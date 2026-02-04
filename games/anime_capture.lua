@@ -311,18 +311,19 @@ TargetSection:Button({
 local RollSection = FruitsTab:Section({ Title = "Gacha Rolling", Icon = "dice-5", Opened = true })
 local SceneSection = FruitsTab:Section({ Title = "Scenes/Worlds", Icon = "map", Opened = true })
 
--- Scene data with gachas
+-- Scene data with gachas and teleport coordinates
 local SCENES = {
-    { Name = "Scene 1 - Pirate Village", Gachas = {"Shock Fruit", "Flame Fruit"} },
-    { Name = "Scene 2 - Ninja Village", Gachas = {"Sharingan", "Tessen"} },
-    { Name = "Scene 3 - Shirayuki Village", Gachas = {"Nichirian Earring", "SwordsSmith Mask"} },
-    { Name = "Scene 4 - Cursed Arts Hamlet", Gachas = {"Impression Ring", "Prison Realm"} },
-    { Name = "Scene 5 - Arcane City Lofts", Gachas = {"One Punch", "Monster Cell"} },
-    { Name = "Scene 6 - Lookout", Gachas = {"Scouter", "Dragon Radar"} },
-    { Name = "Scene 7 - Duck Research Center", Gachas = {"Speed Mark", "Life Mark"} },
+    { Name = "Scene 1 - Pirate Village",       CFrame = CFrame.new(0, 50, 0), --[[ UPDATE COORDS ]] Gachas = {"Shock Fruit", "Flame Fruit"} },
+    { Name = "Scene 2 - Ninja Village",        CFrame = CFrame.new(0, 50, 0), --[[ UPDATE COORDS ]] Gachas = {"Sharingan", "Tessen"} },
+    { Name = "Scene 3 - Shirayuki Village",    CFrame = CFrame.new(0, 50, 0), --[[ UPDATE COORDS ]] Gachas = {"Nichirian Earring", "SwordsSmith Mask"} },
+    { Name = "Scene 4 - Cursed Arts Hamlet",   CFrame = CFrame.new(0, 50, 0), --[[ UPDATE COORDS ]] Gachas = {"Impression Ring", "Prison Realm"} },
+    { Name = "Scene 5 - Arcane City Lofts",    CFrame = CFrame.new(0, 50, 0), --[[ UPDATE COORDS ]] Gachas = {"One Punch", "Monster Cell"} },
+    { Name = "Scene 6 - Lookout",              CFrame = CFrame.new(0, 50, 0), --[[ UPDATE COORDS ]] Gachas = {"Scouter", "Dragon Radar"} },
+    { Name = "Scene 7 - Duck Research Center", CFrame = CFrame.new(0, 50, 0), --[[ UPDATE COORDS ]] Gachas = {"Speed Mark", "Life Mark"} },
 }
 
 local autoRollEnabled = false
+local selectedScene = SCENES[1]
 
 -- Roll once button (RollOne takes no arguments)
 RollSection:Button({
@@ -384,9 +385,9 @@ RollSection:Slider({
     end
 })
 
--- Scene dropdown for info
+-- Scene dropdown for info & selection
 SceneSection:Dropdown({
-    Title = "Scene Info",
+    Title = "Select Scene",
     Values = (function()
         local vals = {}
         for _, scene in ipairs(SCENES) do
@@ -397,10 +398,28 @@ SceneSection:Dropdown({
     Callback = function(val)
         for _, scene in ipairs(SCENES) do
             if scene.Name == (val.Title or val) then
+                selectedScene = scene
                 local gachaText = #scene.Gachas > 0 and table.concat(scene.Gachas, ", ") or "Unknown"
-                NebubloxUI:Notify({ Title = scene.Name, Content = "Gachas: " .. gachaText, Icon = "gift", Duration = 4 })
+                NebubloxUI:Notify({ Title = scene.Name, Content = "Gachas: " .. gachaText, Icon = "gift", Duration = 3 })
                 break
             end
+        end
+    end
+})
+
+-- Teleport Button
+SceneSection:Button({
+    Title = "Teleport to Scene",
+    Desc = "Teleport to selected location",
+    Icon = "zap",
+    Callback = function()
+        if selectedScene and selectedScene.CFrame then
+            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                player.Character.HumanoidRootPart.CFrame = selectedScene.CFrame
+                NebubloxUI:Notify({ Title = "Teleported!", Content = "Arrived at " .. selectedScene.Name, Icon = "check", Duration = 2 })
+            end
+        else
+            NebubloxUI:Notify({ Title = "Error", Content = "No coordinates set for this scene!", Icon = "x", Duration = 2 })
         end
     end
 })
