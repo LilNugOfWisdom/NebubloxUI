@@ -11,7 +11,7 @@
 -- Load the Nebublox UI Library
 -- ============================================
 -- Option 1: Load from your own hosted file (recommended for production)
--- local UILib = loadstring(game:HttpGet("https://raw.githubusercontent.com/YOUR_USERNAME/NebubloxUI/main/nebublox_ui.lua"))()
+-- local UILib = loadstring(game:HttpGet("https://raw.githubusercontent.com/Gamr46/NebubloxUI/main/nebublox_ui.lua"))()
 
 -- Option 2: For local testing, paste the contents of nebublox_ui.lua here
 -- or use this loadstring pointing to where you'll host it

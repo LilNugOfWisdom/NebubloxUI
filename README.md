@@ -1,4 +1,4 @@
-# Nebublox UI Library
+﻿# Nebublox UI Library
 
 <div align="center">
 
@@ -19,26 +19,26 @@
 
 ---
 
-## ✨ Features
+## âœ¨ Features
 
-- 🎨 **Glassmorphism Design** - Modern, sleek UI with blur effects
-- ⚡ **High Performance** - Optimized for smooth animations
-- 🎯 **Easy to Use** - Simple API for rapid development
-- 🌈 **Theming Support** - Dark/Light themes with custom colors
-- 📱 **Responsive** - Works on all screen sizes
-- 🔒 **Key System** - Built-in support for Luarmor, Platoboost, Panda
+- ðŸŽ¨ **Glassmorphism Design** - Modern, sleek UI with blur effects
+- âš¡ **High Performance** - Optimized for smooth animations
+- ðŸŽ¯ **Easy to Use** - Simple API for rapid development
+- ðŸŒˆ **Theming Support** - Dark/Light themes with custom colors
+- ðŸ“± **Responsive** - Works on all screen sizes
+- ðŸ”’ **Key System** - Built-in support for Luarmor, Platoboost, Panda
 
-## 📦 Installation
+## ðŸ“¦ Installation
 
 ```lua
-local NebubloxUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/YOUR_USERNAME/NebubloxUI/main/nebublox_ui.lua"))()
+local NebubloxUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Gamr46/NebubloxUI/main/nebublox_ui.lua"))()
 ```
 
-## 🚀 Quick Start
+## ðŸš€ Quick Start
 
 ```lua
 -- Load the library
-local NebubloxUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/YOUR_USERNAME/NebubloxUI/main/nebublox_ui.lua"))()
+local NebubloxUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Gamr46/NebubloxUI/main/nebublox_ui.lua"))()
 
 -- Create a window
 local Window = NebubloxUI:CreateWindow({
@@ -88,7 +88,7 @@ Section:Slider({
 })
 ```
 
-## 📚 Components
+## ðŸ“š Components
 
 | Component | Description |
 |-----------|-------------|
@@ -105,7 +105,7 @@ Section:Slider({
 | **Notify** | Alert/notification system |
 | **Dialog** | Modal dialogs |
 
-## 🎨 Themes
+## ðŸŽ¨ Themes
 
 ```lua
 -- Built-in themes
@@ -116,7 +116,7 @@ Theme = "Light"  -- Light mode
 Transparent = true
 ```
 
-## 🔒 Key System
+## ðŸ”’ Key System
 
 ```lua
 local Window = NebubloxUI:CreateWindow({
@@ -130,21 +130,22 @@ local Window = NebubloxUI:CreateWindow({
 })
 ```
 
-## 🤝 Contributing
+## ðŸ¤ Contributing
 
 Contributions are welcome! Feel free to submit issues and pull requests.
 
-## 📄 License
+## ðŸ“„ License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 💬 Support
+## ðŸ’¬ Support
 
 - **Discord:** [discord.gg/nebublox](https://discord.gg/nebublox)
-- **GitHub Issues:** [Create an issue](https://github.com/YOUR_USERNAME/NebubloxUI/issues)
+- **GitHub Issues:** [Create an issue](https://github.com/Gamr46/NebubloxUI/issues)
 
 ---
 
 <div align="center">
-Made with ❤️ by <b>Nebublox</b>
+Made with â¤ï¸ by <b>Nebublox</b>
 </div>
+
