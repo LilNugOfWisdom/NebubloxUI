@@ -21,7 +21,8 @@ local RollOne = Remotes:FindFirstChild("RollOne") or ReplicatedStorage:FindFirst
 local RebirthEvent = Remotes:FindFirstChild("RebirthEvent") or ReplicatedStorage:FindFirstChild("RebirthEvent")
 local EquipBestEvent = Remotes:FindFirstChild("EquipBestEvent") or ReplicatedStorage:FindFirstChild("EquipBestEvent") -- UPDATED
 local CraftItemEvent = Remotes:FindFirstChild("CraftItemEvent") or ReplicatedStorage:FindFirstChild("CraftItemEvent") -- UPDATED
-local GetAllEvent = Remotes:FindFirstChild("GetAllEvent") or ReplicatedStorage:FindFirstChild("GetAllEvent") -- NEW (Achievements)
+local GetAllEvent = Remotes:FindFirstChild("GetAllEvent") or ReplicatedStorage:FindFirstChild("GetAllEvent") -- Achievement Claim
+local UseCatchRate = Remotes:FindFirstChild("CatchRate") and Remotes.CatchRate:FindFirstChild("UseCatchRate") or ReplicatedStorage:FindFirstChild("Events") and ReplicatedStorage.Events.CatchRate:FindFirstChild("UseCatchRate")
 
 -- Variables
 local autoFarmEnabled = false
@@ -39,11 +40,10 @@ local selectedBallId = 1 -- Default Ball ID
 -- ═══════════════════════════════════════════════════════════
 -- CAPTURE TAB
 -- ═══════════════════════════════════════════════════════════
--- ... (Capture logic)
 
 CaptureSection:Slider({
     Title = "Ball ID",
-    Desc = "ID of the ball to use for capture",
+    Desc = "ID of the ball to equip/use",
     Value = { Min = 1, Max = 20, Default = 1 },
     Step = 1,
     Callback = function(val)
@@ -52,13 +52,32 @@ CaptureSection:Slider({
 })
 
 CaptureSection:Button({
+    Title = "Equip Ball",
+    Desc = "Manually equip selected ball",
+    Icon = "circle",
+    Callback = function()
+        if UseCatchRate then
+            UseCatchRate:FireServer(selectedBallId)
+            NebubloxUI:Notify({ Title = "Equipped!", Content = "Ball ID: " .. selectedBallId, Icon = "check", Duration = 2 })
+        else
+            NebubloxUI:Notify({ Title = "Error", Content = "UseCatchRate remote not found", Icon = "x", Duration = 2 })
+        end
+    end
+})
+
+CaptureSection:Button({
     Title = "Capture Now",
-    Desc = "Fire CatchFollowFinish to capture",
+    Desc = "Equip Ball -> Capture",
     Icon = "box",
     Callback = function()
         if selectedTarget and selectedTarget.Model then
+            -- 1. Equip Ball First
+            if UseCatchRate then
+                UseCatchRate:FireServer(selectedBallId)
+            end
+            wait(0.1)
+            -- 2. Capture
             if CatchFollowFinish then
-                -- Pass selectedBallId as second argument
                 CatchFollowFinish:FireServer(selectedTarget.Model, selectedBallId)
                 NebubloxUI:Notify({ Title = "Captured!", Content = "Caught " .. selectedTarget.Name, Icon = "check", Duration = 2 })
             else
@@ -69,6 +88,38 @@ CaptureSection:Button({
         end
     end
 })
+
+-- ... (rest of features)
+
+-- BACKGROUND LOOPS UPDATE
+-- ...
+        -- Auto Capture loop (full sequence)
+        if autoCaptureEnabled then
+            local entity = getClosestEntity()
+            if entity and entity.Model then
+                -- Teleport close
+                if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                    player.Character.HumanoidRootPart.CFrame = entity.Root.CFrame + Vector3.new(0, 3, 0)
+                end
+                
+                -- Fire capture sequence
+                -- 0. Equip Ball
+                if UseCatchRate then UseCatchRate:FireServer(selectedBallId) end
+                
+                -- 1. Engage
+                if SetEnemyEvent then SetEnemyEvent:FireServer(entity.Model) end
+                wait(0.1)
+                
+                -- 2. Attack
+                if ClickEvent then ClickEvent:FireServer(entity.Model) end
+                if PlayerAttack then PlayerAttack:FireServer(entity.Model) end
+                wait(0.1)
+                
+                -- 3. Capture
+                if CatchFollowFinish then CatchFollowFinish:FireServer(entity.Model, selectedBallId) end
+            end
+        end
+-- ...
 
 -- ... (rest of features)
 
@@ -96,14 +147,19 @@ StatsSection:Toggle({
                 end
                 
                 -- Fire capture sequence
+                -- 0. Equip Ball
+                if UseCatchRate then UseCatchRate:FireServer(selectedBallId) end
+                
+                -- 1. Engage
                 if SetEnemyEvent then SetEnemyEvent:FireServer(entity.Model) end
                 wait(0.1)
-                -- Auto attack first to weaken
+                
+                -- 2. Attack
                 if ClickEvent then ClickEvent:FireServer(entity.Model) end
-                wait(0.1)
                 if PlayerAttack then PlayerAttack:FireServer(entity.Model) end
                 wait(0.1)
-                -- Then capture with Ball ID
+                
+                -- 3. Capture
                 if CatchFollowFinish then CatchFollowFinish:FireServer(entity.Model, selectedBallId) end
             end
         end
