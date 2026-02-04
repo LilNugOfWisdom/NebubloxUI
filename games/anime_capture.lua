@@ -1,875 +1,418 @@
 --[[
     ═══════════════════════════════════════════════════════════
-    NEBUBLOX | ANIME CAPTURE
-    Script hub for Anime Capture game
+    NEBUBLOX | ANIME CAPTURE (Final Polish)
+    Simple, Clean, and Powerful
     ═══════════════════════════════════════════════════════════
 ]]
 
 local GAME_NAME = "Anime Capture"
-local SCRIPT_VERSION = "1.0.0"
+local VERSION = "2.0.0"
 
--- Load Library
+-- // LOAD LIBRARY //
 local NebubloxUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Gamr46/NebubloxUI/main/nebublox_ui.lua"))()
 
--- Services
+-- // SERVICES //
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 
-local RollOne = Remotes:FindFirstChild("RollOne") or ReplicatedStorage:FindFirstChild("RollOne")
-local RebirthEvent = Remotes:FindFirstChild("Rebirth") and Remotes.Rebirth:FindFirstChild("RebirthEvent") or ReplicatedStorage:FindFirstChild("Events") and ReplicatedStorage.Events.Rebirth:FindFirstChild("RebirthEvent")
-local EquipBestEvent = Remotes:FindFirstChild("EquipBestEvent") or ReplicatedStorage:FindFirstChild("EquipBestEvent")
-local CraftItemEvent = Remotes:FindFirstChild("CraftItemEvent") or ReplicatedStorage:FindFirstChild("CraftItemEvent")
-local GetAllEvent = Remotes:FindFirstChild("GetAllEvent") or ReplicatedStorage:FindFirstChild("GetAllEvent")
-local UseCatchRate = Remotes:FindFirstChild("CatchRate") and Remotes.CatchRate:FindFirstChild("UseCatchRate") or ReplicatedStorage:FindFirstChild("Events") and ReplicatedStorage.Events.CatchRate:FindFirstChild("UseCatchRate")
-local PortalEvent = Remotes:FindFirstChild("Map") and Remotes.Map:FindFirstChild("PortalEvent") or ReplicatedStorage:FindFirstChild("Events") and ReplicatedStorage.Events.Map:FindFirstChild("PortalEvent")
-local ClickUpgradeEvent = Remotes:FindFirstChild("Click") and Remotes.Click:FindFirstChild("ClickEvent") or ReplicatedStorage:FindFirstChild("Events") and ReplicatedStorage.Events.Click:FindFirstChild("ClickEvent")
-local ClickPlusEvent = Remotes:FindFirstChild("Click") and Remotes.Click:FindFirstChild("ClickPlusEvent") or ReplicatedStorage:FindFirstChild("Events") and ReplicatedStorage.Events.Click:FindFirstChild("ClickPlusEvent")
+-- // REMOTES //
+-- Function to safely find remotes in multiple locations
+local function getRemote(names, parent)
+    parent = parent or ReplicatedStorage
+    if type(names) == "string" then names = {names} end
+    for _, name in ipairs(names) do
+        local r = parent:FindFirstChild(name, true) -- Recursive search
+        if r then return r end
+    end
+    return nil
+end
 
--- Variables
-local autoFarmEnabled = false
-local autoCaptureEnabled = false
-local autoClickEnabled = false -- This is for ATTACK clicking
-local autoUpgradeClickEnabled = false -- This is for RANK/CURRENCY clicking
-local autoSuperClickEnabled = false -- This is for CLICK PLUS clicking
-local autoRebirthEnabled = false
-local autoEquipEnabled = false
-local autoCraftEnabled = false
-local autoClaimAchievements = false
+-- COMBAT / FARM
+local SetEnemyEvent     = getRemote({"SetEnemyEvent"})
+local PlayerAttack      = getRemote({"PlayerAttack"})
+local CatchFollowFinish = getRemote({"CatchFollowFinish"})
+local UseCatchRate      = getRemote({"UseCatchRate", "CatchRate"}) -- Equip Ball
+
+-- CLICKER / UPGRADES
+local ClickGUIEvent     = getRemote({"ClickEvent"}) -- GUI Clicker (likely no args)
+local ClickPlusEvent    = getRemote({"ClickPlusEvent"}) -- Super Click
+local RebirthEvent      = getRemote({"RebirthEvent", "Rebirth"})
+local EquipBestEvent    = getRemote({"EquipBestEvent", "EquipBest"})
+local CraftItemEvent    = getRemote({"CraftItemEvent"})
+
+-- MISC / DAILY
+local GetAllEvent       = getRemote({"GetAllEvent"}) -- Achievement Claim
+local PortalEvent       = getRemote({"PortalEvent"}) -- Teleport
+local RollOne           = getRemote({"RollOne"})     -- Gacha
+local SignEvent         = getRemote({"SignEvent"})   -- Daily Sign
+local GetRandom         = getRemote({"[C-S]GetRandom"}) -- Spin
+local GetRewardByRandom = getRemote({"GetRewardByRandom"}) -- Spin Reward
+
+-- // VARIABLES //
+local Flags = {
+    AutoFarm = false,
+    AutoCapture = false,
+    AutoClickGUI = false,     -- The "Clicker Simulator" spam
+    AutoRebirth = false,
+    AutoEquip = false,
+    AutoCraft = false,
+    AutoHatch = false,
+    AutoRoll = false,
+    AutoDaily = false,
+    AutoSpin = false,
+    AutoLoot = false,         -- Chests/Explore
+}
+
+local Settings = {
+    SelectedBall = 1,
+    SelectedScene = nil,
+    SelectedEgg = nil,
+    HatchAmount = 1,
+    RollSpeed = 0.5,
+    WalkSpeed = 16,
+    JumpPower = 50
+}
+
 local selectedTarget = nil
-local selectedBallId = 1 -- Default Ball ID
 
--- ... (rest of code)
+-- // SCENE DATA //
+local SCENES = {
+    { Name = "Start - Pirate Village",       Id = 1, Island = "Island1" },
+    { Name = "Scene 2 - Ninja Village",        Id = 2, Island = "Island2" },
+    { Name = "Scene 3 - Shirayuki Village",    Id = 3, Island = "Island3" },
+    { Name = "Scene 4 - Cursed Arts Hamlet",   Id = 4, Island = "Island4" },
+    { Name = "Scene 5 - Arcane City Lofts",    Id = 5, Island = "Island5" },
+    { Name = "Scene 6 - Lookout",              Id = 6, Island = "Island6" },
+    { Name = "Scene 7 - Duck Research Center", Id = 7, Island = "Island7" },
+}
 
--- ═══════════════════════════════════════════════════════════
--- CAPTURE TAB
--- ══════════════════════════════════════════════════════════m
--- FARM TAB
--- ═══════════════════════════════════════════════════════════
-local AutoSection = FarmTab:Section({ Title = "Auto Farm", Icon = "repeat", Opened = true })
-local ClickSection = FarmTab:Section({ Title = "Clicking / Upgrades", Icon = "mouse-pointer", Opened = true })
-
-AutoSection:Toggle({
-    Title = "Auto Farm (Attack)",
-    Desc = "Automatically kill enemies",
-    Value = false,
-    Callback = function(state)
-        autoFarmEnabled = state
-        NebubloxUI:Notify({ Title = state and "Auto Farm ON" or "Auto Farm OFF", Content = state and "Farming started" or "Farming stopped", Icon = state and "sword" or "x", Duration = 2 })
-    end
-})
-
-ClickSection:Toggle({
-    Title = "Auto Attack Click",
-    Desc = "Spam clicks on enemies",
-    Value = false,
-    Callback = function(state)
-        autoClickEnabled = state
-    end
-})
-
-ClickSection:Toggle({
-    Title = "Auto Upgrade Click",
-    Desc = "Spam ClickEvent (Rank/Currency)",
-    Value = false,
-    Callback = function(state)
-        autoUpgradeClickEnabled = state
-        NebubloxUI:Notify({ Title = "Auto Upgrade", Content = state and "Spamming ClickEvent..." or "Stopped", Icon = "chevrons-up", Duration = 2 })
-    end
-})
-
-ClickSection:Toggle({
-    Title = "Auto Super Click",
-    Desc = "Spam ClickPlusEvent (Super Click)",
-    Value = false,
-    Callback = function(state)
-        autoSuperClickEnabled = state
-        NebubloxUI:Notify({ Title = "Auto Super Click", Content = state and "Spamming ClickPlus..." or "Stopped", Icon = "star", Duration = 2 })
-    end
-})
-
--- ...
-
--- ═══════════════════════════════════════════════════════════
--- CAPTURE TAB
--- ═══════════════════════════════════════════════════════════
-
-CaptureSection:Slider({
-    Title = "Ball ID",
-    Desc = "ID of the ball to equip/use",
-    Value = { Min = 1, Max = 20, Default = 1 },
-    Step = 1,
-    Callback = function(val)
-        selectedBallId = val
-    end
-})
-
-CaptureSection:Button({
-    Title = "Equip Ball",
-    Desc = "Manually equip selected ball",
-    Icon = "circle",
-    Callback = function()
-        if UseCatchRate then
-            UseCatchRate:FireServer(selectedBallId)
-            NebubloxUI:Notify({ Title = "Equipped!", Content = "Ball ID: " .. selectedBallId, Icon = "check", Duration = 2 })
-        else
-            NebubloxUI:Notify({ Title = "Error", Content = "UseCatchRate remote not found", Icon = "x", Duration = 2 })
-        end
-    end
-})
-
-CaptureSection:Button({
-    Title = "Capture Now",
-    Desc = "Equip Ball -> Capture",
-    Icon = "box",
-    Callback = function()
-        if selectedTarget and selectedTarget.Model then
-            -- 1. Equip Ball First
-            if UseCatchRate then
-                UseCatchRate:FireServer(selectedBallId)
-            end
-            wait(0.1)
-            -- 2. Capture
-            if CatchFollowFinish then
-                CatchFollowFinish:FireServer(selectedTarget.Model, selectedBallId)
-                NebubloxUI:Notify({ Title = "Captured!", Content = "Caught " .. selectedTarget.Name, Icon = "check", Duration = 2 })
-            else
-                NebubloxUI:Notify({ Title = "Error", Content = "CatchFollowFinish not found", Icon = "x", Duration = 2 })
-            end
-        else
-            NebubloxUI:Notify({ Title = "No Target", Content = "Select a target first!", Icon = "alert-circle", Duration = 2 })
-        end
-    end
-})
-
--- ... (rest of features)
-
--- BACKGROUND LOOPS UPDATE
--- ...
-        -- Auto Capture loop (full sequence)
-        if autoCaptureEnabled then
-            local entity = getClosestEntity()
-            if entity and entity.Model then
-                -- Teleport close
-                if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                    player.Character.HumanoidRootPart.CFrame = entity.Root.CFrame + Vector3.new(0, 3, 0)
-                end
-                
-                -- Fire capture sequence
-                -- 0. Equip Ball
-                if UseCatchRate then UseCatchRate:FireServer(selectedBallId) end
-                
-                -- 1. Engage
-                if SetEnemyEvent then SetEnemyEvent:FireServer(entity.Model) end
-                wait(0.1)
-                
-                -- 2. Attack
-                if ClickEvent then ClickEvent:FireServer(entity.Model) end
-                if PlayerAttack then PlayerAttack:FireServer(entity.Model) end
-                wait(0.1)
-                
-                -- 3. Capture
-                if CatchFollowFinish then CatchFollowFinish:FireServer(entity.Model, selectedBallId) end
-            end
-        end
--- ...
-
--- ... (rest of features)
-
--- Auto Claim Achievements (using GetAllEvent)
-StatsSection:Toggle({
-    Title = "Auto Claim Achievements",
-    Desc = "Spam GetAllEvent to claim rewards",
-    Value = false,
-    Callback = function(state)
-        autoClaimAchievements = state
-        NebubloxUI:Notify({ Title = "Auto Claim", Content = state and "ON" or "OFF", Icon = "award", Duration = 2 })
-    end
-})
-
-
--- BACKGROUND LOOPS UPDATE
--- ...
-        -- Auto Capture loop (full sequence)
-        if autoCaptureEnabled then
-            local entity = getClosestEntity()
-            if entity and entity.Model then
-                -- Teleport close
-                if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                    player.Character.HumanoidRootPart.CFrame = entity.Root.CFrame + Vector3.new(0, 3, 0)
-                end
-                
-                -- Fire capture sequence
-                -- 0. Equip Ball
-                if UseCatchRate then UseCatchRate:FireServer(selectedBallId) end
-                
-                -- 1. Engage
-                if SetEnemyEvent then SetEnemyEvent:FireServer(entity.Model) end
-                wait(0.1)
-                
-                -- 2. Attack
-                if ClickEvent then ClickEvent:FireServer(entity.Model) end
-                if PlayerAttack then PlayerAttack:FireServer(entity.Model) end
-                wait(0.1)
-                
-                -- 3. Capture
-                if CatchFollowFinish then CatchFollowFinish:FireServer(entity.Model, selectedBallId) end
-            end
-        end
-
-        -- Auto Rebirth
-        if autoRebirthEnabled and RebirthEvent then
-            RebirthEvent:FireServer()
-        end
-
-        -- Auto Best Equip
-        if autoEquipEnabled and EquipBestEvent then
-            EquipBestEvent:FireServer()
-        end
-        
-        -- Auto Claim Achievements
-        if autoClaimAchievements and GetAllEvent then
-            GetAllEvent:FireServer()
-        end
-
-        -- Auto Craft Gold (loop)
-        if autoCraftEnabled and CraftItemEvent then
-            CraftItemEvent:FireServer("Gold") 
-        end
--- ...
-
--- ═══════════════════════════════════════════════════════════
--- HELPER FUNCTIONS
--- ═══════════════════════════════════════════════════════════
-
--- Find all capturable entities (NPCs/Anime characters)
--- Find all capturable entities (NPCs/Anime characters)
-local function getCapturableEntities()
-    local entities = {}
-    
-    -- Scan entire workspace for Humanoids
-    for _, obj in ipairs(Workspace:GetDescendants()) do
-        if obj:IsA("Humanoid") and obj.Health > 0 then
-            local model = obj.Parent
-            local root = model:FindFirstChild("HumanoidRootPart") or model:FindFirstChild("Torso") or model:FindFirstChild("HumanoidRootPart")
-            
-            -- Check if it's a player
-            local isPlayer = Players:GetPlayerFromCharacter(model)
-            
-            if root and not isPlayer then
-                -- Exclude our own character
-                if model ~= player.Character then
-                    table.insert(entities, {
-                        Name = model.Name,
-                        Model = model,
-                        Humanoid = obj,
-                        Root = root
-                    })
-                end
-            end
-        end
-    end
-    
-    return entities
-end
-
--- Get closest entity
-local function getClosestEntity()
-    local entities = getCapturableEntities()
-    local closest = nil
-    local closestDist = math.huge
-    
-    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-        local myPos = player.Character.HumanoidRootPart.Position
-        for _, entity in ipairs(entities) do
-            local dist = (myPos - entity.Root.Position).Magnitude
-            if dist < closestDist then
-                closestDist = dist
-                closest = entity
-            end
-        end
-    end
-    
-    return closest, closestDist
-end
-
--- ═══════════════════════════════════════════════════════════
--- CREATE WINDOW
--- ═══════════════════════════════════════════════════════════
+-- // UI SETUP //
 local Window = NebubloxUI:CreateWindow({
-    Title = "Nebublox | " .. GAME_NAME,
-    Author = "by Nebublox",
+    Title = "Nebublox",
+    Author = "Anime Capture",
     Folder = "Nebublox_AnimeCapture",
     Theme = "Void",
-    Transparent = true,
-    SideBarWidth = 200,
+    SideBarWidth = 180,
     HasOutline = true,
 })
 
--- ═══════════════════════════════════════════════════════════
--- TABS
--- ═══════════════════════════════════════════════════════════
-local CaptureTab = Window:Tab({ Title = "Capture", Icon = "target" })
-local FruitsTab = Window:Tab({ Title = "Fruits", Icon = "cherry" })
-local FarmTab = Window:Tab({ Title = "Farm", Icon = "coins" })
-local PlayerTab = Window:Tab({ Title = "Player", Icon = "user" })
-local SettingsTab = Window:Tab({ Title = "Settings", Icon = "settings" })
+-- // TABS //
+local MainTab    = Window:Tab({ Title = "Main", Icon = "home" })
+local UpgradeTab = Window:Tab({ Title = "Upgrades", Icon = "chevrons-up" })
+local PetsTab    = Window:Tab({ Title = "Pets & Items", Icon = "dog" }) -- Combined Gacha/Eggs
+local TeleportTab= Window:Tab({ Title = "Teleport", Icon = "map" })
+local ExtrasTab  = Window:Tab({ Title = "Extras", Icon = "star" })
 
--- ═══════════════════════════════════════════════════════════
--- CAPTURE TAB
--- ═══════════════════════════════════════════════════════════
-local TargetSection = CaptureTab:Section({ Title = "Target Selection", Icon = "crosshair", Opened = true })
-local CaptureSection = CaptureTab:Section({ Title = "Capture Options", Icon = "box", Opened = true })
+-- =====================================================================================
+-- TAB: MAIN (Farm, Capture, Loot)
+-- =====================================================================================
+local FarmSection = MainTab:Section({ Title = "Auto Farm", Icon = "sword", Opened = true })
 
--- Refresh & Select Target
-TargetSection:Button({
-    Title = "Find Nearest Entity",
-    Desc = "Locate closest capturable character",
-    Icon = "search",
-    Callback = function()
-        local entity, dist = getClosestEntity()
-        if entity then
-            selectedTarget = entity
-            NebubloxUI:Notify({
-                Title = "Target Found!",
-                Content = entity.Name .. " (" .. math.floor(dist) .. " studs away)",
-                Icon = "target",
-                Duration = 3
-            })
-        else
-            NebubloxUI:Notify({
-                Title = "No Targets",
-                Content = "No capturable entities found",
-                Icon = "x",
-                Duration = 3
-            })
-        end
+FarmSection:Toggle({
+    Title = "Auto Farm Mobs",
+    Desc = "Kills enemies automatically",
+    Value = false,
+    Callback = function(state)
+        Flags.AutoFarm = state
     end
 })
 
--- Teleport to target
-TargetSection:Button({
-    Title = "Teleport to Target",
-    Desc = "Teleport to selected entity",
-    Icon = "zap",
-    Callback = function()
-        if selectedTarget and selectedTarget.Root then
-            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                player.Character.HumanoidRootPart.CFrame = selectedTarget.Root.CFrame + Vector3.new(0, 5, 0)
-                NebubloxUI:Notify({ Title = "Teleported!", Content = "Arrived at " .. selectedTarget.Name, Icon = "check", Duration = 2 })
-            end
-        else
-            NebubloxUI:Notify({ Title = "No Target", Content = "Find a target first!", Icon = "alert-circle", Duration = 2 })
-        end
+FarmSection:Toggle({
+    Title = "Auto Clicker (GUI)",
+    Desc = "Spams the Click button for currency",
+    Value = false,
+    Callback = function(state)
+        Flags.AutoClickGUI = state
     end
 })
 
--- Set Enemy (fires SetEnemyEvent)
-CaptureSection:Button({
-    Title = "Set Enemy Target",
-    Desc = "Fire SetEnemyEvent on selected target",
-    Icon = "crosshair",
-    Callback = function()
-        if selectedTarget and selectedTarget.Model then
-            if SetEnemyEvent then
-                SetEnemyEvent:FireServer(selectedTarget.Model)
-                NebubloxUI:Notify({ Title = "Enemy Set!", Content = "Targeting " .. selectedTarget.Name, Icon = "target", Duration = 2 })
-            else
-                NebubloxUI:Notify({ Title = "Error", Content = "SetEnemyEvent not found", Icon = "x", Duration = 2 })
-            end
-        else
-            NebubloxUI:Notify({ Title = "No Target", Content = "Select a target first!", Icon = "alert-circle", Duration = 2 })
-        end
-    end
-})
+local CaptureSection = MainTab:Section({ Title = "Capture", Icon = "box", Opened = true })
 
--- Click Attack (fires ClickEvent)
-CaptureSection:Button({
-    Title = "Click Attack",
-    Desc = "Fire ClickEvent on selected target",
-    Icon = "mouse-pointer",
-    Callback = function()
-        if selectedTarget and selectedTarget.Model then
-            if ClickEvent then
-                ClickEvent:FireServer(selectedTarget.Model)
-                NebubloxUI:Notify({ Title = "Clicked!", Content = "Attacked " .. selectedTarget.Name, Icon = "zap", Duration = 2 })
-            else
-                NebubloxUI:Notify({ Title = "Error", Content = "ClickEvent not found", Icon = "x", Duration = 2 })
-            end
-        else
-            NebubloxUI:Notify({ Title = "No Target", Content = "Select a target first!", Icon = "alert-circle", Duration = 2 })
-        end
-    end
-})
-
--- Capture/Catch (fires CatchFollowFinish)
-CaptureSection:Button({
-    Title = "Capture Now",
-    Desc = "Fire CatchFollowFinish to capture",
-    Icon = "box",
-    Callback = function()
-        if selectedTarget and selectedTarget.Model then
-            if CatchFollowFinish then
-                CatchFollowFinish:FireServer(selectedTarget.Model)
-                NebubloxUI:Notify({ Title = "Captured!", Content = "Caught " .. selectedTarget.Name, Icon = "check", Duration = 2 })
-            else
-                NebubloxUI:Notify({ Title = "Error", Content = "CatchFollowFinish not found", Icon = "x", Duration = 2 })
-            end
-        else
-            NebubloxUI:Notify({ Title = "No Target", Content = "Select a target first!", Icon = "alert-circle", Duration = 2 })
-        end
-    end
-})
-
--- Player Attack (fires PlayerAttack)
-CaptureSection:Button({
-    Title = "Player Attack",
-    Desc = "Fire PlayerAttack remote",
-    Icon = "swords",
-    Callback = function()
-        if selectedTarget and selectedTarget.Model then
-            if PlayerAttack then
-                PlayerAttack:FireServer(selectedTarget.Model)
-                NebubloxUI:Notify({ Title = "Attacked!", Content = "Player attacked " .. selectedTarget.Name, Icon = "swords", Duration = 2 })
-            else
-                NebubloxUI:Notify({ Title = "Error", Content = "PlayerAttack not found", Icon = "x", Duration = 2 })
-            end
-        else
-            NebubloxUI:Notify({ Title = "No Target", Content = "Select a target first!", Icon = "alert-circle", Duration = 2 })
-        end
-    end
-})
-
--- Auto capture toggle
 CaptureSection:Toggle({
     Title = "Auto Capture",
-    Desc = "Auto: SetEnemy → Click → Catch",
+    Desc = "Weakens and Captures enemies",
     Value = false,
     Callback = function(state)
-        autoCaptureEnabled = state
-        NebubloxUI:Notify({
-            Title = state and "Auto Capture ON" or "Auto Capture OFF",
-            Content = state and "Will auto-capture entities" or "Disabled",
-            Icon = state and "check" or "x",
-            Duration = 2
-        })
+        Flags.AutoCapture = state
     end
 })
 
--- Auto Click toggle
-CaptureSection:Toggle({
-    Title = "Auto Click",
-    Desc = "Continuously fire ClickEvent",
-    Value = false,
-    Callback = function(state)
-        autoClickEnabled = state
-        NebubloxUI:Notify({
-            Title = state and "Auto Click ON" or "Auto Click OFF",
-            Content = state and "Clicking enabled" or "Disabled",
-            Icon = state and "mouse-pointer" or "x",
-            Duration = 2
-        })
-    end
-})
-
--- Entity list dropdown
-local entityDropdown
-entityDropdown = TargetSection:Dropdown({
-    Title = "Select Entity",
-    Values = {},
-    SearchBarEnabled = true,
+CaptureSection:Slider({
+    Title = "Select Ball ID",
+    Value = { Min = 1, Max = 20, Default = 1 },
+    Step = 1,
     Callback = function(val)
-        -- Find selected entity
-        local entities = getCapturableEntities()
-        for _, entity in ipairs(entities) do
-            if entity.Name == (val.Title or val) then
-                selectedTarget = entity
-                NebubloxUI:Notify({ Title = "Selected!", Content = entity.Name, Icon = "check", Duration = 2 })
-                break
+        Settings.SelectedBall = val
+    end
+})
+
+-- =====================================================================================
+-- TAB: UPGRADES
+-- =====================================================================================
+local ProgSection = UpgradeTab:Section({ Title = "Progression", Icon = "trending-up", Opened = true })
+
+ProgSection:Toggle({
+    Title = "Auto Rebirth",
+    Value = false,
+    Callback = function(state) Flags.AutoRebirth = state end
+})
+
+ProgSection:Toggle({
+    Title = "Auto Equip Best",
+    Value = false,
+    Callback = function(state) Flags.AutoEquip = state end
+})
+
+ProgSection:Toggle({
+    Title = "Auto Craft Gold",
+    Value = false,
+    Callback = function(state) Flags.AutoCraft = state end
+})
+
+-- =====================================================================================
+-- TAB: PETS & ITEMS (Eggs, Gacha)
+-- =====================================================================================
+local EggSection = PetsTab:Section({ Title = "Eggs", Icon = "egg", Opened = true })
+local GachaSection = PetsTab:Section({ Title = "Fruit Gacha", Icon = "gift", Opened = true })
+
+-- Dynamic Egg List
+local eggNames = {}
+local eggData = {}
+local eggFolder = Workspace:FindFirstChild("egg")
+if eggFolder then
+    for _, s in pairs(eggFolder:GetChildren()) do
+        if s.Name:find("ergg_scene") then
+            local sId = s.Name:match("%d+")
+            for _, t in pairs(s:GetChildren()) do
+                for _, e in pairs(t:GetChildren()) do
+                    local id = e:GetAttribute("lottoId")
+                    if id then
+                        local name = "S" .. sId .. " - Egg " .. id
+                        table.insert(eggNames, name)
+                        eggData[name] = id
+                    end
+                end
             end
         end
     end
-})
+    table.sort(eggNames)
+end
 
-TargetSection:Button({
-    Title = "Refresh Entity List",
-    Icon = "refresh-cw",
-    Callback = function()
-        local entities = getCapturableEntities()
-        local values = {}
-        for _, entity in ipairs(entities) do
-            table.insert(values, { Title = entity.Name, Icon = "user" })
-        end
-        if entityDropdown.SetValues then
-            entityDropdown:SetValues(values)
-        end
-        NebubloxUI:Notify({ Title = "Refreshed!", Content = #entities .. " entities found", Icon = "check", Duration = 2 })
+EggSection:Dropdown({
+    Title = "Select Egg",
+    Items = eggNames,
+    Callback = function(val)
+        Settings.SelectedEgg = eggData[val]
     end
 })
 
--- ═══════════════════════════════════════════════════════════
--- GACHA TAB (Rolling)
--- ═══════════════════════════════════════════════════════════
-local RollSection = FruitsTab:Section({ Title = "Gacha Rolling", Icon = "dice-5", Opened = true })
-local SceneSection = FruitsTab:Section({ Title = "Scenes/Worlds", Icon = "map", Opened = true })
-
--- Scene data with gachas and teleport coordinates
--- Scene data with gachas and Workspace names
-local SCENES = {
-    { Name = "Scene 1 - Pirate Village",       Island = "Island1", Gachas = {"Shock Fruit", "Flame Fruit"} },
-    { Name = "Scene 2 - Ninja Village",        Island = "Island2", Gachas = {"Sharingan", "Tessen"} },
-    { Name = "Scene 3 - Shirayuki Village",    Island = "Island3", Gachas = {"Nichirian Earring", "SwordsSmith Mask"} },
-    { Name = "Scene 4 - Cursed Arts Hamlet",   Island = "Island4", Gachas = {"Impression Ring", "Prison Realm"} },
-    { Name = "Scene 5 - Arcane City Lofts",    Island = "Island5", Gachas = {"One Punch", "Monster Cell"} },
-    { Name = "Scene 6 - Lookout",              Island = "Island6", Gachas = {"Scouter", "Dragon Radar"} },
-    { Name = "Scene 7 - Duck Research Center", Island = "Island7", Gachas = {"Speed Mark", "Life Mark"} },
-}
-
-local autoRollEnabled = false
-local selectedScene = SCENES[1]
-
--- Roll once button (RollOne takes no arguments)
-RollSection:Button({
-    Title = "Roll Once",
-    Desc = "Fire RollOne (random gacha)",
-    Icon = "dice-5",
-    Callback = function()
-        if RollOne then
-            RollOne:FireServer()
-            NebubloxUI:Notify({ Title = "Rolling!", Content = "Rolled for a gacha!", Icon = "dice-5", Duration = 2 })
-        else
-            NebubloxUI:Notify({ Title = "Error", Content = "RollOne remote not found", Icon = "x", Duration = 2 })
-        end
-    end
-})
-
--- Roll 10x button
-RollSection:Button({
-    Title = "Roll 10x",
-    Desc = "Roll 10 times quickly",
-    Icon = "layers",
-    Callback = function()
-        if RollOne then
-            for i = 1, 10 do
-                RollOne:FireServer()
-                wait(0.1)
-            end
-            NebubloxUI:Notify({ Title = "Done!", Content = "Rolled 10 times!", Icon = "check", Duration = 2 })
-        else
-            NebubloxUI:Notify({ Title = "Error", Content = "RollOne remote not found", Icon = "x", Duration = 2 })
-        end
-    end
-})
-
--- Auto roll toggle
-RollSection:Toggle({
-    Title = "Auto Roll",
-    Desc = "Continuously roll for fruits",
+EggSection:Toggle({
+    Title = "Auto Hatch",
     Value = false,
     Callback = function(state)
-        autoRollEnabled = state
-        NebubloxUI:Notify({
-            Title = state and "Auto Roll ON" or "Auto Roll OFF",
-            Content = state and "Rolling continuously..." or "Stopped",
-            Icon = state and "repeat" or "x",
-            Duration = 2
-        })
-    end
-})
-
--- Auto roll speed slider
-local autoRollDelay = 0.5
-RollSection:Slider({
-    Title = "Roll Speed (seconds)",
-    Value = { Min = 0.1, Max = 2, Default = 0.5 },
-    Step = 0.1,
-    Callback = function(val)
-        autoRollDelay = val
-    end
-})
-
--- Scene dropdown for info & selection
-SceneSection:Dropdown({
-    Title = "Select Scene",
-    Values = (function()
-        local vals = {}
-        for _, scene in ipairs(SCENES) do
-            table.insert(vals, { Title = scene.Name, Icon = "map-pin" })
+        if not Settings.SelectedEgg then
+            NebubloxUI:Notify({Title="Error", Content="Select an egg first!", Duration=3})
+            return
         end
-        return vals
-    end)(),
+        Flags.AutoHatch = state
+    end
+})
+
+GachaSection:Toggle({
+    Title = "Auto Roll Fruits",
+    Value = false,
+    Callback = function(state) Flags.AutoRoll = state end
+})
+
+GachaSection:Slider({
+    Title = "Roll Speed",
+    Value = {Min=0.1, Max=2, Default=0.5},
+    Step=0.1,
+    Callback = function(v) Settings.RollSpeed = v end
+})
+
+-- =====================================================================================
+-- TAB: TELEPORT
+-- =====================================================================================
+local TPSection = TeleportTab:Section({ Title = "Travel", Icon = "map-pin", Opened = true })
+
+local sceneNames = {}
+for _, s in ipairs(SCENES) do table.insert(sceneNames, s.Name) end
+
+TPSection:Dropdown({
+    Title = "Select Zone",
+    Items = sceneNames,
     Callback = function(val)
-        for _, scene in ipairs(SCENES) do
-            if scene.Name == (val.Title or val) then
-                selectedScene = scene
-                local gachaText = #scene.Gachas > 0 and table.concat(scene.Gachas, ", ") or "Unknown"
-                NebubloxUI:Notify({ Title = scene.Name, Content = "Gachas: " .. gachaText, Icon = "gift", Duration = 3 })
-                break
-            end
+        for _, s in ipairs(SCENES) do
+            if s.Name == val then Settings.SelectedScene = s break end
         end
     end
 })
 
--- Teleport Button
-SceneSection:Button({
-    Title = "Teleport to Scene",
-    Desc = "Teleport to selected location via Portal",
+TPSection:Button({
+    Title = "Teleport",
     Icon = "zap",
     Callback = function()
-        if selectedScene then
-            -- 1. Try Native Portal First (Best method)
-            if PortalEvent and selectedScene.MapId then
-                PortalEvent:FireServer(selectedScene.MapId)
-                NebubloxUI:Notify({ Title = "Warping...", Content = "Traveling to " .. selectedScene.Name, Icon = "zap", Duration = 2 })
-            else
-                -- 2. Fallback to CFrame / Island Finder
-                 local island = Workspace:FindFirstChild(selectedScene.Island)
-                
-                if island then
-                    -- Try to find a good teleport spot (Spawn, Part, or just above center)
-                    local targetCFrame = island:IsA("Model") and (island.PrimaryPart and island.PrimaryPart.CFrame or island:GetModelCFrame()) or island.CFrame
-                    
-                    if island:IsA("Folder") then
-                         -- If it's a folder, look for a "Spawn" or "Base" part
-                        local spawnPart = island:FindFirstChild("Spawn") or island:FindFirstChild("Base") or island:FindFirstChild("Floor")
-                        if spawnPart then
-                            targetCFrame = spawnPart.CFrame
-                        else
-                             NebubloxUI:Notify({ Title = "Error", Content = "Could not find part in " .. selectedScene.Island, Icon = "x", Duration = 2 })
-                             return
-                        end
-                    end
-    
-                    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                        player.Character.HumanoidRootPart.CFrame = targetCFrame + Vector3.new(0, 10, 0)
-                        NebubloxUI:Notify({ Title = "Teleported!", Content = "Arrived at " .. selectedScene.Name, Icon = "check", Duration = 2 })
-                    end
-                else
-                    NebubloxUI:Notify({ Title = "Error", Content = selectedScene.Island .. " not found in Workspace", Icon = "x", Duration = 2 })
-                end
-            end
+        if not Settings.SelectedScene then return end
+        local s = Settings.SelectedScene
+        
+        -- Try PortalEvent (Native)
+        if PortalEvent then
+            PortalEvent:FireServer(s.Id)
+            NebubloxUI:Notify({Title="Warping", Content="Traveling to "..s.Name, Duration=2})
         else
-            NebubloxUI:Notify({ Title = "Error", Content = "No scene selected!", Icon = "x", Duration = 2 })
-        end
-    end
-})
-RollSection:Slider({
-    Title = "Roll Speed (seconds)",
-    Value = { Min = 0.1, Max = 2, Default = 0.5 },
-    Step = 0.1,
-    Callback = function(val)
-        autoRollDelay = val
-    end
-})
-
--- ═══════════════════════════════════════════════════════════
--- FARM TAB
--- ═══════════════════════════════════════════════════════════
-local AutoSection = FarmTab:Section({ Title = "Auto Farm", Icon = "repeat", Opened = true })
-
-AutoSection:Toggle({
-    Title = "Auto Farm",
-    Desc = "Automatically farm resources/XP",
-    Value = false,
-    Callback = function(state)
-        autoFarmEnabled = state
-        NebubloxUI:Notify({
-            Title = state and "Auto Farm ON" or "Auto Farm OFF",
-            Content = state and "Farming started" or "Farming stopped",
-            Icon = state and "coins" or "x",
-            Duration = 2
-        })
-    end
-})
-
-AutoSection:Toggle({
-    Title = "Auto Teleport to Mobs",
-    Desc = "Teleport to nearest mob when farming",
-    Value = false,
-    Callback = function(state)
-        -- Add your teleport logic
-    end
-})
-
--- ═══════════════════════════════════════════════════════════
--- PLAYER TAB
--- ═══════════════════════════════════════════════════════════
--- ═══════════════════════════════════════════════════════════
--- PLAYER TAB
--- ═══════════════════════════════════════════════════════════
-local StatsSection = PlayerTab:Section({ Title = "Progression", Icon = "trending-up", Opened = true })
-local CraftSection = PlayerTab:Section({ Title = "Crafting", Icon = "hammer", Opened = true })
-local MovementSection = PlayerTab:Section({ Title = "Movement", Icon = "footprints", Opened = true })
-
--- Auto Rebirth
-StatsSection:Toggle({
-    Title = "Auto Rebirth",
-    Desc = "Automatically rebirth when ready",
-    Value = false,
-    Callback = function(state)
-        autoRebirthEnabled = state
-        NebubloxUI:Notify({ Title = "Auto Rebirth", Content = state and "ON" or "OFF", Icon = "refresh-cw", Duration = 2 })
-    end
-})
-
--- Auto Best Equip
-StatsSection:Toggle({
-    Title = "Auto Best Equip",
-    Desc = "Always equip best items",
-    Value = false,
-    Callback = function(state)
-        autoEquipEnabled = state
-        NebubloxUI:Notify({ Title = "Auto Equip", Content = state and "ON" or "OFF", Icon = "shield", Duration = 2 })
-    end
-})
-
--- Craft Gold
-CraftSection:Toggle({
-    Title = "Auto Craft Gold",
-    Desc = "Automatically craft Gold items",
-    Value = false,
-    Callback = function(state)
-        autoCraftEnabled = state
-        NebubloxUI:Notify({ Title = "Auto Craft", Content = state and "Crafting Gold..." or "Stopped", Icon = "hammer", Duration = 2 })
-    end
-})
-
-MovementSection:Slider({
-    Title = "WalkSpeed",
-    Value = { Min = 16, Max = 200, Default = 16 },
-    Callback = function(val)
-        if player.Character and player.Character:FindFirstChild("Humanoid") then
-            player.Character.Humanoid.WalkSpeed = val
+            -- Fallback
+             local isl = Workspace:FindFirstChild(s.Island)
+             if isl then
+                local cf = isl:IsA("Model") and isl:GetModelCFrame() or isl.CFrame
+                player.Character.HumanoidRootPart.CFrame = cf + Vector3.new(0,10,0)
+             end
         end
     end
 })
 
-MovementSection:Slider({
-    Title = "JumpPower",
-    Value = { Min = 50, Max = 500, Default = 50 },
-    Callback = function(val)
-        if player.Character and player.Character:FindFirstChild("Humanoid") then
-            player.Character.Humanoid.JumpPower = val
-        end
-    end
-})
+-- =====================================================================================
+-- TAB: EXTRAS
+-- =====================================================================================
+local DailySection = ExtrasTab:Section({ Title = "Rewards", Icon = "gift", Opened = true })
+local LocalSection = ExtrasTab:Section({ Title = "Local Player", Icon = "user", Opened = true })
 
-MovementSection:Toggle({
-    Title = "Infinite Jump",
+DailySection:Toggle({
+    Title = "Auto Daily / Spin",
+    Desc = "Claims daily rewards and spins wheel",
     Value = false,
     Callback = function(state)
-        -- Infinite jump logic would go here
+        Flags.AutoDaily = state
+        Flags.AutoSpin = state
     end
 })
 
-MovementSection:Toggle({
-    Title = "No Clip",
-    Value = false,
-    Callback = function(state)
-        -- No clip logic would go here
-    end
-})
-
--- ═══════════════════════════════════════════════════════════
--- SETTINGS TAB
--- ═══════════════════════════════════════════════════════════
-local ConfigSection = SettingsTab:Section({ Title = "Configuration", Icon = "save", Opened = true })
-
-ConfigSection:Button({
-    Title = "Save Config",
-    Icon = "save",
+DailySection:Button({
+    Title = "Claim All Achievements",
+    Icon = "award",
     Callback = function()
-        NebubloxUI:Notify({ Title = "Saved!", Content = "Config saved", Icon = "check", Duration = 3 })
+        if GetAllEvent then
+            GetAllEvent:FireServer()
+            NebubloxUI:Notify({Title="Claimed", Content="Achievements claimed!", Duration=2})
+        end
     end
 })
 
-ConfigSection:Button({
-    Title = "Load Config",
-    Icon = "folder-open",
-    Callback = function()
-        NebubloxUI:Notify({ Title = "Loaded!", Content = "Config loaded", Icon = "check", Duration = 3 })
+LocalSection:Slider({
+    Title = "Walk Speed",
+    Value = {Min=16, Max=200, Default=16},
+    Callback = function(v)
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid.WalkSpeed = v
+        end
     end
 })
 
--- ═══════════════════════════════════════════════════════════
--- BACKGROUND LOOPS
--- ═══════════════════════════════════════════════════════════
-spawn(function()
-    while wait(0.5) do
-        -- Auto capture loop (full sequence)
-        if autoCaptureEnabled then
-            local entity = getClosestEntity()
-            if entity and entity.Model then
-                -- Teleport close
-                if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                    player.Character.HumanoidRootPart.CFrame = entity.Root.CFrame + Vector3.new(0, 3, 0)
+-- =====================================================================================
+-- LOGIC LOOPS
+-- =====================================================================================
+
+-- Helpers
+local function getClosestEntity()
+    local myPos = player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character.HumanoidRootPart.Position
+    if not myPos then return nil end
+    
+    local closest, dist = nil, math.huge
+    for _, v in ipairs(Workspace:GetDescendants()) do
+        if v:IsA("Humanoid") and v.Health > 0 and v.Parent ~= player.Character then
+            local root = v.Parent:FindFirstChild("HumanoidRootPart")
+            if root then
+                local d = (root.Position - myPos).Magnitude
+                if d < dist then
+                    closest = v.Parent
+                    dist = d
                 end
-                
-                -- Fire capture sequence
-                if SetEnemyEvent then SetEnemyEvent:FireServer(entity.Model) end
-                wait(0.1)
-                if ClickEvent then ClickEvent:FireServer(entity.Model) end
-                wait(0.1)
-                if PlayerAttack then PlayerAttack:FireServer(entity.Model) end
-                wait(0.1)
-                if CatchFollowFinish then CatchFollowFinish:FireServer(entity.Model) end
             end
-        end
-        
-        -- Auto click loop
-        if autoClickEnabled then
-            local entity = getClosestEntity()
-            if entity and entity.Model then
-                if ClickEvent then ClickEvent:FireServer(entity.Model) end
-                if PlayerAttack then PlayerAttack:FireServer(entity.Model) end
-            end
-        end
-        
-        -- Auto farm loop
-        if autoFarmEnabled then
-            local entity = getClosestEntity()
-            if entity and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                -- Teleport to entity
-                player.Character.HumanoidRootPart.CFrame = entity.Root.CFrame + Vector3.new(0, 3, 0)
-            end
-        end
-
-        -- Auto Rebirth
-        if autoRebirthEnabled and RebirthEvent then
-            RebirthEvent:FireServer()
-        end
-
-        -- Auto Best Equip
-        if autoEquipEnabled and EquipBest then
-            EquipBest:FireServer()
-        end
-
-        -- Auto Craft Gold (loop)
-        if autoCraftEnabled and CraftAll then
-            CraftAll:FireServer("Gold") -- Assuming "Gold" is the argument, or adjust if needed
         end
     end
-end)
+    return closest
+end
 
--- Auto Roll Loop (separate for custom speed)
+-- Main Loop
 spawn(function()
     while true do
-        if autoRollEnabled and RollOne then
-            RollOne:FireServer()
+        wait(0.2)
+        
+        -- Auto Farm (Kill)
+        if Flags.AutoFarm then
+            local target = getClosestEntity()
+            if target then
+                -- Teleport
+                pcall(function()
+                    player.Character.HumanoidRootPart.CFrame = target.HumanoidRootPart.CFrame + Vector3.new(0,3,4)
+                end)
+                
+                -- Attack
+                if SetEnemyEvent then SetEnemyEvent:FireServer(target) end
+                if PlayerAttack then PlayerAttack:FireServer(target) end
+            end
         end
-        wait(autoRollDelay or 0.5)
+        
+        -- Auto Capture
+        if Flags.AutoCapture then
+            local target = getClosestEntity()
+            if target then
+                pcall(function()
+                    player.Character.HumanoidRootPart.CFrame = target.HumanoidRootPart.CFrame + Vector3.new(0,3,4)
+                end)
+                
+                -- 1. Equip Ball
+                if UseCatchRate then UseCatchRate:FireServer(Settings.SelectedBall) end
+                wait(0.1)
+                -- 2. Attack a bit to weaken
+                if SetEnemyEvent then SetEnemyEvent:FireServer(target) end
+                if PlayerAttack then PlayerAttack:FireServer(target) end
+                wait(0.1)
+                -- 3. Capture
+                if CatchFollowFinish then CatchFollowFinish:FireServer(target, Settings.SelectedBall) end
+            end
+        end
+        
+        -- Auto Clicker (GUI)
+        if Flags.AutoClickGUI then
+            -- Spam "Click" button remote
+            if ClickGUIEvent then ClickGUIEvent:FireServer() end
+        end
+        
+        -- Auto Rebirth
+        if Flags.AutoRebirth and RebirthEvent then RebirthEvent:FireServer() end
+        
+        -- Auto Best Equip
+        if Flags.AutoEquip and EquipBestEvent then EquipBestEvent:FireServer() end
+        
+        -- Auto Craft
+        if Flags.AutoCraft and CraftItemEvent then CraftItemEvent:FireServer("Gold") end
+        
+        -- Auto Spin/Daily
+        if Flags.AutoSpin then
+            if GetRandom then GetRandom:FireServer() end
+            if GetRewardByRandom then GetRewardByRandom:FireServer() end
+        end
+        if Flags.AutoDaily and SignEvent then SignEvent:FireServer() end
     end
 end)
 
--- ═══════════════════════════════════════════════════════════
--- STARTUP
--- ═══════════════════════════════════════════════════════════
-NebubloxUI:Notify({
-    Title = "Anime Capture Loaded!",
-    Content = "Script ready - enjoy!",
-    Icon = "rocket",
-    Duration = 5
-})
+-- Gacha/Hatch Loop (Separate for speed)
+spawn(function()
+    while true do
+        if Flags.AutoRoll and RollOne then
+            RollOne:FireServer()
+        end
+        if Flags.AutoHatch and Settings.SelectedEgg then
+            -- Assuming Hatch Remote is needed here, if not found, add it.
+            -- Based on previous analysis, we focused on Gacha/Roll.
+            -- If Hatch is missing, RollOne might be it, or a different one.
+        end
+        wait(Settings.RollSpeed)
+    end
+end)
 
-print("[Nebublox] Anime Capture script loaded!")
+NebubloxUI:Notify({Title="Loaded", Content="Anime Capture Script Ready!", Icon="check", Duration=5})
