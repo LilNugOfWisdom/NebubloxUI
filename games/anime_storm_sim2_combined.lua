@@ -14732,16 +14732,27 @@ local function TweenTo(targetCFrame)
     local myRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
     if not myRoot then return end
     
+    -- Safety: Validate root is still in Workspace
+    if not myRoot.Parent or not myRoot:IsDescendantOf(Workspace) then return end
+    
     local dist = (myRoot.Position - targetCFrame.Position).Magnitude
     if dist < 5 then
-        myRoot.CFrame = targetCFrame
+        pcall(function() myRoot.CFrame = targetCFrame end)
         return
     end
     
     local info = TweenInfo.new(dist / 300, Enum.EasingStyle.Linear)
-    if currentTween then currentTween:Cancel() end
-    currentTween = TweenService:Create(myRoot, info, {CFrame = targetCFrame})
-    currentTween:Play()
+    if currentTween then pcall(function() currentTween:Cancel() end) end
+    
+    -- Safety: Wrap Tween creation in pcall
+    local success, tween = pcall(function()
+        return TweenService:Create(myRoot, info, {CFrame = targetCFrame})
+    end)
+    
+    if success and tween then
+        currentTween = tween
+        pcall(function() currentTween:Play() end)
+    end
 end
 
 -- // UTILS //
