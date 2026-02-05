@@ -14618,13 +14618,14 @@ end
 return d
 end
 
-return aa
+
+-- Module loaded, game script follows
 
 
 
 
 -- // UI INITIALIZATION //
-local ANUI = a.load('Z')
+local ANUI = aa
 
 -- // GAME SCRIPT //
 --[[
