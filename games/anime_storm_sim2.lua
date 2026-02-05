@@ -60,7 +60,8 @@ local Flags = {
     AutoTrial = false, AutoChest = false,
     BuyTicket = false, BuyStrPot = false, BuyDropPot = false, BuyLuckPot = false, BuyGemPot = false,
     AutoAchievement = false,
-    PotStr = false, PotDrop = false, PotLuck = false, PotGem = false
+    PotStr = false, PotDrop = false, PotLuck = false, PotGem = false,
+    AutoPickup = false, DropESP = false
 }
 
 local Settings = {
@@ -177,6 +178,84 @@ local function collectChests()
                 -- Fallback: move to it? No, just warn.
                 if Settings.Debug then warn("Missing fireproximityprompt function") end
             end
+        end
+    end
+end
+
+-- // DROPS & VISUALS //
+local dropCache = {} -- [Instance] = {Name = "", Image = ""}
+local validDrops = {} -- [Name] = ImageID
+
+-- Initialize Drop Cache from ReplicatedStorage
+task.spawn(function()
+    local rsAssets = game:GetService("ReplicatedStorage"):WaitForChild("Assets", 5)
+    local rsDrops = rsAssets and rsAssets:WaitForChild("Drops", 5)
+    
+    if rsDrops then
+        for _, v in ipairs(rsDrops:GetChildren()) do
+            -- Find Image
+            local img = ""
+            local decal = v:FindFirstChildOfClass("Decal") or v:FindFirstChildOfClass("Texture")
+            if decal then img = decal.Texture end
+            if img == "" and v:IsA("MeshPart") then img = v.TextureID end
+            if img == "" then 
+                 local gui = v:FindFirstChildOfClass("BillboardGui") or v:FindFirstChildOfClass("SurfaceGui")
+                 local imgLabel = gui and gui:FindFirstChildOfClass("ImageLabel")
+                 if imgLabel then img = imgLabel.Image end
+            end
+            
+            validDrops[v.Name] = img
+        end
+    end
+end)
+
+-- Drop Listener
+local function monitorDrops()
+    local folder = Workspace:FindFirstChild("Drops") or Workspace
+    
+    local function onAdd(child)
+        if validDrops[child.Name] then
+            dropCache[child] = {Name = child.Name, Image = validDrops[child.Name]}
+        end
+    end
+    
+    local function onRemove(child)
+        local data = dropCache[child]
+        if data and Flags.DropESP then -- Use DropESP flag for "Visual Notification"
+            -- Check distance
+            local pRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+            if pRoot and (pRoot.Position - child:GetPivot().Position).Magnitude < 20 then
+                ANUI:Notify({
+                    Title = "Drop Collected!",
+                    Content = data.Name,
+                    Image = data.Image,
+                    Duration = 2
+                })
+            end
+            dropCache[child] = nil
+        end
+    end
+    
+    folder.ChildAdded:Connect(onAdd)
+    folder.ChildRemoved:Connect(onRemove)
+    -- Init existing
+    for _, v in ipairs(folder:GetChildren()) do onAdd(v) end
+end
+task.spawn(monitorDrops)
+
+local function collectDrops()
+    -- Legacy auto pickup logic
+    if not Flags.AutoPickup then return end
+    local folder = Workspace:FindFirstChild("Drops") or Workspace
+    local pRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if not pRoot then return end
+    
+    for _, v in ipairs(folder:GetChildren()) do
+        if validDrops[v.Name] or v:FindFirstChild("TouchInterest") then
+             if v:FindFirstChild("TouchInterest") then -- Only if it has touch interest
+                 firetouchinterest(pRoot, v:FindFirstChild("HumanoidRootPart") or v, 0)
+                 firetouchinterest(pRoot, v:FindFirstChild("HumanoidRootPart") or v, 1)
+             end
         end
     end
 end
