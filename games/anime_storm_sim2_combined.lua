@@ -14958,7 +14958,8 @@ local HatchSec = EggsTab:Section({ Title = "Auto Hatch", Opened = true })
 
 HatchSec:Dropdown({
     Title = "Select Egg",
-    Options = EggNames,
+    Default = "Egg1",
+    Options = {"OnePieceEgg", "DbzEgg", "NarutoEgg", "JjkEgg", "OnePieceGoldenEgg", "DbzGoldenEgg", "NarutoGoldenEgg", "JjkGoldenEgg", "RareEgg", "LegendaryEgg", "MythicEgg"},
     Callback = function(v) Settings.SelectedEgg = v end
 })
 
