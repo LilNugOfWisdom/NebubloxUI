@@ -14792,7 +14792,7 @@ local WorldEnemies = {
     OnePiece = {"Aokiji", "Doflamingo", "Kizaru", "Sengoku", "Akainu"},
     Dbz = {"Raditz", "Frieza", "Cell", "Android18", "Buu"},
     Naruto = {"Deidara", "Sasori", "Konan", "Zetsu", "Itachi"},
-    Jjk = {}  -- Add JJK enemies here when known
+    Jjk = {"Choso", "Jogo", "Toji", "Mahito", "Sukuna"}
 }
 
 local function GetEnemyFolder()
@@ -14800,6 +14800,12 @@ local function GetEnemyFolder()
     local npcFolder = Workspace:FindFirstChild("Npc")
     if npcFolder then
         return npcFolder  -- Return the parent, we'll scan all worlds
+    end
+    
+    -- Also check SpecialPerksNpc for boss rush enemies
+    local specialNpc = Workspace:FindFirstChild("SpecialPerksNpc")
+    if specialNpc then
+        return specialNpc
     end
     
     -- Fallback paths
