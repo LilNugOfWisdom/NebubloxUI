@@ -15220,6 +15220,11 @@ task.spawn(function()
     while task.wait(0.5) do
          achTick = achTick + 1
          pcall(function()
+            -- Auto WalkSpeed 90
+            if player.Character and player.Character:FindFirstChild("Humanoid") then
+                player.Character.Humanoid.WalkSpeed = 90
+            end
+            
             if Flags.Rebirth and Remotes.Rebirth then Remotes.Rebirth:FireServer("Rebirth") end
             
             if Flags.Daily then
