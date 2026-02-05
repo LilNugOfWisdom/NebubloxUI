@@ -14786,6 +14786,49 @@ local function TweenTo(targetCFrame)
     end
 end
 
+-- // REMOTES SETUP //
+local Remotes = {}
+local RemotesFolder = ReplicatedStorage:FindFirstChild("Remotes")
+
+local function setupRemotes()
+    -- Main Remotes Folder
+    if RemotesFolder then
+        Remotes.AttackRange = RemotesFolder:FindFirstChild("AttackRange")
+        Remotes.TimeTrialShop = RemotesFolder:FindFirstChild("Shop")
+        Remotes.Rebirth = RemotesFolder:FindFirstChild("Rebirth")
+        Remotes.DailyLogin = RemotesFolder:FindFirstChild("DailyLogin")
+        Remotes.BoosterLogin = RemotesFolder:FindFirstChild("BoosterLogin")
+        Remotes.TimedRewards = RemotesFolder:FindFirstChild("TimedRewards")
+        Remotes.Achievement = RemotesFolder:FindFirstChild("Achievement")
+        Remotes.SpecialPerk = RemotesFolder:FindFirstChild("SpecialPerk")
+        Remotes.SpecialProgression = RemotesFolder:FindFirstChild("SpecialProgression")
+        Remotes.UseItem = RemotesFolder:FindFirstChild("UseItem")
+        -- Pets
+        local pets = RemotesFolder:FindFirstChild("pets")
+        if pets then
+            Remotes.PetEquip = pets:FindFirstChild("EquipBest") or pets:FindFirstChild("Equip")
+        end
+    end
+    
+    -- External Folders
+    Remotes.BossRushRemote = ReplicatedStorage:FindFirstChild("BossRush")
+    -- Check inside BossRush for specific remotes if needed, usually it's a folder or RemoteFunction
+    
+    Remotes.Egg = ReplicatedStorage:FindFirstChild("Egg")
+    Remotes.Merchant = ReplicatedStorage:FindFirstChild("MerchantRemotes")
+    
+    -- World Teleport (if exists in Remotes)
+    if RemotesFolder then
+        Remotes.World = RemotesFolder:FindFirstChild("World")
+    end
+    
+    -- Potions/Items (Try multiple paths)
+    if RemotesFolder then
+        Remotes.GetData = RemotesFolder:FindFirstChild("GetData") -- Used for checking items
+    end
+end
+setupRemotes()
+
 -- // UTILS //
 -- Known enemy names for each world
 local WorldEnemies = {
