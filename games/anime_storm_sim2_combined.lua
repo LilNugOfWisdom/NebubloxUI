@@ -14797,7 +14797,12 @@ local function setupRemotes()
         Remotes.TimeTrialShop = RemotesFolder:FindFirstChild("Shop")
         Remotes.Rebirth = RemotesFolder:FindFirstChild("Rebirth")
         Remotes.DailyLogin = RemotesFolder:FindFirstChild("DailyLogin")
+        Remotes.DailyLogin = RemotesFolder:FindFirstChild("DailyLogin")
         Remotes.BoosterLogin = RemotesFolder:FindFirstChild("BoosterLogin")
+        
+        -- Attack Remotes (Critical Fix)
+        Remotes.Attack = RemotesFolder:FindFirstChild("Attack") or RemotesFolder:FindFirstChild("Damage")
+        Remotes.Click = RemotesFolder:FindFirstChild("Click") or RemotesFolder:FindFirstChild("Tap")
         Remotes.TimedRewards = RemotesFolder:FindFirstChild("TimedRewards")
         Remotes.Achievement = RemotesFolder:FindFirstChild("Achievement")
         Remotes.SpecialPerk = RemotesFolder:FindFirstChild("SpecialPerk")
@@ -15255,20 +15260,13 @@ RunService.RenderStepped:Connect(function()
                     local hum = player.Character:FindFirstChild("Humanoid")
                     
                     -- Safe Mode
-                    if hum and hum.Health > 0 and hum.Health < (hum.MaxHealth * 0.3) then
-                         local safePlate = Workspace:FindFirstChild("NebuSafePlate")
-                         if not safePlate then
-                             safePlate = Instance.new("Part")
-                             safePlate.Name = "NebuSafePlate"
-                             safePlate.Size = Vector3.new(50, 1, 50)
-                             safePlate.Position = Vector3.new(0, 5000, 0)
-                             safePlate.Anchored = true
-                             safePlate.Transparency = 0.5
-                             safePlate.Parent = Workspace
-                         end
-                         myRoot.CFrame = safePlate.CFrame + Vector3.new(0, 5, 0)
-                         return -- Don't attack if low health
-                    end
+                    -- Safe Mode (Disabled to prevent interference)
+                    -- if hum and hum.Health > 0 and hum.Health < (hum.MaxHealth * 0.3) then
+                    --      local safePlate = Workspace:FindFirstChild("NebuSafePlate")
+                    --      ...
+                    --      myRoot.CFrame = safePlate.CFrame + Vector3.new(0, 5, 0)
+                    --      return -- Don't attack if low health
+                    -- end
 
                     if target then
                         local tRoot = target:FindFirstChild("HumanoidRootPart") or target:FindFirstChild("Torso") or target.PrimaryPart
