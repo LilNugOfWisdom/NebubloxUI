@@ -76,10 +76,25 @@ d.Heartbeat
 
 local j="https://raw.githubusercontent.com/Nebublox/Icons/main/Main-v2.lua"
 
-local l=loadstring(
-game.HttpGetAsync and game:HttpGetAsync(j)
-or h:GetAsync(j)
-)()
+-- Load Icons with fallback stub if URL fails
+local l
+local iconsSuccess, iconsResult = pcall(function()
+    local content = game.HttpGetAsync and game:HttpGetAsync(j) or h:GetAsync(j)
+    return loadstring(content)()
+end)
+
+if iconsSuccess and iconsResult then
+    l = iconsResult
+else
+    -- Fallback stub when Icons fail to load
+    l = {
+        SetIconsType = function() end,
+        Init = function() end,
+        Icon = function(name, _, _) return nil end,
+        AddIcons = function() end,
+    }
+    warn("[NebubloxUI] Icons library failed to load, using fallback")
+end
 l.SetIconsType"lucide"
 
 local m
