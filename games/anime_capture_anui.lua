@@ -109,8 +109,9 @@ InfoSection:Button({
 local FarmTab = Window:Tab({ Title = "Farming", Icon = "swords", SidebarProfile = false })
 local MainFarm = FarmTab:Section({ Title = "Smart Farm", Icon = "zap", Opened = true })
 
+-- Moved Auto Capture Here (Above Enemy Priority)
 MainFarm:Toggle({
-    Title = "Auto Capture (E)",
+    Title = "Auto Capture",
     Desc = "Spams Capture Interaction",
     Value = false,
     Callback = function(state) Flags.AutoCapture = state end
@@ -130,38 +131,48 @@ local CaptureDropdown = MainFarm:Dropdown({
 })
 
 MainFarm:Button({
-    Title = "Refresh Enemies (Aggressive)",
+    Title = "Refresh Enemies (Scan Maps)",
     Callback = function()
         local validEnemies = {}
         local seen = {}
         
+        -- Helper
         local function AddEnemy(mob, icon)
             if mob:IsA("Model") and mob:FindFirstChild("Humanoid") and mob:FindFirstChild("HumanoidRootPart") then
                 if Players:GetPlayerFromCharacter(mob) then return end
+                
+                -- CLEAN DISPLAY: Just the name, no subtitles
                 if not seen[mob.Name] then
-                    table.insert(validEnemies, {Title = mob.Name, Val = mob.Name, Icon = icon or "swords"})
-                    seen[mob.Name] = true
+                   table.insert(validEnemies, {Title = mob.Name, Val = mob.Name, Icon = icon or "swords"})
+                   seen[mob.Name] = true
                 end
             end
         end
 
+        -- 1. Scan Islands (workspace.common.Up)
         if workspace:FindFirstChild("common") and workspace.common:FindFirstChild("Up") then
-            for _, island in ipairs(workspace.common.Up:GetChildren()) do 
-                 local npcFolder = island:FindFirstChild("NPC")
-                 if npcFolder then
-                    for _, mob in ipairs(npcFolder:GetChildren()) do 
-                        AddEnemy(mob, "swords")
-                    end
+            -- Sort islands 1-7
+            for i = 1, 7 do
+                 local island = workspace.common.Up:FindFirstChild(tostring(i))
+                 if island then
+                     local npcFolder = island:FindFirstChild("NPC")
+                     if npcFolder then
+                        for _, mob in ipairs(npcFolder:GetChildren()) do 
+                            AddEnemy(mob, "swords")
+                        end
+                     end
                  end
             end
         end
         
+        -- 2. Scan World Boss (workspace.enemy)
         if workspace:FindFirstChild("enemy") then
              for _, mob in ipairs(workspace.enemy:GetDescendants()) do
                 AddEnemy(mob, "alert-circle")
             end
         end
         
+        -- 3. GLOBAL FALLBACK
         if #validEnemies == 0 then
              for _, mob in ipairs(workspace:GetChildren()) do
                  if mob:IsA("Model") and mob:FindFirstChild("Humanoid") and not Players:GetPlayerFromCharacter(mob) then
@@ -174,7 +185,7 @@ MainFarm:Button({
         
         table.sort(validEnemies, function(a, b) return a.Title < b.Title end)
         
-        -- CONVERT TO SIMPLE STRINGS for Dropdown compatibility
+        -- Compatibility: Pass simple list of strings
         local stringList = {}
         for _, enemy in ipairs(validEnemies) do
             table.insert(stringList, enemy.Title)
@@ -270,6 +281,32 @@ GachaSection:Toggle({
 })
 
 
+-- [CHARGE PODIUMS SECTION]
+local ChargeSection = GachaTab:Section({ Title = "Charge Podiums", Icon = "zap", Opened = true })
+
+ChargeSection:Dropdown({
+    Title = "Select Podium Level",
+    Multi = false,
+    Required = true,
+    Values = {"1", "2", "3", "4", "5", "6", "7"},
+    Callback = function(val)
+        -- Handle single value
+        local selected = val
+        if type(val) == "table" then
+            for k, v in pairs(val) do selected = v end
+        end
+        Flags.SelectedCharge = selected
+    end
+})
+
+ChargeSection:Toggle({
+    Title = "Auto Charge Selected",
+    Desc = "Teleports & Uses Selected Podium",
+    Value = false,
+    Callback = function(state) Flags.AutoCharge = state end
+})
+
+
 local EventSection = GachaTab:Section({ Title = "Events", Icon = "star", Opened = true })
 
 EventSection:Toggle({
@@ -325,12 +362,7 @@ MiscSection:Toggle({
     Callback = function(state) Flags.AutoSpin = state end
 })
 
-MiscSection:Toggle({
-    Title = "Auto Charge (Podiums)",
-    Desc = "Teleports to & uses Charge Podiums",
-    Value = false,
-    Callback = function(state) Flags.AutoCharge = state end
-})
+-- Removed Auto Charge from here (Moved to Gacha Tab)
 
 MiscSection:Toggle({
     Title = "Hide Error Popups",
@@ -365,14 +397,30 @@ for _, island in ipairs(Islands) do
                 local spawnName = "SpawnLocation" .. island.Id
                 local spawner = workspace.building.SceneChange:FindFirstChild(spawnName)
                 
+                -- SAFE CFRAME LOGIC
+                local cf = nil
                 if spawner then
-                    root.CFrame = spawner.CFrame + Vector3.new(0, 5, 0)
+                    if spawner:IsA("BasePart") then cf = spawner.CFrame
+                    elseif spawner:IsA("Model") then cf = spawner:GetPivot()
+                    elseif spawner:IsA("Folder") then
+                        -- Check inside Folder for Part
+                        local p = spawner:FindFirstChildWhichIsA("BasePart", true)
+                        if p then cf = p.CFrame end
+                    end
+                end
+                
+                if cf then
+                    root.CFrame = cf + Vector3.new(0, 5, 0)
                     ANUI:Notify({Title = "Teleport", Content = "Warped to " .. island.Name, Icon = "map-pin", Duration = 2})
                 else
                      -- Portal Fallback
                      local pIdx = tonumber(island.Id) - 1
-                     pcall(function() ReplicatedStorage.Events.Map.PortalEvent:FireServer(pIdx) end)
-                     ANUI:Notify({Title = "Teleport", Content = "Used portal for " .. island.Name, Icon = "map-pin", Duration = 2})
+                     if ReplicatedStorage.Events.Map:FindFirstChild("PortalEvent") then
+                        pcall(function() ReplicatedStorage.Events.Map.PortalEvent:FireServer(pIdx) end)
+                        ANUI:Notify({Title = "Teleport", Content = "Used portal event for " .. island.Name, Icon = "map-pin", Duration = 2})
+                     else
+                        ANUI:Notify({Title = "Teleport", Content = "Could not find location!", Icon = "alert-triangle", Duration = 2})
+                     end
                 end
             end
         end
@@ -433,6 +481,16 @@ task.spawn(function()
         end
         if Flags.SmartFarm and captureEvent then
             pcall(function() captureEvent:FireServer("AutoCatchFollow", true) end)
+        end
+    end)
+    
+    -- Secondary Ultra-Fast Loop
+    task.spawn(function()
+        while true do
+            if Flags.AutoCapture and captureEvent then
+                pcall(function() captureEvent:FireServer("AutoCatchFollow", true) end)
+            end
+            task.wait() -- Minimal yield
         end
     end)
 end)
@@ -506,33 +564,33 @@ task.spawn(function()
 
         -- AUTO CHARGE LOOP UPDATED
         -- Path: workspace.common.Up[i].NPC.Model.Part
-        if Flags.AutoCharge then
+        if Flags.AutoCharge and Flags.SelectedCharge then
             pcall(function()
+                local i = Flags.SelectedCharge
                 if workspace:FindFirstChild("common") and workspace.common:FindFirstChild("Up") then
-                    for i = 1, 7 do
-                        local island = workspace.common.Up:FindFirstChild(tostring(i))
-                        local npcFolder = island and island:FindFirstChild("NPC")
-                        local model = npcFolder and npcFolder:FindFirstChild("Model")
-                        local part = model and model:FindFirstChild("Part")
-                        
-                        if part then
-                            -- 1. Teleport to it
-                            local myRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-                            if myRoot then
-                                myRoot.CFrame = part.CFrame + Vector3.new(0, 3, 0)
-                            end
-                            
-                            -- 2. Interact (Click/Prompt)
-                            if part:FindFirstChild("ClickDetector") then
-                                fireclickdetector(part.ClickDetector)
-                            elseif part:FindFirstChildWhichIsA("ProximityPrompt") then
-                                fireproximityprompt(part:FindFirstChildWhichIsA("ProximityPrompt"))
-                            end
-                            
-                            -- 3. TouchInterest Check (Old school)
-                            firetouchinterest(myRoot, part, 0)
-                            firetouchinterest(myRoot, part, 1)
+                    -- Target specific selected podium
+                    local island = workspace.common.Up:FindFirstChild(tostring(i))
+                    local npcFolder = island and island:FindFirstChild("NPC")
+                    local model = npcFolder and npcFolder:FindFirstChild("Model")
+                    local part = model and model:FindFirstChild("Part")
+                    
+                    if part then
+                        -- 1. Teleport to it
+                        local myRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                        if myRoot then
+                            myRoot.CFrame = part.CFrame + Vector3.new(0, 3, 0)
                         end
+                        
+                        -- 2. Interact (Click/Prompt)
+                        if part:FindFirstChild("ClickDetector") then
+                            fireclickdetector(part.ClickDetector)
+                        elseif part:FindFirstChildWhichIsA("ProximityPrompt") then
+                            fireproximityprompt(part:FindFirstChildWhichIsA("ProximityPrompt"))
+                        end
+                        
+                        -- 3. TouchInterest Check
+                        firetouchinterest(myRoot, part, 0)
+                        firetouchinterest(myRoot, part, 1)
                     end
                 end
             end)
