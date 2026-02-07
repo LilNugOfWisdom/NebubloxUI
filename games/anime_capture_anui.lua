@@ -152,22 +152,56 @@ MainFarm:Toggle({
 local GachaTab = Window:Tab({ Title = "Gacha", Icon = "gift", SidebarProfile = false })
 local GachaSection = GachaTab:Section({ Title = "Auto Roll", Icon = "dices", Opened = true })
 
--- List of IDs provided
-local GachaIDs = {
-    "201", "203", "202", "204", "205", "206", "207", 
+-- Gacha ID-to-Name Mapping
+local GachaNames = {
+    ["201"] = "Shock Fruit",
+    ["601"] = "Event Star",
+    -- Add more as known: ["202"] = "Flame Fruit", etc.
+}
+
+-- Auto-Detect Names from Workspace
+if workspace:FindFirstChild("common") and workspace.common:FindFirstChild("OtherLotto") then
+    for _, lotto in ipairs(workspace.common.OtherLotto:GetChildren()) do
+        local id = lotto.Name
+        if not GachaNames[id] then
+            -- Try to find a readable name inside the model (e.g. SurfaceGui or Part Name)
+            -- For now, default to "Machine [ID]"
+            GachaNames[id] = "Machine " .. id
+        end
+    end
+end
+
+-- Generate Dropdown Values
+local GachaList = {}
+-- Ensure known IDs are in the list
+local KnownIDs = {
+    "201", "202", "203", "204", "205", "206", "207", 
     "208", "209", "210", "212", "213", "221", "222", "223", "224", "601"
 }
+
+for _, id in ipairs(KnownIDs) do
+    local name = GachaNames[id] or ("Machine " .. id)
+    table.insert(GachaList, {Title = name .. " (" .. id .. ")", Val = id})
+end
 
 GachaSection:Dropdown({
     Title = "Select Gacha Machine",
     Multi = false,
     Required = true,
-    Values = GachaIDs,
+    Values = GachaList,
     Callback = function(val) 
-        -- Dropdown returns table {Key=Val} or single value depending on config, ANUI usually returns Key table
-        -- Simplification: iterating just in case, but usually single selection works
+        -- Dropdown returns the Value property if set, or we handle table
         for k, v in pairs(val) do
-            Flags.SelectedGachaId = k 
+            -- If using simple values:
+            if type(k) == "number" then Flags.SelectedGachaId = v 
+            else Flags.SelectedGachaId = k end -- ANUI sometimes returns Key=Bool
+        end
+        -- Fallback for single value return
+        if type(val) == "string" then Flags.SelectedGachaId = val end
+        
+        -- Extract ID if value is "Name (ID)" format (just in case)
+        if Flags.SelectedGachaId and string.find(Flags.SelectedGachaId, "%(") then
+            Flags.SelectedGachaId = string.match(Flags.SelectedGachaId, "%((%d+)%)")
         end
     end
 })
