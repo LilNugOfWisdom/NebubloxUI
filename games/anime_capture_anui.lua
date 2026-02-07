@@ -392,8 +392,20 @@ for _, island in ipairs(Islands) do
             local char = player.Character
             local root = char and char:FindFirstChild("HumanoidRootPart")
             if root and workspace:FindFirstChild("building") and workspace.building:FindFirstChild("SceneChange") then
-                -- UPDATED TELEPORT LOGIC: workspace.building.SceneChange.SpawnLocation[i]
-                -- Assuming format SpawnLocation1, SpawnLocation2 etc.
+                -- USER REQUESTED REMOTE TELEPORT
+                -- "0-7 for each world"
+                local pIdx = tonumber(island.Id) - 1 -- Assuming 0-indexed (1->0, 2->1)
+                
+                local success, err = pcall(function() 
+                    ReplicatedStorage.Events.Map.PortalEvent:FireServer(pIdx) 
+                end)
+                
+                if success then
+                    ANUI:Notify({Title = "Teleport", Content = "Warped to " .. island.Name, Icon = "map-pin", Duration = 2})
+                    return -- Stop here if remote worked
+                end
+                
+                -- Fallback to CFrame if remote fails
                 local spawnName = "SpawnLocation" .. island.Id
                 local spawner = workspace.building.SceneChange:FindFirstChild(spawnName)
                 
@@ -410,17 +422,12 @@ for _, island in ipairs(Islands) do
                 end
                 
                 if cf then
-                    root.CFrame = cf + Vector3.new(0, 5, 0)
-                    ANUI:Notify({Title = "Teleport", Content = "Warped to " .. island.Name, Icon = "map-pin", Duration = 2})
+                    local char = player.Character
+                    local root = char and char:FindFirstChild("HumanoidRootPart")
+                    if root then root.CFrame = cf + Vector3.new(0, 5, 0) end
+                    ANUI:Notify({Title = "Teleport", Content = "CFrame Warp to " .. island.Name, Icon = "map-pin", Duration = 2})
                 else
-                     -- Portal Fallback
-                     local pIdx = tonumber(island.Id) - 1
-                     if ReplicatedStorage.Events.Map:FindFirstChild("PortalEvent") then
-                        pcall(function() ReplicatedStorage.Events.Map.PortalEvent:FireServer(pIdx) end)
-                        ANUI:Notify({Title = "Teleport", Content = "Used portal event for " .. island.Name, Icon = "map-pin", Duration = 2})
-                     else
-                        ANUI:Notify({Title = "Teleport", Content = "Could not find location!", Icon = "alert-triangle", Duration = 2})
-                     end
+                    ANUI:Notify({Title = "Teleport", Content = "Could not find location!", Icon = "alert-triangle", Duration = 2})
                 end
             end
         end
