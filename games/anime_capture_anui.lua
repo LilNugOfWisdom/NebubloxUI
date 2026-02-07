@@ -21,6 +21,7 @@ local Flags = {
     AutoSpin = false,
     AutoEventCollect = false,
     AutoEventGacha = false,
+    AutoCharge = false,
     AntiPopup = true,
     SelectedMobs = {},
     
@@ -85,6 +86,14 @@ InfoSection:Button({
 local FarmTab = Window:Tab({ Title = "Farming", Icon = "swords", SidebarProfile = false })
 local MainFarm = FarmTab:Section({ Title = "Smart Farm", Icon = "zap", Opened = true })
 
+-- Moved Auto Capture Here (Above Enemy Priority)
+MainFarm:Toggle({
+    Title = "Auto Capture (E)",
+    Desc = "Spams Capture Interaction",
+    Value = false,
+    Callback = function(state) Flags.AutoCapture = state end
+})
+
 local CaptureDropdown = MainFarm:Dropdown({
     Title = "Enemy Priority",
     Multi = true,
@@ -106,9 +115,7 @@ MainFarm:Button({
         
         local function AddEnemy(mob, icon)
             if mob:IsA("Model") and mob:FindFirstChild("Humanoid") and mob:FindFirstChild("HumanoidRootPart") then
-                 -- Avoid players
                 if Players:GetPlayerFromCharacter(mob) then return end
-                
                 if not seen[mob.Name] then
                     table.insert(validEnemies, {Title = mob.Name, Val = mob.Name, Icon = icon or "swords"})
                     seen[mob.Name] = true
@@ -118,10 +125,10 @@ MainFarm:Button({
 
         -- 1. Scan Islands (workspace.common.Up)
         if workspace:FindFirstChild("common") and workspace.common:FindFirstChild("Up") then
-            for _, island in ipairs(workspace.common.Up:GetChildren()) do -- Iterate ALL islands
+            for _, island in ipairs(workspace.common.Up:GetChildren()) do 
                  local npcFolder = island:FindFirstChild("NPC")
                  if npcFolder then
-                    for _, mob in ipairs(npcFolder:GetChildren()) do -- Check direct children first
+                    for _, mob in ipairs(npcFolder:GetChildren()) do 
                         AddEnemy(mob, "swords")
                     end
                  end
@@ -135,11 +142,11 @@ MainFarm:Button({
             end
         end
         
-        -- 3. FALLBACK: Global Workspace Scan (if nothing found)
+        -- 3. FALLBACK: Global Workspace Scan
         if #validEnemies == 0 then
              for _, mob in ipairs(workspace:GetChildren()) do
                  if mob:IsA("Model") and mob:FindFirstChild("Humanoid") and not Players:GetPlayerFromCharacter(mob) then
-                     if mob.Name ~= "StarterCharacter" then -- Filter generic
+                     if mob.Name ~= "StarterCharacter" then 
                          AddEnemy(mob, "help-circle")
                      end
                  end
@@ -147,10 +154,7 @@ MainFarm:Button({
         end
         
         table.sort(validEnemies, function(a, b) return a.Title < b.Title end)
-        
-        if CaptureDropdown and CaptureDropdown.SetValues then 
-            CaptureDropdown:SetValues(validEnemies) 
-        end
+        if CaptureDropdown and CaptureDropdown.SetValues then CaptureDropdown:SetValues(validEnemies) end
         ANUI:Notify({Title = "Farming", Content = "Found " .. #validEnemies .. " enemies!", Icon = "refresh-cw", Duration = 2})
     end
 })
@@ -201,7 +205,6 @@ GachaSection:Dropdown({
     Required = true,
     Values = GachaList,
     Callback = function(val) 
-        -- Helper to handle multiple return types from ANUI
         local selected = val
         if type(val) == "table" then
             for k, v in pairs(val) do 
@@ -209,8 +212,6 @@ GachaSection:Dropdown({
                  else selected = k end
             end
         end
-        
-        -- Extract ID if mixed with Name
         if selected and string.find(selected, "%(") then
              selected = string.match(selected, "%((%d+)%)")
         end
@@ -229,8 +230,16 @@ GachaSection:Toggle({
 
 local EventSection = GachaTab:Section({ Title = "Events", Icon = "star", Opened = true })
 
+-- Renamed & Reordered Star Events
 EventSection:Toggle({
-    Title = "Auto Collect & Spin Event Star",
+    Title = "Auto Collect Star(s)",
+    Desc = "Claims Online Time Rewards (1-12)",
+    Value = false,
+    Callback = function(state) Flags.AutoEventCollect = state end
+})
+
+EventSection:Toggle({
+    Title = "Auto Roll Star(s)",
     Desc = "Rolls the Limited Event Gacha (ID 601)",
     Value = false,
     Callback = function(state) Flags.AutoEventGacha = state end
@@ -240,12 +249,7 @@ EventSection:Toggle({
 local AutoTab = Window:Tab({ Title = "Automation", Icon = "cpu", SidebarProfile = false })
 local MiscSection = AutoTab:Section({ Title = "Misc", Icon = "settings", Opened = true })
 
-MiscSection:Toggle({
-    Title = "Auto Capture (E)",
-    Desc = "Spams Capture Interaction",
-    Value = false,
-    Callback = function(state) Flags.AutoCapture = state end
-})
+-- Removed Auto Capture from here (Moved to MainFarm)
 
 MiscSection:Toggle({
     Title = "Auto Equip Best",
@@ -282,11 +286,13 @@ MiscSection:Toggle({
     Callback = function(state) Flags.AutoSpin = state end
 })
 
+-- Removed AutoEventCollect from here (Moved to Events tab)
+
 MiscSection:Toggle({
-    Title = "Auto Collect Event Items",
-    Desc = "Claims Online Time Rewards (1-12)",
+    Title = "Auto Charge (Podiums)",
+    Desc = "Teleports to & uses Charge Podiums",
     Value = false,
-    Callback = function(state) Flags.AutoEventCollect = state end
+    Callback = function(state) Flags.AutoCharge = state end
 })
 
 MiscSection:Toggle({
@@ -300,7 +306,6 @@ MiscSection:Toggle({
 local WorldTab = Window:Tab({ Title = "Worlds", Icon = "globe", SidebarProfile = false })
 local TeleportSection = WorldTab:Section({ Title = "Teleports", Icon = "map-pin", Opened = true })
 
--- Using workspace.common.Up[i] (Islands) as destination + Portals as backup
 local Islands = {
     {Name = "Seaside Town",        Id = "1"},
     {Name = "Pirate Village",      Id = "2"},
@@ -309,7 +314,6 @@ local Islands = {
     {Name = "Cursed Arts Hamlet",  Id = "5"},
     {Name = "Arcane City Lofts",   Id = "6"},
     {Name = "Lookout",             Id = "7"},
-    -- Duck Research Center not in 1-7 list, keeping generic fallback
 }
 
 for _, island in ipairs(Islands) do
@@ -323,11 +327,9 @@ for _, island in ipairs(Islands) do
                 local targetCFrame = nil
                 
                 if dest then
-                    -- Safety check: Determine if it's a Model/Part or Folder
                     if dest:IsA("Model") or dest:IsA("BasePart") then
                         targetCFrame = dest:GetPivot()
                     else
-                        -- It's a Folder (likely), find first part
                         local part = dest:FindFirstChildWhichIsA("BasePart", true)
                         if part then targetCFrame = part.CFrame end
                     end
@@ -337,7 +339,6 @@ for _, island in ipairs(Islands) do
                     root.CFrame = targetCFrame + Vector3.new(0, 5, 0)
                     ANUI:Notify({Title = "Teleport", Content = "Warped to " .. island.Name, Icon = "map-pin", Duration = 2})
                 else
-                     -- Portal Fallback (0-Index based)
                      local pIdx = tonumber(island.Id) - 1
                      pcall(function() ReplicatedStorage.Events.Map.PortalEvent:FireServer(pIdx) end)
                      ANUI:Notify({Title = "Teleport", Content = "Used portal for " .. island.Name, Icon = "map-pin", Duration = 2})
@@ -364,7 +365,6 @@ local function GetSmartTarget()
                 -- Filter
                 local isSelected = true
                 if next(Flags.SelectedMobs) ~= nil then
-                    -- Flags.SelectedMobs is table [Name] = true
                     if not Flags.SelectedMobs[mob.Name] then isSelected = false end
                 end
 
@@ -440,7 +440,6 @@ task.spawn(function()
         -- AUTO GACHA (General)
         if Flags.AutoRollSelected and Flags.SelectedGachaId then
             pcall(function()
-                -- CORRECTED: FireServer(True, ID)
                 ReplicatedStorage.Events.NewLotto.RollOne:FireServer(true, tonumber(Flags.SelectedGachaId))
             end)
         end
@@ -448,7 +447,6 @@ task.spawn(function()
         -- AUTO EVENT GACHA (Specific)
         if Flags.AutoEventGacha then
             pcall(function()
-                -- CORRECTED: FireServer(True, 601)
                 ReplicatedStorage.Events.NewLotto.RollOne:FireServer(true, 601)
             end)
         end
@@ -478,6 +476,27 @@ task.spawn(function()
         
         if Flags.AutoEventCollect then
             pcall(function() for i=1,12 do ReplicatedStorage.Events.Activity.Mix.OnlineTime.GetEvent:FireServer(3, i) end end)
+        end
+
+        -- Auto Charge (Podiums)
+        if Flags.AutoCharge then
+            pcall(function()
+                if workspace:FindFirstChild("common") and workspace.common:FindFirstChild("Up") then
+                    for _, island in ipairs(workspace.common.Up:GetChildren()) do
+                        for _, child in ipairs(island:GetDescendants()) do
+                            if string.find(string.lower(child.Name), "charge") or string.find(string.lower(child.Name), "podium") then
+                                if child:FindFirstChild("ClickDetector") then
+                                    fireclickdetector(child.ClickDetector)
+                                    print("Clicked charge:", child:GetFullName())
+                                elseif child:IsA("ProximityPrompt") then
+                                    fireproximityprompt(child)
+                                    print("Prompted charge:", child:GetFullName())
+                                end
+                            end
+                        end
+                    end
+                end
+            end)
         end
     end
 end)
