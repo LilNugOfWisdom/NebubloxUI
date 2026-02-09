@@ -332,19 +332,29 @@ task.spawn(function()
     if not FindAndInjectImage(game:GetService("CoreGui")) then FindAndInjectImage(player.PlayerGui) end
 end)
 
-local AboutSection = MainTab:Section({ Title = "Welcome!", Icon = "smile", Opened = true })
-
+local AboutSection = MainTab:Section({ Title = "Nebublox", Icon = "star", Opened = true })
 AboutSection:Paragraph({
-    Title = "Join the community",
+    Title = "Welcome to Nebublox",
     Content = [[
-           Join our Discord server!
+           // SYSTEM INFORMATION
 
-        Drop your concepts in #dark-visions
-        Request a #forbidden-script
+               ARCHITECTS
 
-        https://discord.gg/nebublox
-    ]],
-    Icon = "message-circle"
+      Core & Logic: Lil Nug of Wisdom
+           Visual Interface: ANUI
+
+           CURRENT PARAMETERS
+
+          Patch Date: 02/08/26
+    Target Reality: Anime Storm Simulator 2
+      Origin: Roblox Community Group
+
+              TRANSMISSION
+    Seeking to expand the void? Access our frequency.
+ Share your #dark-visions and propose the next #forbidden-script.
+
+       [LINK] DISCORD: discord.gg/nebublox
+]]
 })
 
 -- [TAB 2: FARM (SMART FARM)]
