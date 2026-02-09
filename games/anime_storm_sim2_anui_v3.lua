@@ -734,12 +734,14 @@ local function GetTarget()
         
         local isValid = false
         
-        if Flags.SmartFarm and selectedCount > 0 then
+        local isFarmActive = Flags.SmartFarm or Flags.AutoTrialFarm or Flags.AutoInvasionStart or Flags.BossRushDBZ or Flags.BossRushJJK
+        
+        if isFarmActive and selectedCount > 0 then
             local head = mob:FindFirstChild("Head")
             local bb = head and head:FindFirstChild("NpcBillboard")
             local disp = bb and bb:FindFirstChild("NpcName") and bb.NpcName.Text
             if SelectedEnemies[mob.Name] or (disp and SelectedEnemies[disp]) then isValid = true end
-        elseif Flags.SmartFarm then
+        elseif isFarmActive then
             isValid = true
         end
         
