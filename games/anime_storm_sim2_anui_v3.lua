@@ -338,6 +338,16 @@ task.spawn(function()
 end)
 
 -- About Content (One Clean Paragraph)
+ConfigSection:Input({
+--    Title = "Config Name",
+--    Placeholder = "Enter config name...",
+--    Callback = function(text)
+--        ConfigNameInput = text
+--    end
+-- })
+-- Removed Input to avoid duplication
+
+-- About Content (One Clean Paragraph)
 local AboutSection = MainTab:Section({ Title = "Nebublox", Icon = "star", Opened = true })
 AboutSection:Paragraph({
     Title = "Welcome to Nebublox",
@@ -347,11 +357,11 @@ AboutSection:Paragraph({
 ARCHITECTS
 
 Core & Logic: Lil Nug of Wisdom
-Visual Interface: ANUI
+Visual Interface: ANUI v3.1
 
 CURRENT PARAMETERS
 
-Patch Date: 02/08/26
+Patch Date: 02/08/26 (v3.1)
 Target Reality: Anime Storm Simulator 2
 Origin: Roblox Community Group
 
@@ -663,45 +673,126 @@ local SettingsTab = Window:Tab({ Title = "Settings", Icon = "settings" })
 local ConfigSection = SettingsTab:Section({ Title = "Configuration Manager", Icon = "folder", Opened = true })
 
 local ConfigNameInput = ""
-ConfigSection:Input({
-    Title = "Config Name",
-    Placeholder = "Enter config name...",
-    Callback = function(text)
-        ConfigNameInput = text
-    end
-})
+-- Input removed (now inside Custom Manager)
 
--- [CUSTOM CONFIG SELECTOR UI - Like Enemy Scanner]
-local function CreateConfigSelector(parent)
+-- [CUSTOM CONFIG MANAGER UI]
+local function CreateConfigManager(parent)
     local MainFrame = Instance.new("Frame")
-    MainFrame.Name = "ConfigSelectorFrame"
-    MainFrame.Size = UDim2.new(1, -10, 0, 180)
+    MainFrame.Name = "ConfigManagerFrame"
+    MainFrame.Size = UDim2.new(1, -10, 0, 260) -- Increased height for controls
     MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
     MainFrame.BorderSizePixel = 0
     MainFrame.Parent = parent
     Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
 
+    -- Header
     local Header = Instance.new("TextLabel")
     Header.Size = UDim2.new(1, 0, 0, 30)
     Header.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-    Header.Text = "📁 Saved Configs"
-    Header.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Header.TextSize = 13
+    Header.Text = "  Configuration Manager"
+    Header.TextColor3 = Color3.fromRGB(220, 220, 220)
+    Header.TextSize = 14
     Header.Font = Enum.Font.GothamBold
+    Header.TextXAlignment = Enum.TextXAlignment.Left
     Header.Parent = MainFrame
     Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
 
+    -- Input Box
+    local InputFrame = Instance.new("Frame")
+    InputFrame.Size = UDim2.new(1, -20, 0, 35)
+    InputFrame.Position = UDim2.new(0, 10, 0, 40)
+    InputFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+    InputFrame.Parent = MainFrame
+    Instance.new("UICorner", InputFrame).CornerRadius = UDim.new(0, 6)
+    
+    local NameInput = Instance.new("TextBox")
+    NameInput.Size = UDim2.new(1, -10, 1, 0)
+    NameInput.Position = UDim2.new(0, 10, 0, 0)
+    NameInput.BackgroundTransparency = 1
+    NameInput.Text = ""
+    NameInput.PlaceholderText = "Enter config name..."
+    NameInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+    NameInput.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+    NameInput.TextSize = 13
+    NameInput.Font = Enum.Font.Gotham
+    NameInput.TextXAlignment = Enum.TextXAlignment.Left
+    NameInput.Parent = InputFrame
+    
+    NameInput.FocusLost:Connect(function()
+        ConfigNameInput = NameInput.Text
+    end)
+
+    -- Action Buttons Row
+    local function CreateBtn(text, color, pos, callback)
+        local btn = Instance.new("TextButton")
+        btn.Text = text
+        btn.BackgroundColor3 = color
+        btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        btn.Font = Enum.Font.GothamBold
+        btn.TextSize = 12
+        btn.Size = UDim2.new(0.3, 0, 0, 30)
+        btn.Position = pos
+        btn.Parent = MainFrame
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+        btn.MouseButton1Click:Connect(callback)
+        return btn
+    end
+
+    -- Save (Orange)
+    CreateBtn("SAVE", Color3.fromRGB(255, 100, 0), UDim2.new(0, 10, 0, 85), function()
+        ConfigNameInput = NameInput.Text
+        if ConfigNameInput ~= "" then
+            ConfigSystem.SaveConfig(ConfigNameInput)
+            if getgenv().RefreshConfigSelector then getgenv().RefreshConfigSelector() end
+        else
+            ANUI:Notify({Title = "Error", Content = "Enter a name!", Icon = "alert-triangle", Duration = 2})
+        end
+    end)
+
+    -- Load (Blue)
+    CreateBtn("LOAD", Color3.fromRGB(0, 120, 215), UDim2.new(0.35, 10, 0, 85), function()
+        ConfigNameInput = NameInput.Text
+        if ConfigNameInput ~= "" then
+            ConfigSystem.LoadConfig(ConfigNameInput)
+        else
+             ANUI:Notify({Title = "Error", Content = "Select/Enter a name!", Icon = "alert-triangle", Duration = 2})
+        end
+    end)
+
+    -- Delete (Red)
+    CreateBtn("DELETE", Color3.fromRGB(200, 50, 50), UDim2.new(0.7, 10, 0, 85), function()
+        ConfigNameInput = NameInput.Text
+        if ConfigNameInput ~= "" then
+            ConfigSystem.DeleteConfig(ConfigNameInput)
+            if getgenv().RefreshConfigSelector then getgenv().RefreshConfigSelector() end
+        end
+    end)
+
+    -- List Header
+    local ListLabel = Instance.new("TextLabel")
+    ListLabel.Size = UDim2.new(1, -20, 0, 20)
+    ListLabel.Position = UDim2.new(0, 10, 0, 125)
+    ListLabel.BackgroundTransparency = 1
+    ListLabel.Text = "Saved Configurations:"
+    ListLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+    ListLabel.TextSize = 12
+    ListLabel.Font = Enum.Font.Gotham
+    ListLabel.TextXAlignment = Enum.TextXAlignment.Left
+    ListLabel.Parent = MainFrame
+
+    -- Scroll List
     local ScrollFrame = Instance.new("ScrollingFrame")
-    ScrollFrame.Size = UDim2.new(1, -10, 1, -40)
-    ScrollFrame.Position = UDim2.new(0, 5, 0, 35)
-    ScrollFrame.BackgroundTransparency = 1
+    ScrollFrame.Size = UDim2.new(1, -20, 1, -155)
+    ScrollFrame.Position = UDim2.new(0, 10, 0, 145)
+    ScrollFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
     ScrollFrame.BorderSizePixel = 0
     ScrollFrame.ScrollBarThickness = 4
     ScrollFrame.Parent = MainFrame
+    Instance.new("UICorner", ScrollFrame).CornerRadius = UDim.new(0, 6)
     
     local ListLayout = Instance.new("UIListLayout")
     ListLayout.SortOrder = Enum.SortOrder.Name
-    ListLayout.Padding = UDim.new(0, 4)
+    ListLayout.Padding = UDim.new(0, 2)
     ListLayout.Parent = ScrollFrame
 
     local function RefreshConfigList()
@@ -709,131 +800,80 @@ local function CreateConfigSelector(parent)
         
         local configs = ConfigSystem.GetConfigs()
         
-        if #configs == 0 then
-            local noConfigs = Instance.new("TextLabel")
-            noConfigs.Name = "NoConfigs"
-            noConfigs.Size = UDim2.new(1, -10, 0, 28)
-            noConfigs.BackgroundTransparency = 1
-            noConfigs.Text = "No configs saved yet"
-            noConfigs.TextColor3 = Color3.fromRGB(120, 120, 120)
-            noConfigs.TextSize = 12
-            noConfigs.Font = Enum.Font.Gotham
-            noConfigs.Parent = ScrollFrame
-        else
-            for _, name in ipairs(configs) do
-                local btn = Instance.new("TextButton")
-                btn.Name = name
-                btn.Size = UDim2.new(1, -10, 0, 28)
-                btn.BackgroundColor3 = (ConfigNameInput == name) and Color3.fromRGB(80, 150, 80) or Color3.fromRGB(50, 50, 60)
-                btn.Text = "  📄 " .. name
-                btn.TextColor3 = Color3.fromRGB(220, 220, 220)
-                btn.TextSize = 12
-                btn.Font = Enum.Font.Gotham
-                btn.TextXAlignment = Enum.TextXAlignment.Left
-                btn.Parent = ScrollFrame
-                Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
-                
-                btn.MouseButton1Click:Connect(function()
-                    ConfigNameInput = name
-                    -- Update visual selection
-                    for _, b in pairs(ScrollFrame:GetChildren()) do
-                        if b:IsA("TextButton") then
-                            b.BackgroundColor3 = (b.Name == name) and Color3.fromRGB(80, 150, 80) or Color3.fromRGB(50, 50, 60)
-                        end
+        for _, name in ipairs(configs) do
+            local btn = Instance.new("TextButton")
+            btn.Name = name
+            btn.Size = UDim2.new(1, -4, 0, 24)
+            btn.BackgroundColor3 = (ConfigNameInput == name) and Color3.fromRGB(80, 150, 80) or Color3.fromRGB(45, 45, 50)
+            btn.Text = "  " .. name
+            btn.TextColor3 = Color3.fromRGB(220, 220, 220)
+            btn.TextSize = 11
+            btn.Font = Enum.Font.Gotham
+            btn.TextXAlignment = Enum.TextXAlignment.Left
+            btn.Parent = ScrollFrame
+            Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+            
+            btn.MouseButton1Click:Connect(function()
+                ConfigNameInput = name
+                NameInput.Text = name -- Update input box
+                -- Visual update
+                for _, b in pairs(ScrollFrame:GetChildren()) do
+                    if b:IsA("TextButton") then
+                        b.BackgroundColor3 = (b.Name == name) and Color3.fromRGB(80, 150, 80) or Color3.fromRGB(45, 45, 50)
                     end
-                    ANUI:Notify({Title = "Selected", Content = name, Icon = "check", Duration = 2})
-                end)
-            end
+                end
+            end)
         end
-        
         ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, ListLayout.AbsoluteContentSize.Y + 5)
     end
     
-    -- Initial populate
     RefreshConfigList()
-    
     return RefreshConfigList
 end
 
--- Inject Config Selector into Settings Tab
+-- Inject Config Manager
 task.spawn(function()
-    task.wait(2) -- Wait for UI to load
+    task.wait(1.5)
     local function FindSettingsSection(root)
         if not root then return nil end
         for _, obj in ipairs(root:GetDescendants()) do
             if obj:IsA("TextLabel") and obj.Text == "Configuration Manager" then
-                local section = obj.Parent and obj.Parent.Parent
-                if section then return section end
+                local paragraph = obj.Parent -- ANUI structure usually paragraph inside section?
+                 -- Actually, we look for the SECTION header.
+                 -- If Text == "Configuration Manager", it's likely the Section Title.
+                 -- Section Title is usually inside a button/frame inside the container.
+                 -- Assuming standard ANUI structure: Section -> Container -> Elements
+                 
+                 -- We want to inject into the Container.
+                 -- The 'obj' is the Title Label.
+                 -- obj.Parent is likely the Header Frame.
+                 -- obj.Parent.Parent might be the Section Frame.
+                 -- Section Frame should have a 'Container' child?
+                 
+                 local sectionFrame = obj.Parent and obj.Parent.Parent
+                 if sectionFrame then
+                     -- Try to find content container
+                     local container = sectionFrame:FindFirstChild("Container") or sectionFrame:FindFirstChild("Content")
+                     if container then return container end
+                     
+                     -- Fallback: Just return sectionFrame and hope
+                     return sectionFrame
+                 end
             end
         end
         return nil
     end
     
-    local section = FindSettingsSection(game:GetService("CoreGui")) or FindSettingsSection(player.PlayerGui)
-    if section then
-        getgenv().RefreshConfigSelector = CreateConfigSelector(section)
-        
-        -- Custom 'Bloxsmith' Style Save Config Button (Injected Manually)
-        local SaveBtn = Instance.new("TextButton")
-        SaveBtn.Name = "SaveConfigBtn"
-        SaveBtn.Size = UDim2.new(1, -10, 0, 35)
-        SaveBtn.Position = UDim2.new(0, 5, 0, 185) -- Below Selector
-        SaveBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 30) -- Charcoal
-        SaveBtn.BorderColor3 = Color3.fromRGB(255, 100, 0) -- Magma Orange
-        SaveBtn.BorderSizePixel = 2
-        SaveBtn.Text = "SAVE CONFIGURATION"
-        SaveBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        SaveBtn.Font = Enum.Font.GothamBold 
-        SaveBtn.TextSize = 14
-        SaveBtn.Parent = section -- Parent to the FOUND settings section
-        
-        SaveBtn.MouseButton1Click:Connect(function()
-             if ConfigNameInput ~= "" then
-                ConfigSystem.SaveConfig(ConfigNameInput)
-                if getgenv().RefreshConfigSelector then getgenv().RefreshConfigSelector() end
-            else
-                ANUI:Notify({Title = "Error", Content = "Enter a config name!", Icon = "alert-triangle", Duration = 3})
-            end
-        end)
+    local container = FindSettingsSection(game:GetService("CoreGui")) or FindSettingsSection(player.PlayerGui)
+    if container then
+        -- Clear existing elements if possible (Hard to do without breaking lib, so we just append)
+        -- Create our Custom Manager
+        getgenv().RefreshConfigSelector = CreateConfigManager(container)
     end
 end)
 
--- Custom 'Bloxsmith' Style Save Config Button
--- Old Manual Button placeholder removed
-
-
-ConfigSection:Button({ Title = "[SAVE] Save Config (Standard)", Callback = function()
-    if ConfigNameInput ~= "" then
-        ConfigSystem.SaveConfig(ConfigNameInput)
-        if getgenv().RefreshConfigSelector then getgenv().RefreshConfigSelector() end
-    else
-        ANUI:Notify({Title = "Error", Content = "Enter a config name!", Icon = "alert-triangle", Duration = 3})
-    end
-end })
-
-ConfigSection:Button({ Title = "[REFRESH] Refresh Config List", Callback = function()
-    if getgenv().RefreshConfigSelector then
-        getgenv().RefreshConfigSelector()
-        ANUI:Notify({Title = "Configs", Content = "List refreshed!", Icon = "refresh-cw", Duration = 2})
-    end
-end })
-
-ConfigSection:Button({ Title = "[LOAD] Load Config", Callback = function()
-    if ConfigNameInput ~= "" then
-        ConfigSystem.LoadConfig(ConfigNameInput)
-    else
-        ANUI:Notify({Title = "Error", Content = "Enter a config name!", Icon = "alert-triangle", Duration = 3})
-    end
-end })
-
-ConfigSection:Button({ Title = "[DELETE] Delete Config", Callback = function()
-    if ConfigNameInput ~= "" then
-        ConfigSystem.DeleteConfig(ConfigNameInput)
-        if getgenv().RefreshConfigSelector then getgenv().RefreshConfigSelector() end
-    else
-        ANUI:Notify({Title = "Error", Content = "Enter a config name!", Icon = "alert-triangle", Duration = 3})
-    end
-end })
+-- [REMOVED STANDARD BUTTONS]
+-- [REMOVED STANDARD BUTTONS]
 
 ConfigSection:Toggle({
     Title = "Autoload on Startup",
@@ -1389,4 +1429,4 @@ task.spawn(function()
     end)
 end)
 
-ANUI:Notify({Title = "Nebublox", Content = "Loaded v3.0 (Fresh Install)", Icon = "check", Duration = 5})
+ANUI:Notify({Title = "Nebublox", Content = "Loaded v3.1 (About Fix)", Icon = "check", Duration = 5})
