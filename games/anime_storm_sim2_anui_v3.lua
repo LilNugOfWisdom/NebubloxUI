@@ -361,7 +361,7 @@ Visual Interface: ANUI v3.1
 
 CURRENT PARAMETERS
 
-Patch Date: 02/08/26 (v3.2)
+Patch Date: 02/08/26 (v3.3)
 Target Reality: Anime Storm Simulator 2
 Origin: Roblox Community Group
 
@@ -932,21 +932,11 @@ local function GetSmartTarget()
         local isValid = false
         -- RESTRICTED: TrialAttackAll logic handled inside scanner loops
         
-        if Flags.SmartFarm and selectedCount > 0 then
-            local head = mob:FindFirstChild("Head")
-            local bb = head and head:FindFirstChild("NpcBillboard")
-            local disp = bb and bb:FindFirstChild("NpcName") and bb.NpcName.Text
-            if SelectedEnemies[mob.Name] or (disp and SelectedEnemies[disp]) then isValid = true end
-        elseif Flags.SmartFarm then
-            isValid = true
-        end
-        
-        -- Special override for Trial Attack All
-        if Flags.TrialAttackAll and mob:IsDescendantOf(Workspace:FindFirstChild("TrialRoomNpc")) then
-            isValid = true
-        end
-        
-        if isValid then
+
+    local function CheckMob(mob)
+        if mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 and mob:FindFirstChild("HumanoidRootPart") then
+            -- Exclude self/pets if necessary (usually they are in different folders)
+            local rootPart = mob.HumanoidRootPart
             local dist = (rootPart.Position - myRoot.Position).Magnitude
             if dist < shortestDist then
                 shortestDist = dist
@@ -955,41 +945,56 @@ local function GetSmartTarget()
         end
     end
 
-    -- 1. Scan Trials (Priority)
-    if Flags.AutoTrialFarm then
-        local tf = Workspace:FindFirstChild("TrialRoomNpc")
-        if tf then for _, o in ipairs(tf:GetDescendants()) do CheckMob(o) end end
-        if bestTarget then return bestTarget end
+    -- PRIORITY 1: TIME TRIAL (Highest)
+    local trialContainer = Workspace:FindFirstChild("TrialRoomNpc")
+    local InTrial = trialContainer and #trialContainer:GetChildren() > 0
+    
+    if InTrial and Flags.AutoTrialFarm then
+        -- STRICT: Only scan Trial Mobs
+        for _, o in ipairs(trialContainer:GetDescendants()) do CheckMob(o) end
+        return bestTarget 
     end
 
-    -- 2. Scan Invasion (Priority)
-    if Flags.SmartFarm or Flags.AutoInvasionStart then -- Check invasion if SmartFarm OR AutoInvasion is on
-        local invF = Workspace:FindFirstChild("InvasionNpc")
-        if invF then for _, o in ipairs(invF:GetDescendants()) do CheckMob(o) end end
-        
-        -- New Path: Maps.DemonSlayerInvasion.NpcSpawns.Boss
-        local maps = Workspace:FindFirstChild("Maps")
-        local dsInv = maps and maps:FindFirstChild("DemonSlayerInvasion")
-        local dsSpawns = dsInv and dsInv:FindFirstChild("NpcSpawns")
-        if dsSpawns then for _, o in ipairs(dsSpawns:GetDescendants()) do CheckMob(o) end end
-        
-        if bestTarget then 
-            -- Dist Check: Only prioritize if reasonably close (e.g. 3000 studs) to avoid ghosts or Abyss targeting
-            local dist = (bestTarget.HumanoidRootPart.Position - myRoot.Position).Magnitude
-            if dist < 3000 then return bestTarget end
-        end
-    end
-
-    -- 3. Scan Generic Maps
-    if Flags.SmartFarm then -- REMOVED 'and not Flags.AutoTrialFarm' to allow farming map mobs while waiting for trial
-        local mf = Workspace:FindFirstChild("Npc")
-        if mf then for _, o in ipairs(mf:GetDescendants()) do CheckMob(o) end end
-        
-        local invF = Workspace:FindFirstChild("InvasionNpc")
-        if invF then for _, o in ipairs(invF:GetDescendants()) do CheckMob(o) end end
+    -- PRIORITY 2: INVASION
+    local invContainer = Workspace:FindFirstChild("InvasionNpc")
+    local InInvasion = invContainer and #invContainer:GetChildren() > 0
+    local invBossMap = Workspace.Maps:FindFirstChild("DemonSlayerInvasion")
+    local InInvasionBoss = invBossMap and invBossMap:FindFirstChild("NpcSpawns")
+    
+    if (InInvasion or InInvasionBoss) and Flags.AutoInvasionStart then
+        -- STRICT: Only scan Invasion Mobs
+        if invContainer then for _, o in ipairs(invContainer:GetDescendants()) do CheckMob(o) end end
+        if InInvasionBoss then for _, o in ipairs(InInvasionBoss:GetDescendants()) do CheckMob(o) end end
+        return bestTarget
     end
     
-    return bestTarget
+    -- PRIORITY 3: BOSS RUSH
+    if Flags.BossRushDBZ or Flags.BossRushJJK then
+        -- Boss Rush Mobs? Usually just one boss.
+        -- We will scan the specific boss rush map if it exists
+        local mapName = Flags.BossRushDBZ and "dbzBossRush" or "JjkBossRush"
+        local brMap = Workspace.Maps:FindFirstChild(mapName)
+        if brMap then
+             for _, o in ipairs(brMap:GetDescendants()) do CheckMob(o) end
+        end
+        return bestTarget
+    end
+
+    -- PRIORITY 4: AUTO FARM (Lowest)
+    if Flags.SmartFarm then
+        -- STRICT: Only scan Normal Mobs (and Invasion/Trial folders if they happen to have lingering mobs but mode is OFF? No, user said ignore if active)
+        -- Normal Mobs in "Npc" folder
+        local normalNpc = Workspace:FindFirstChild("Npc")
+        if normalNpc then for _, o in ipairs(normalNpc:GetDescendants()) do CheckMob(o) end end
+        
+        -- Also scan "InvasionNpc" IF AutoInvasion is OFF (maybe user just wants to farm them without auto-start?)
+        -- But strictly speaking, SmartFarm should just target closest valid mob.
+        -- Use user's instruction: "Only run if Trial, Invasion, and Boss Rush are ALL inactive"
+        -- If we are here, they ARE inactive (or flags are off).
+        return bestTarget
+    end
+    
+    return nil
 end
 
 local function GetBossSpawn(mode)
@@ -1022,28 +1027,31 @@ getgenv().NebuBlox_MovementConnection = RunService.RenderStepped:Connect(functio
         local hum = char:FindFirstChild("Humanoid")
         if hum and hum.WalkSpeed ~= 70 then hum.WalkSpeed = 70 end
 
-        -- PRIORITY 1: Trial (AutoTrialFarm handles targeting in TrialRoomNpc)
+        -- PRIORITY 1: Trial
         local tf = Workspace:FindFirstChild("TrialRoomNpc")
         local InTrial = tf and #tf:GetChildren() > 0
+        
         if InTrial and Flags.AutoTrialFarm then
             local t = getgenv().NebuBlox_CurrentTarget
             if t and t.Parent and t:FindFirstChild("Humanoid") and t.Humanoid.Health > 0 and t:FindFirstChild("HumanoidRootPart") then
                 root.CFrame = t.HumanoidRootPart.CFrame * CFrame.new(0,0,3)
                 root.AssemblyLinearVelocity = Vector3.zero
             end
-            return -- Priority: Don't do anything else while in Trial
+            return -- STOP HERE
         end
         
         -- PRIORITY 2: Invasion
         local invF = Workspace:FindFirstChild("InvasionNpc")
-        local InInvasionNow = invF and #invF:GetChildren() > 0
-        if InInvasionNow and Flags.AutoInvasionStart then
-            local t = getgenv().NebuBlox_CurrentTarget
-            if t and t.Parent and t:FindFirstChild("Humanoid") and t.Humanoid.Health > 0 and t:FindFirstChild("HumanoidRootPart") then
-                root.CFrame = t.HumanoidRootPart.CFrame * CFrame.new(0,0,3)
-                root.AssemblyLinearVelocity = Vector3.zero
-            end
-            return -- Priority: Don't do anything else while in Invasion
+        local invBoss = Workspace.Maps:FindFirstChild("DemonSlayerInvasion")
+        local InInvasion = (invF and #invF:GetChildren() > 0) or (invBoss and invBoss:FindFirstChild("NpcSpawns") and #invBoss.NpcSpawns:GetChildren() > 0)
+        
+        if InInvasion and Flags.AutoInvasionStart then
+             local t = getgenv().NebuBlox_CurrentTarget
+             if t and t.Parent and t:FindFirstChild("Humanoid") and t.Humanoid.Health > 0 and t:FindFirstChild("HumanoidRootPart") then
+                 root.CFrame = t.HumanoidRootPart.CFrame * CFrame.new(0,0,3)
+                 root.AssemblyLinearVelocity = Vector3.zero
+             end
+             return -- STOP HERE
         end
 
         -- PRIORITY 3: Boss Rush
@@ -1051,11 +1059,12 @@ getgenv().NebuBlox_MovementConnection = RunService.RenderStepped:Connect(functio
              local tc = nil
              if Flags.BossRushDBZ then local s = GetBossSpawn("Dbz"); if s then tc = s.CFrame * CFrame.new(0,0,2) end
              elseif Flags.BossRushJJK then local s = GetBossSpawn("Jjk"); if s then tc = s.CFrame * CFrame.new(0,0,2) end end
+             
              if tc then root.CFrame = tc; root.AssemblyLinearVelocity = Vector3.zero end
-             return
+             return -- STOP HERE
         end
 
-        -- PRIORITY 4: Smart Farm (Only if not in Trial/Invasion/Boss)
+        -- PRIORITY 4: Smart Farm
         if Flags.SmartFarm then
             local t = getgenv().NebuBlox_CurrentTarget
             if t and t.Parent and t:FindFirstChild("Humanoid") and t.Humanoid.Health > 0 and t:FindFirstChild("HumanoidRootPart") then
@@ -1147,10 +1156,13 @@ task.spawn(function()
                 end
             end
             
-            -- Boss - Only if NOT In Trial
-            if (Flags.BossRushDBZ or Flags.BossRushJJK) and not InTrial then
+            -- Boss - Only if NOT In Trial AND NOT In Invasion
+            if (Flags.BossRushDBZ or Flags.BossRushJJK) and not InTrial and not InInvasion then
                  local BR = Remotes.BossRush
                  local mode = Flags.BossRushDBZ and "DbzBossRush" or "JjkBossRush"
+                 if BR and BR:FindFirstChild(mode) then
+                      BR[mode]:FireServer("Enter")
+                 end
                  -- Silent Mode: Disable Client Listener
                  if getconnections then for _, c in pairs(getconnections(BR.BossRushRemote.OnClientEvent)) do c:Disable() end end
                  -- BR.BossRushRemote:FireServer("OpenBossRushFrame", mode) -- REMOVED
@@ -1380,4 +1392,4 @@ task.spawn(function()
     end)
 end)
 
-ANUI:Notify({Title = "Nebublox", Content = "Loaded v3.2 (Invasion Fix)", Icon = "check", Duration = 5})
+ANUI:Notify({Title = "Nebublox", Content = "Loaded v3.3 (Logic Fixes)", Icon = "check", Duration = 5})
