@@ -345,7 +345,7 @@ AboutSection:Label("System Version: v3.7 (Stable)")
 AboutSection:Label("Developer: Lil Nug of Wisdom")
 AboutSection:Label("UI Library: ANUI v3")
 AboutSection:Label("Target Game: Anime Storm Sim 2")
-AboutSection:Label("Updated: 02/08/2026")
+AboutSection:Label("Updated: 02/08/26 (v3.95)")
 
 AboutSection:Button({
     Title = "Copy Discord Link",
@@ -600,13 +600,7 @@ TrialSection:Button({
 TrialSection:Toggle({ Title = "Auto Drop Potion (On Start)", Value = false, Callback = function(s) Flags.AutoDropPotion = s end })
 TrialSection:Toggle({ Title = "Attack ALL (Trial Only)", Value = false, Callback = function(s) Flags.TrialAttackAll = s end })
 
--- Trial Upgrades Section (New)
-local UpgradeSection = TrialTab:Section({ Title = "Trial Upgrades", Icon = "trending-up" })
-UpgradeSection:Toggle({ Title = "Auto Upgrade Strength", Value = false, Callback = function(s) Flags.TrialUpgradeStrength = s end })
-UpgradeSection:Toggle({ Title = "Auto Upgrade Gems", Value = false, Callback = function(s) Flags.TrialUpgradeGems = s end })
-UpgradeSection:Toggle({ Title = "Auto Upgrade Drops", Value = false, Callback = function(s) Flags.TrialUpgradeDrops = s end })
-UpgradeSection:Toggle({ Title = "Auto Upgrade Luck", Value = false, Callback = function(s) Flags.TrialUpgradeLuck = s end })
-UpgradeSection:Toggle({ Title = "Auto Upgrade Walkspeed", Value = false, Callback = function(s) Flags.TrialUpgradeWalkspeed = s end })
+
 
 -- [TAB 3: CHAMPIONS (New)]
 local ChampionsTab = Window:Tab({ Title = "Champions", Icon = "egg" })
@@ -618,7 +612,42 @@ EggSection:Toggle({ Title = "Auto Hatch JJK", Value = false, Callback = function
 EggSection:Toggle({ Title = "Auto Hatch Demon Slayer", Value = false, Callback = function(s) Flags.HatchSlayer = s end })
 EggSection:Toggle({ Title = "Auto Hatch Dragon Ball", Value = false, Callback = function(s) Flags.HatchDBZ = s end })
 
-EggSection:Toggle({ Title = "Disable Egg Animation (Local)", Value = false, Callback = function(s) Flags.DisableEggAnim = s end })
+EggSection:Button({
+    Title = "Disable Egg Animation (Experimental)",
+    Callback = function()
+        local Event = game:GetService("ReplicatedStorage").Remotes.Egg.EggNotification
+        local success, err = pcall(function()
+            for _, Connection in pairs(getconnections(Event.OnClientEvent)) do
+                if hookfunction then
+                     local old; old = hookfunction(Connection.Function, function(...)
+                        -- Intercept and suppress
+                        return
+                    end)
+                else
+                    Connection:Disable()
+                end
+            end
+        end)
+        if success then 
+             ANUI:Notify({Title = "Animations", Content = "Attempted to disable egg UI!", Icon = "check", Duration = 3})
+        else
+             ANUI:Notify({Title = "Error", Content = "Executor doesn't support hook/getconnections!", Icon = "alert-triangle", Duration = 3})
+        end
+    end
+})
+
+-- Proximity Prompt Modifier (Auto-Run)
+task.spawn(function()
+    while task.wait(5) do
+         for _, v in ipairs(Workspace:GetDescendants()) do
+              if v:IsA("ProximityPrompt") then
+                   v.HoldDuration = 0
+                   v.MaxActivationDistance = 99999
+                   v.RequiresLineOfSight = false
+              end
+         end
+    end
+end)
 
 -- [TAB 4: GAMEMODES (Consolidated)]
 local GamemodesTab = Window:Tab({ Title = "Gamemodes", Icon = "swords" })
@@ -661,6 +690,14 @@ local MiscSection = MiscTab:Section({ Title = "Progression", Icon = "chevrons-up
 
 MiscSection:Toggle({ Title = "Auto Rebirth", Value = false, Callback = function(s) Flags.AutoRebirth = s end })
 MiscSection:Toggle({ Title = "Claim Timed Rewards", Value = false, Callback = function(s) Flags.AutoTimedRewards = s end })
+
+-- Moved from Trial Tab
+local UpgradeSection = MiscTab:Section({ Title = "Trial Upgrades", Icon = "trending-up" })
+UpgradeSection:Toggle({ Title = "Auto Upgrade Strength", Value = false, Callback = function(s) Flags.TrialUpgradeStrength = s end })
+UpgradeSection:Toggle({ Title = "Auto Upgrade Gems", Value = false, Callback = function(s) Flags.TrialUpgradeGems = s end })
+UpgradeSection:Toggle({ Title = "Auto Upgrade Drops", Value = false, Callback = function(s) Flags.TrialUpgradeDrops = s end })
+UpgradeSection:Toggle({ Title = "Auto Upgrade Luck", Value = false, Callback = function(s) Flags.TrialUpgradeLuck = s end })
+UpgradeSection:Toggle({ Title = "Auto Upgrade Walkspeed", Value = false, Callback = function(s) Flags.TrialUpgradeWalkspeed = s end })
 
 -- [TAB 6: SETTINGS]
 local SettingsTab = Window:Tab({ Title = "Settings", Icon = "settings" })
@@ -1134,24 +1171,35 @@ task.spawn(function()
                 end
             end
             
+            -- Check Invasion Status
+            local invF = Workspace:FindFirstChild("InvasionNpc")
+            local invBoss = Workspace.Maps:FindFirstChild("DemonSlayerInvasion")
+            local bossSpawns = invBoss and invBoss:FindFirstChild("NpcSpawns")
+            local InInvasion = (invF and #invF:GetChildren() > 0) or (bossSpawns and #bossSpawns:GetChildren() > 0)
+
             -- Invasion (Slayer World) - Only if NOT In Trial
             if Flags.AutoInvasionStart and not InTrial then 
                 local InvStart = Remotes.Invasion and Remotes.Invasion:FindFirstChild("InvasionStart")
                 if InvStart then
-                    -- 1. Fire Start Remote
-                    InvStart:FireServer("StartUi", "DemonSlayerInvasion")
-                    
-                    -- 2. Teleport to Invasion Boss Spawn (Immediately)
-                    local map = Workspace.Maps:FindFirstChild("DemonSlayerInvasion")
-                    local bossSpawn = map and map:FindFirstChild("NpcSpawns") and map.NpcSpawns:FindFirstChild("Boss")
-                    
-                    if bossSpawn and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                        -- Only TP if not already there (distance check 200 studs)
-                        if (player.Character.HumanoidRootPart.Position - bossSpawn.Position).Magnitude > 200 then
-                            player.Character.HumanoidRootPart.CFrame = bossSpawn.CFrame
-                            print("[Nebublox] Teleported to Invasion Boss Spawn")
-                        end
+                    -- Only Start if NOT already in invasion (to avoid spamming start)
+                    if not InInvasion then
+                        InvStart:FireServer("StartUi", "DemonSlayerInvasion")
+                        -- print("[Nebublox Debug] Fired Invasion Start")
                     end
+
+                    -- Teleport Logic (Always try to TP if flag is on and boss exists)
+                    if invBoss then
+                         local bossSpawn = bossSpawns and bossSpawns:FindFirstChild("Boss")
+                         if bossSpawn and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                            if (player.Character.HumanoidRootPart.Position - bossSpawn.Position).Magnitude > 200 then
+                                player.Character.HumanoidRootPart.CFrame = bossSpawn.CFrame
+                                -- print("[Nebublox] TP to Invasion Boss")
+                            end
+                         end
+                    end
+                else
+                     -- Debug: Remote missing
+                     -- print("[Nebublox Error] Invasion Remote Not Found")
                 end
             end
             
@@ -1164,7 +1212,6 @@ task.spawn(function()
                  end
                  -- Silent Mode: Disable Client Listener
                  if getconnections then for _, c in pairs(getconnections(BR.BossRushRemote.OnClientEvent)) do c:Disable() end end
-                 -- BR.BossRushRemote:FireServer("OpenBossRushFrame", mode) -- REMOVED
                  BR.BossRushStart:FireServer("StartUi", mode)
             end
             
@@ -1391,4 +1438,4 @@ task.spawn(function()
     end)
 end)
 
-ANUI:Notify({Title = "Nebublox", Content = "Loaded v3.7 (About Tab Fix)", Icon = "check", Duration = 5})
+ANUI:Notify({Title = "Nebublox", Content = "Loaded v3.95 (Refactor)", Icon = "check", Duration = 5})
