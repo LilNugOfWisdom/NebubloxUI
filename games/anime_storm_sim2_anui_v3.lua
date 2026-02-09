@@ -358,11 +358,19 @@ end)
 
 local AboutSection = MainTab:Section({ Title = "Nebublox Information", Icon = "info", Opened = true })
 
-AboutSection:Label("System Version: v4.0 (Stable)")
-AboutSection:Label("Developer: Lil Nug of Wisdom")
-AboutSection:Label("UI Library: ANUI v3")
-AboutSection:Label("Target Game: Anime Storm Sim 2")
-AboutSection:Label("Updated: 02/08/26 (v4.1)")
+AboutSection:Paragraph({
+    Title = "Nebublox System Info",
+    Content = [[
+[SYSTEM]
+Version: v4.2 (Stable)
+Developer: Lil Nug of Wisdom
+Interface: ANUI v3
+
+[TARGET]
+Game: Anime Storm Simulator 2
+Updated: 02/08/2026 (v4.2)
+]]
+})
 
 AboutSection:Button({
     Title = "Copy Discord Link",
@@ -372,7 +380,8 @@ AboutSection:Button({
     end
 })
 
-AboutSection:Label("Note: Check 'Champions' tab for new Auto Hatch!")
+AboutSection:Paragraph({ Title = "Note", Content = "Check 'Champions' tab for new Auto Hatch!" })
+print("[Nebublox Debug] About Section Loaded")
 
 -- [TAB 2: FARM (SMART FARM)]
 local TeleportTab = Window:Tab({ Title = "Farm", Icon = "map-pin" })
@@ -1467,4 +1476,4 @@ task.spawn(function()
     end)
 end)
 
-ANUI:Notify({Title = "Nebublox", Content = "Loaded v4.1 (Icon Fix)", Icon = "check", Duration = 5})
+ANUI:Notify({Title = "Nebublox", Content = "Loaded v4.2 (Crash Fix)", Icon = "check", Duration = 5})
