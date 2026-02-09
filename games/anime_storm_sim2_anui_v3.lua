@@ -705,50 +705,81 @@ end
 local function GetTarget()
     local myRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
     if not myRoot then return nil end
+    if not player.Character:IsDescendantOf(Workspace) then return nil end
+    
+    local bestTarget = nil
+    local shortestDist = 999999
+    
+    local selectedCount = 0
+    for _ in pairs(SelectedEnemies) do selectedCount = selectedCount + 1 end
 
-    local whitelistActive = false
-    for _ in pairs(SelectedEnemies) do whitelistActive = true; break end
-
-    -- Sticky Logic
-    local current = getgenv().NebuBlox_CurrentTarget
-    if current and current.Parent and current:FindFirstChild("Humanoid") and current.Humanoid.Health > 0 then
-        if whitelistActive and not SelectedEnemies[current.Name] then
-            -- Target no longer in whitelist, drop it
-        else
-            -- Stick to target if close
-            if (current.HumanoidRootPart.Position - myRoot.Position).Magnitude < 300 then return current end
+    local function CheckMob(humanoid)
+        if not humanoid or not humanoid:IsA("Humanoid") then return end
+        local mob = humanoid.Parent
+        if not mob or DeadBlacklist[mob] or LastTargetedTime[mob] then return end
+        
+        local rootPart = mob:FindFirstChild("HumanoidRootPart")
+        if not rootPart or not mob:IsDescendantOf(Workspace) then return end
+        if humanoid.Health <= 0 or mob.Name == player.Name then DeadBlacklist[mob] = true; return end
+        
+        local isValid = false
+        
+        if Flags.SmartFarm and selectedCount > 0 then
+            local head = mob:FindFirstChild("Head")
+            local bb = head and head:FindFirstChild("NpcBillboard")
+            local disp = bb and bb:FindFirstChild("NpcName") and bb.NpcName.Text
+            if SelectedEnemies[mob.Name] or (disp and SelectedEnemies[disp]) then isValid = true end
+        elseif Flags.SmartFarm then
+            isValid = true
         end
-    end
-
-    local best = nil
-    local shortest = math.huge
-
-    local function Scan(folder)
-        if not folder then return end
-        for _, v in ipairs(folder:GetDescendants()) do
-            if v:IsA("Humanoid") and v.Health > 0 and v.Parent and v.Parent:FindFirstChild("HumanoidRootPart") then
-                local mob = v.Parent
-                if whitelistActive and not SelectedEnemies[mob.Name] then continue end
-                local d = (mob.HumanoidRootPart.Position - myRoot.Position).Magnitude
-                if d < shortest then
-                    shortest = d
-                    best = mob
-                end
+        
+        -- Special override for Trial Attack All
+        if Flags.TrialAttackAll and mob:IsDescendantOf(Workspace:FindFirstChild("TrialRoomNpc")) then
+            isValid = true
+        end
+        
+        if isValid then
+            local dist = (rootPart.Position - myRoot.Position).Magnitude
+            if dist < shortestDist then
+                shortestDist = dist
+                bestTarget = mob
             end
         end
     end
 
-    -- Priority
-    if Flags.BossRushDBZ or Flags.BossRushJJK then
-        Scan(Workspace.Maps)
-    elseif Flags.AutoInvasionStart then
-        Scan(Workspace:FindFirstChild("InvasionNpc"))
-        Scan(Workspace.Maps:FindFirstChild("DemonSlayerInvasion"))
-    else
-        Scan(Workspace:FindFirstChild("Npc"))
-        Scan(Workspace:FindFirstChild("TrialRoomNpc"))
+    -- 1. Scan Trials (Priority)
+    if Flags.AutoTrialFarm then
+        local tf = Workspace:FindFirstChild("TrialRoomNpc")
+        if tf then for _, o in ipairs(tf:GetDescendants()) do CheckMob(o) end end
+        if bestTarget then return bestTarget end
     end
-    return best
+
+    -- 2. Scan Invasion (Priority)
+    if Flags.SmartFarm or Flags.AutoInvasionStart then 
+        local invF = Workspace:FindFirstChild("InvasionNpc")
+        if invF then for _, o in ipairs(invF:GetDescendants()) do CheckMob(o) end end
+        
+        local maps = Workspace:FindFirstChild("Maps")
+        local dsInv = maps and maps:FindFirstChild("DemonSlayerInvasion")
+        local dsSpawns = dsInv and dsInv:FindFirstChild("NpcSpawns")
+        if dsSpawns then for _, o in ipairs(dsSpawns:GetDescendants()) do CheckMob(o) end end
+        
+        if bestTarget then 
+            local dist = (bestTarget.HumanoidRootPart.Position - myRoot.Position).Magnitude
+            if dist < 3000 then return bestTarget end
+        end
+    end
+
+    -- 3. Scan Generic Maps
+    if Flags.SmartFarm then 
+        local mf = Workspace:FindFirstChild("Npc")
+        if mf then for _, o in ipairs(mf:GetDescendants()) do CheckMob(o) end end
+        
+        local invF = Workspace:FindFirstChild("InvasionNpc")
+        if invF then for _, o in ipairs(invF:GetDescendants()) do CheckMob(o) end end
+    end
+    
+    return bestTarget
 end
 
 local function GetBossSpawn(mode)
