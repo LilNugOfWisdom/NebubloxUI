@@ -336,24 +336,24 @@ local AboutSection = MainTab:Section({ Title = "Nebublox", Icon = "star", Opened
 AboutSection:Paragraph({
     Title = "Welcome to Nebublox",
     Content = [[
-           // SYSTEM INFORMATION
+// SYSTEM INFORMATION
 
-               ARCHITECTS
+ARCHITECTS
 
-      Core & Logic: Lil Nug of Wisdom
-           Visual Interface: ANUI
+Core & Logic: Lil Nug of Wisdom
+Visual Interface: ANUI
 
-           CURRENT PARAMETERS
+CURRENT PARAMETERS
 
-          Patch Date: 02/08/26
-    Target Reality: Anime Storm Simulator 2
-      Origin: Roblox Community Group
+Patch Date: 02/08/26
+Target Reality: Anime Storm Simulator 2
+Origin: Roblox Community Group
 
-              TRANSMISSION
-    Seeking to expand the void? Access our frequency.
- Share your #dark-visions and propose the next #forbidden-script.
+TRANSMISSION
+Seeking to expand the void? Access our frequency.
+Share your #dark-visions and propose the next #forbidden-script.
 
-       [LINK] DISCORD: discord.gg/nebublox
+[LINK] DISCORD: discord.gg/nebublox
 ]]
 })
 
@@ -764,15 +764,30 @@ local function GetTarget()
         if bestTarget then return bestTarget end
     end
 
-    -- 2. Scan Invasion (Priority)
-    if Flags.SmartFarm or Flags.AutoInvasionStart then 
+    -- 2. Scan Invasion & Boss Rush (Priority)
+    if Flags.SmartFarm or Flags.AutoInvasionStart or Flags.BossRushDBZ or Flags.BossRushJJK then 
         local invF = Workspace:FindFirstChild("InvasionNpc")
         if invF then for _, o in ipairs(invF:GetDescendants()) do CheckMob(o) end end
         
         local maps = Workspace:FindFirstChild("Maps")
-        local dsInv = maps and maps:FindFirstChild("DemonSlayerInvasion")
-        local dsSpawns = dsInv and dsInv:FindFirstChild("NpcSpawns")
-        if dsSpawns then for _, o in ipairs(dsSpawns:GetDescendants()) do CheckMob(o) end end
+        if maps then
+            -- Demon Slayer Invasion
+            local dsInv = maps:FindFirstChild("DemonSlayerInvasion")
+            local dsSpawns = dsInv and dsInv:FindFirstChild("NpcSpawns")
+            if dsSpawns then for _, o in ipairs(dsSpawns:GetDescendants()) do CheckMob(o) end end
+
+            -- Boss Rush (DBZ)
+            if Flags.BossRushDBZ then
+                local brMap = maps:FindFirstChild("dbzBossRush")
+                if brMap then for _, o in ipairs(brMap:GetDescendants()) do CheckMob(o) end end
+            end
+            
+            -- Boss Rush (JJK)
+            if Flags.BossRushJJK then
+                local brMap = maps:FindFirstChild("JjkBossRush")
+                if brMap then for _, o in ipairs(brMap:GetDescendants()) do CheckMob(o) end end
+            end
+        end
         
         if bestTarget then 
             local dist = (bestTarget.HumanoidRootPart.Position - myRoot.Position).Magnitude
@@ -848,6 +863,15 @@ getgenv().NebuBlox_MovementConnection = RunService.RenderStepped:Connect(functio
 
         -- PRIORITY 3: Boss Rush
         if Flags.BossRushDBZ or Flags.BossRushJJK then
+             -- FIRST: Try to target actual boss
+             local t = getgenv().NebuBlox_CurrentTarget
+             if t and t.Parent and t:FindFirstChild("Humanoid") and t.Humanoid.Health > 0 and t:FindFirstChild("HumanoidRootPart") then
+                 root.CFrame = t.HumanoidRootPart.CFrame * CFrame.new(0,0,3)
+                 root.AssemblyLinearVelocity = Vector3.zero
+                 return
+             end
+             
+             -- FALLBACK: Go to spawn
              local tc = nil
              if Flags.BossRushDBZ then local s = GetBossSpawn("Dbz"); if s then tc = s.CFrame * CFrame.new(0,0,2) end
              elseif Flags.BossRushJJK then local s = GetBossSpawn("Jjk"); if s then tc = s.CFrame * CFrame.new(0,0,2) end end
@@ -856,7 +880,7 @@ getgenv().NebuBlox_MovementConnection = RunService.RenderStepped:Connect(functio
              return
         end
 
-        -- PRIORITY 4: Smart Farm
+        -- PRIORITY 4: Smart Farm (Only if not in Trial/Invasion/Boss)
         if Flags.SmartFarm then
             local t = getgenv().NebuBlox_CurrentTarget
             if t and t.Parent and t:FindFirstChild("Humanoid") and t.Humanoid.Health > 0 and t:FindFirstChild("HumanoidRootPart") then
