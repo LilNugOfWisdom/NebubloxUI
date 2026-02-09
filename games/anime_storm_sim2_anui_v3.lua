@@ -338,16 +338,7 @@ task.spawn(function()
 end)
 
 -- About Content (One Clean Paragraph)
-ConfigSection:Input({
---    Title = "Config Name",
---    Placeholder = "Enter config name...",
---    Callback = function(text)
---        ConfigNameInput = text
---    end
--- })
--- Removed Input to avoid duplication
 
--- About Content (One Clean Paragraph)
 local AboutSection = MainTab:Section({ Title = "Nebublox", Icon = "star", Opened = true })
 AboutSection:Paragraph({
     Title = "Welcome to Nebublox",
@@ -361,7 +352,7 @@ Visual Interface: ANUI v3.1
 
 CURRENT PARAMETERS
 
-Patch Date: 02/08/26 (v3.4)
+Patch Date: 02/08/26 (v3.5)
 Target Reality: Anime Storm Simulator 2
 Origin: Roblox Community Group
 
@@ -1433,4 +1424,4 @@ task.spawn(function()
     end)
 end)
 
-ANUI:Notify({Title = "Nebublox", Content = "Loaded v3.4 (Champions Tab)", Icon = "check", Duration = 5})
+ANUI:Notify({Title = "Nebublox", Content = "Loaded v3.5 (Critical Syntax Fix)", Icon = "check", Duration = 5})
