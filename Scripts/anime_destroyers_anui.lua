@@ -39,7 +39,8 @@ local API_URL_BASE = "https://darkmatterv1.onrender.com"
 -- Key Validator Check
 local function ValidateKey(key)
     local success, result = pcall(function()
-        return game:HttpGet(API_URL_BASE .. "/api/verify_key?key=" .. key)
+        local hwid = (gethwid and gethwid() or game:GetService("RbxAnalyticsService"):GetClientId())
+        return game:HttpGet(API_URL_BASE .. "/api/verify_key?key=" .. key .. "&hwid=" .. hwid)
     end)
     if success then
         local data = game:GetService("HttpService"):JSONDecode(result)
@@ -55,16 +56,6 @@ local Window = ANUI:CreateWindow({
     Folder = "NebubloxDestroyers", 
     Icon = "rbxthumb://type=Asset&id=121698194718505&w=150&h=150", 
     IconSize = 44,
-    
-    -- [HARD LOCK] Key System Config
-    KeySystem = {
-        Title = "Nebublox Key System",
-        Subtitle = "Join Discord for Key",
-        Note = "Link copied to clipboard!",
-        SaveKey = true,
-        KeyValidator = ValidateKey, -- Uses our custom API check
-        Link = "https://discord.gg/kgu3WXGg5m", -- Discord Link
-    }
 })
 
 -- 4. Standard Tabs
