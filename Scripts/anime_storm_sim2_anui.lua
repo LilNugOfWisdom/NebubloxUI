@@ -703,6 +703,66 @@ end)
 
 
 -- [TAB 3: TRIAL (TIME TRIAL)]
+
+-- [ROBUST RETURN LOGIC]
+local SavedCFrame = nil
+local BackupMap = {
+    ["Z World"] = CFrame.new(273, 26, -1194),
+    ["Cursed World"] = CFrame.new(-329, 29, -1274), 
+    ["Shinobi World"] = CFrame.new(183, 29, -1355),
+    ["Pirate World"] = CFrame.new(-100, 29, -1355),
+    ["Slayer World"] = CFrame.new(100, 29, -1355) 
+}
+-- If exact coords are unknown, we can default to 0,10,0 or try to find spawn
+-- For now, I'll use placeholders that look "safe" (elevated) based on user's sample
+-- or better, dynamically find spawns if BackupMap is nil.
+
+local function SavePosition()
+    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        SavedCFrame = player.Character.HumanoidRootPart.CFrame
+        ANUI:Notify({Title = "Position Saved", Content = "Location recorded for return.", Icon = "pin", Duration = 2})
+    end
+end
+
+local function ReturnToFarm()
+    if not PerformReturn then return end
+    
+    local char = player.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    
+    if SavedCFrame then
+        -- Plan A: Go back exactly where we were
+        root.CFrame = SavedCFrame
+        ANUI:Notify({Title = "Returning", Content = "Teleported to saved position.", Icon = "rewind", Duration = 3})
+    else
+        -- Plan B: Backup Map Spawn
+        -- Try to find the spawn of the "SelectedReturnMap"
+        local mapName = SelectedReturnMap or "Z World"
+        local internalName = MapDisplayToInternal[mapName] or "Dbz" -- Default
+        
+        -- Try dynamic find first
+        local maps = Workspace:FindFirstChild("Maps")
+        local backupCF = nil
+        
+        if maps then
+             local m = maps:FindFirstChild(internalName) or maps:FindFirstChild(mapName)
+             if m then
+                 local s = m:FindFirstChild("Spawn") or m:FindFirstChild("SpawnPoint")
+                 if s then backupCF = s.CFrame + Vector3.new(0, 5, 0) end
+             end
+        end
+        
+        if not backupCF then
+             -- Fallback to hardcoded safe spots (approximate hub area?)
+             backupCF = CFrame.new(0, 50, 0) 
+        end
+        
+        root.CFrame = backupCF
+        ANUI:Notify({Title = "Returning (Backup)", Content = "Saved position lost! Sent to " .. mapName, Icon = "alert-circle", Duration = 3})
+    end
+end
 -- [PREMIUM TABS LOGIC]
 -- [TAB 5: PROGRESSION] (Free Features)
 MiscTab = Window:Tab({ Title = "Progression", Icon = "chevrons-up" })
@@ -719,10 +779,7 @@ local TrialSection = TrialTab:Section({ Title = "Easy Time Trial", Icon = "play"
 TrialSection:Toggle({ Title = "Auto Join Trial (Smart)", Value = false, Callback = function(s) 
     Flags.AutoTrial = s; 
     Flags.AutoTrialFarm = s
-    if s and (not SavedCFrame or SavedCFrame == nil) and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-        SavedCFrame = player.Character.HumanoidRootPart.CFrame
-        ANUI:Notify({Title = "Position Saved", Content = "Auto-saved current spot for return.", Icon = "pin", Duration = 3})
-    end
+    if s then SavePosition() end
 end })
 -- Return Toggle Renamed for Clarity
 TrialSection:Toggle({ Title = "Return After (Trial/Invasion)", Value = false, Callback = function(s) PerformReturn = s end })
@@ -749,27 +806,7 @@ TrialSection:Button({
 TrialSection:Button({
     Title = "Save Current Position (For Selected Map)",
     Callback = function()
-        local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-        if root then
-            SavedCFrame = root.CFrame
-            local currentMap = "Unknown"
-            local maps = Workspace:FindFirstChild("Maps")
-            if maps then
-                local bestDist = 999999
-                for _, m in ipairs(maps:GetChildren()) do
-                    local spawn = m:FindFirstChild("Spawn") or m:FindFirstChild("SpawnPoint")
-                    if spawn then
-                        local dist = (root.Position - spawn.Position).Magnitude
-                        if dist < bestDist then bestDist = dist; currentMap = m.Name end
-                    end
-                end
-            end
-            getgenv().SavedMapInternalName = currentMap
-            local disp = MapInternalToDisplay[currentMap] or currentMap
-            ANUI:Notify({Title = "Position Saved", Content = "Saved for: " .. disp, Icon = "check", Duration = 3})
-        else
-            ANUI:Notify({Title = "Error", Content = "Character not found!", Icon = "alert-triangle", Duration = 3})
-        end
+        SavePosition()
     end
 })
 
@@ -781,11 +818,20 @@ GamemodesTab = Window:Tab({ Title = "Gamemodes 👑", Icon = "swords" })
 if GamemodesTab and GamemodesTab.Button then GamemodesTab.Button.Visible = false end -- HIDE BY DEFAULT
 
 local BossSection = GamemodesTab:Section({ Title = "World Boss Rushes", Icon = "skull", Opened = true })
-BossSection:Toggle({ Title = "Auto World Boss Rush ( Z World)", Value = false, Callback = function(s) Flags.BossRushDBZ = s end })
-BossSection:Toggle({ Title = "Auto World Boss Rush ( Cursed World)", Value = false, Callback = function(s) Flags.BossRushJJK = s end })
+BossSection:Toggle({ Title = "Auto World Boss Rush ( Z World)", Value = false, Callback = function(s) 
+    Flags.BossRushDBZ = s
+    if s then SavePosition() end
+end })
+BossSection:Toggle({ Title = "Auto World Boss Rush ( Cursed World)", Value = false, Callback = function(s) 
+    Flags.BossRushJJK = s
+    if s then SavePosition() end
+end })
 
 local InvSection = GamemodesTab:Section({ Title = "Invasion", Icon = "shield", Opened = true })
-InvSection:Toggle({ Title = "Auto Invasion (Slayer World)", Value = false, Callback = function(s) Flags.AutoInvasionStart = s end })
+InvSection:Toggle({ Title = "Auto Invasion (Slayer World)", Value = false, Callback = function(s) 
+    Flags.AutoInvasionStart = s 
+    if s then SavePosition() end
+end })
 
 -- [TAB 4: GACHA]
 GachaTab = Window:Tab({ Title = "Gacha 👑", Icon = "gift" })
@@ -1501,98 +1547,55 @@ task.spawn(function()
                 
                 -- Check Trial State
                 local tf = Workspace:FindFirstChild("TrialRoomNpc")
-                -- local InTrialNow = tf and CountLiveEnemies(tf) > 0 -- Moved to top
-
-                -- State Tracking (Moved to top)
-                -- if Flags.AutoInvasionStart then ... end
+                
                 local InInvasionNow = invF and CountLiveEnemies(invF) > 0
                 
                 -- Track Invasion State
                 if Flags.AutoInvasionStart then
                     if InInvasionNow then
-                        InInvasion = true
+                        -- We are IN invasion
                         LastInvasionCheck = now
                     end
                 end
                 
-                -- TRIAL RETURN: If we joined a trial AND it's now empty
-                -- Removed 300s timeout to allow long runs
-                -- ADDED: TrialSuccess check
+                -- TRIAL RETURN
                 if Flags.AutoTrial and (now - LastTrialJoinTime > 10) then
                     if not InTrialArea then
                         if getgenv().TrialSuccess then
-                            -- print("[Nebublox] Trial Success Verified! Returning...")
                             -- Trial ended! Perform return
-                            local internalName = MapDisplayToInternal[SelectedReturnMap] or SelectedReturnMap
-                            
-                            -- Check for saved position match
-                            if SavedCFrame and getgenv().SavedMapInternalName then
-                                local savedMap = getgenv().SavedMapInternalName:lower()
-                                if internalName:lower() == savedMap then
-                                    root.CFrame = SavedCFrame
-                                    ANUI:Notify({Title = "Trial Complete!", Content = "Returned to saved spot in " .. SelectedReturnMap, Icon = "check", Duration = 3})
-                                    LastTrialJoinTime = now + 999999
-                                    getgenv().TrialSuccess = false -- Reset
-                                    return
-                                end
-                            end
-                            
-                            -- Use World Remote for spawn teleport
-                            local WorldRemote = Remotes:FindFirstChild("World")
-                            local teleported = false
-                            pcall(function()
-                                if WorldRemote then
-                                    -- Try multiple teleport call formats
-                                    WorldRemote:FireServer("Teleport", internalName)
-                                    WorldRemote:FireServer(internalName, "Teleport")
-                                    WorldRemote:FireServer("TeleportToWorld", internalName)
-                                    ANUI:Notify({Title = "Trial Complete!", Content = "Returned to: " .. SelectedReturnMap, Icon = "map-pin", Duration = 3})
-                                    teleported = true
-                                end
-                            end)
-                            
-                            if not teleported then
-                                -- Fallback: Try Maps folder teleport
-                                local maps = Workspace:FindFirstChild("Maps")
-                                local targetMap = maps and maps:FindFirstChild(internalName)
-                                local spawn = targetMap and (targetMap:FindFirstChild("Spawn") or targetMap:FindFirstChild("SpawnPoint"))
-                                if spawn then
-                                    root.CFrame = spawn.CFrame + Vector3.new(0, 5, 0)
-                                    ANUI:Notify({Title = "Trial Complete!", Content = "Teleported to: " .. SelectedReturnMap, Icon = "map-pin", Duration = 3})
-                                end
-                            end
+                            ReturnToFarm()
                             
                             LastTrialJoinTime = now + 999999
                             getgenv().TrialSuccess = false -- Reset
-                        else
-                             -- print("[Nebublox] Trial Ended but Success NOT detected. Staying in lobby.")
                         end
                     end
                 end
                 
                 -- INVASION RETURN: If we were in invasion AND it's now empty for 5s
-                if Flags.AutoInvasionStart and InInvasion and not InInvasionNow and (now - LastInvasionCheck > 5) then
-                    InInvasion = false -- Reset
-                    local internalName = MapDisplayToInternal[SelectedReturnMap] or SelectedReturnMap
-                    
-                    local WorldRemote = Remotes:FindFirstChild("World")
-                    if WorldRemote then
-                        -- Try multiple teleport call formats
-                        pcall(function() WorldRemote:FireServer("Teleport", internalName) end)
-                        pcall(function() WorldRemote:FireServer(internalName, "Teleport") end)
-                        pcall(function() WorldRemote:FireServer("TeleportToWorld", internalName) end)
-                        pcall(function() WorldRemote:FireServer(internalName) end)
-                        ANUI:Notify({Title = "Invasion Complete!", Content = "Returned to: " .. SelectedReturnMap, Icon = "map-pin", Duration = 3})
-                    else
-                        -- Fallback: Direct teleport to map spawn
-                        local maps = Workspace:FindFirstChild("Maps")
-                        local targetMap = maps and maps:FindFirstChild(internalName)
-                        local spawn = targetMap and (targetMap:FindFirstChild("Spawn") or targetMap:FindFirstChild("SpawnPoint"))
-                        if spawn then
-                            root.CFrame = spawn.CFrame + Vector3.new(0, 5, 0)
-                            ANUI:Notify({Title = "Invasion Complete!", Content = "Teleported to: " .. SelectedReturnMap, Icon = "map-pin", Duration = 3})
-                        end
-                    end
+                if Flags.AutoInvasionStart and not InInvasionNow and (now - LastInvasionCheck > 5) then
+                     -- Check if we legitimately just finished one
+                     -- (We assume we did if we are checking this)
+                     -- Reset invasion timer/check
+                     LastInvasionCheck = now + 99999
+                     ReturnToFarm()
+                end
+
+                -- BOSS RUSH RETURN 
+                -- We track if we were in BossRush last check, and now we are not (and map is gone or empty)
+                if Flags.BossRushDBZ or Flags.BossRushJJK then
+                     local Mode = Flags.BossRushDBZ and "DbzBossRush" or "JjkBossRush"
+                     local maps = Workspace:FindFirstChild("Maps")
+                     local inBRMap = maps and maps:FindFirstChild(Mode)
+                     
+                     -- If we were in BR, and now we are NOT in BR map (or it's deleted), we returned
+                     -- Using a session flag to track "WasInBossRush"
+                     if inBRMap then
+                         getgenv().WasInBossRush = true
+                         getgenv().LastBossRushTime = now
+                     elseif getgenv().WasInBossRush and (now - (getgenv().LastBossRushTime or 0) > 5) then
+                         getgenv().WasInBossRush = false
+                         ReturnToFarm()
+                     end
                 end
             end
         end)
