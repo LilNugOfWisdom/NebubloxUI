@@ -11,41 +11,9 @@ local function SafeDisconnect(conn)
     if conn then pcall(function() conn:Disconnect() end) end
 end
 
--- [SECURITY BYPASS]
-local function Bypass()
-    pcall(function()
-        local ReplicatedStorage = game:GetService("ReplicatedStorage")
-        local Remotes = ReplicatedStorage:FindFirstChild("Remotes")
-        if not Remotes then return end
-        
-        local function DisableRemote(name)
-            for _, v in ipairs(Remotes:GetDescendants()) do
-                if v.Name == name and (v:IsA("RemoteEvent") or v:IsA("RemoteFunction")) then
-                    -- Disable Client Listeners
-                    if getconnections then
-                        for _, c in pairs(getconnections(v.OnClientEvent)) do c:Disable() end
-                        for _, c in pairs(getconnections(v.OnServerEvent)) do c:Disable() end 
-                    end
-                    v.Name = v.Name .. "_Disabled"
-                end
-            end
-        end
-        
-        -- Disable common anti-cheat / detection remotes
-        DisableRemote("Error")
-        DisableRemote("Kick")
-        DisableRemote("Ban")
-        DisableRemote("Detect")
-        DisableRemote("Log")
-        DisableRemote("Report")
-        
-        -- Disable specific game remotes that might cause issues
-        -- (BossRush and Trial prompts are handled in loop, but we can do it here too)
-        
-        print("/// NEBUBLOX SECURITY BYPASS APPLIED ///")
-    end)
-end
-task.spawn(Bypass)
+-- [SECURITY BYPASS REMOVED]
+-- User reported this block causes "incomplete function call" syntax errors.
+-- Logic removed to restore functionality.
 
 if getgenv().NebuBlox_Loaded then
     getgenv().NebuBlox_Running = false
