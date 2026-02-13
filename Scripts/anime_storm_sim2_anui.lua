@@ -594,7 +594,7 @@ local function CreateEmbeddedSelector(parent)
     Header.Text = "  Multi-Target Selector"
     Header.TextColor3 = Color3.new(0,0,0) -- Black text
     Header.TextXAlignment = Enum.TextXAlignment.Left
-    Header.Font = Enum.Font.GothamBold
+    Header.Font = Enum.Font.SourceSansSemibold
     Header.TextSize = 14
     Header.Parent = MainFrame
 
@@ -605,7 +605,7 @@ local function CreateEmbeddedSelector(parent)
     StatusLabel.Text = "Status: Attack All / Nearest"
     StatusLabel.TextColor3 = Color3.new(0,0,0) -- Black text
     StatusLabel.TextSize = 11
-    StatusLabel.Font = Enum.Font.Gotham
+    StatusLabel.Font = Enum.Font.SourceSans
     StatusLabel.Parent = MainFrame
 
     local ScrollFrame = Instance.new("ScrollingFrame")
@@ -670,7 +670,7 @@ local function CreateEmbeddedSelector(parent)
             btn.BackgroundTransparency = 0.8
             btn.Text = name
             btn.TextColor3 = Color3.new(0, 0, 0) -- Black text
-            btn.Font = Enum.Font.Gotham
+            btn.Font = Enum.Font.SourceSans
             btn.TextSize = 12
             btn.Parent = ScrollFrame
             Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
