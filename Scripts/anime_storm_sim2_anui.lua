@@ -74,6 +74,20 @@ local function LoadScript(url)
     return result
 end
 
+-- [HTTP HELPER] Robust Request Function
+local function MakeRequest(url)
+    local req = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
+    if req then
+        local response = req({Url = url, Method = "GET"})
+        if response.Success or response.StatusCode == 200 then
+            return response.Body
+        end
+    end
+    -- Fallback to HttpGet (Cache-busting included)
+    local freshUrl = url .. (url:find("?") and "&" or "?") .. "t=" .. tick()
+    return game:HttpGet(freshUrl)
+end
+
 -- [PATCH] Use Custom Patched Library
 local ANUI = loadstring(LoadScript("https://raw.githubusercontent.com/LilNugOfWisdom/NebubloxUI/main/Scripts/anui_patched.lua"))()
 
@@ -420,9 +434,10 @@ InputGroup:Button({
             local encodedHwid = HttpService:UrlEncode(hwid)
             
             local url = string.format("%s/verify_key?key=%s&hwid=%s", API_URL_BASE, encodedKey, encodedHwid)
-            print("[Nebublox] Requesting:", url) -- Debug print
-            local response = HttpService:GetAsync(url)
-            return HttpService:JSONDecode(response)
+            print("[Nebublox] Requesting:", url)
+            
+            local responseBody = MakeRequest(url)
+            return HttpService:JSONDecode(responseBody)
         end)
 
         -- 4. Handle Response
