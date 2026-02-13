@@ -78,9 +78,17 @@ end
 local function MakeRequest(url)
     local req = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
     if req then
-        local response = req({Url = url, Method = "GET"})
+        local response = req({
+            Url = url, 
+            Method = "GET",
+            Headers = {
+                ["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+            }
+        })
         if response.Success or response.StatusCode == 200 then
             return response.Body
+        else
+            warn("[Nebublox] Request failed with Status:", response.StatusCode)
         end
     end
     -- Fallback to HttpGet (Cache-busting included)
