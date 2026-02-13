@@ -260,7 +260,7 @@ function KeySystem:ShowUI(onSuccess)
     
     local KeyInput = ""
     
-    Section:Textbox({
+    Section:TextBox({
         Title = "License Key",
         Default = "",
         Placeholder = "Paste Key (BLOX-...)",
