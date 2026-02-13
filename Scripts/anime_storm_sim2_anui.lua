@@ -407,10 +407,16 @@ InputGroup:Button({
         ANUI:Notify({Title = "Verifying...", Content = "Checking key...", Icon = "loader", Duration = 2})
 
         -- 3. API Request
+        -- 3. API Request
         local success, result = pcall(function()
-            local url = API_URL_BASE .. "/api/verify_key?key=" .. UserKeyInput .. "&hwid=" .. game:GetService("RbxAnalyticsService"):GetClientId()
-            local response = game:GetService("HttpService"):GetAsync(url)
-            return game:GetService("HttpService"):JSONDecode(response)
+            local HttpService = game:GetService("HttpService")
+            local hwid = (gethwid and gethwid() or game:GetService("RbxAnalyticsService"):GetClientId())
+            local encodedKey = HttpService:UrlEncode(UserKeyInput)
+            
+            local url = API_URL_BASE .. "/api/verify_key?key=" .. encodedKey .. "&hwid=" .. hwid
+            
+            local response = HttpService:GetAsync(url)
+            return HttpService:JSONDecode(response)
         end)
 
         -- 4. Handle Response
@@ -432,7 +438,10 @@ InputGroup:Button({
         else
             -- [API ERROR]
             warn("API Error:", result)
-            ANUI:Notify({Title = "Connection Error", Content = "Failed to reach server.", Icon = "wifi-off", Duration = 3})
+            -- Show the actual error if it's short, otherwise generic
+            local errMsg = tostring(result)
+            if #errMsg > 20 then errMsg = "Failed to reach server." end
+            ANUI:Notify({Title = "Connection Error", Content = errMsg, Icon = "wifi-off", Duration = 3})
         end
     end
 })
