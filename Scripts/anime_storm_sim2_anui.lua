@@ -547,18 +547,12 @@ local function CreateEmbeddedSelector(parent)
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "EnemySelectorFrame"
     MainFrame.Size = UDim2.new(1, -10, 0, 250)
-    MainFrame.BackgroundColor3 = Color3.new(1, 1, 1) -- White for gradient
+    MainFrame.BackgroundColor3 = Color3.new(0, 0, 0) -- Pitch Black
     MainFrame.BorderSizePixel = 0
     MainFrame.Parent = parent
     
-    -- [GRADIENT]
-    local g = Instance.new("UIGradient")
-    g.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 0, 139)), -- Dark Blue
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 20, 147)) -- Deep Pink
-    })
-    g.Rotation = 45
-    g.Parent = MainFrame
+    -- [GRADIENT REMOVED]
+    -- local g = Instance.new("UIGradient") ...
     
     local UICorner = Instance.new("UICorner"); UICorner.CornerRadius = UDim.new(0, 8); UICorner.Parent = MainFrame
     
