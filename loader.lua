@@ -44,7 +44,7 @@ local PlaceId = game.PlaceId
 local UniverseId = game.GameId
 
 -- [3] LIBRARY LOADER
-local ANUI_URL = "https://raw.githubusercontent.com/ANHub-Script/ANUI/refs/heads/main/dist/main.lua"
+local ANUI_URL = "https://raw.githubusercontent.com/LilNugOfWisdom/NebubloxUI/main/Scripts/anui_patched.lua"
 local success, libraryCode = pcall(function() return game:HttpGet(ANUI_URL) end)
 
 if not success or not libraryCode then
@@ -201,7 +201,7 @@ else
     SocialSection:Button({
         Title = "Join Discord Server",
         Callback = function()
-            setclipboard("https://discord.gg/T2vw3QuJ9K")
+            setclipboard("https://discord.gg/nebublox")
             SafeNotify({Title = "Discord", Content = "Invite link copied!", Icon = "check", Duration = 3})
         end
     })
