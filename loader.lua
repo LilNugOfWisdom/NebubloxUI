@@ -90,12 +90,6 @@ local GameIds = {
     [133898125416947] = { 
         Name = "Anime Creatures", 
         Url = "https://raw.githubusercontent.com/LilNugOfWisdom/NebubloxUI/main/Scripts/Anime_Creatures_Anui.lua" 
-    },
-
-    -- Anime Capture (I kept this one just in case you add it later)
-    [15498808459] = { 
-        Name = "Anime Capture", 
-        Url = "https://raw.githubusercontent.com/LilNugOfWisdom/NebubloxUI/main/Scripts/anime_capture_anui.lua" 
     }
 }
 
