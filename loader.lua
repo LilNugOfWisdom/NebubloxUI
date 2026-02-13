@@ -1,49 +1,41 @@
--- // UNIVERSAL HUB LOADER //
--- // Supports: Anime Storm 2, Anime Destroyers, Anime Creatures, Anime Capture //
+-- // NEBUBLOX UNIVERSAL HUB //
+-- // Final Build for LilNugOfWisdom //
 
--- [1] SCRIPT KILLER / RELOAD LOGIC
+-- [0] COMPATIBILITY PATCH
 local getgenv = getgenv or function() return _G end
-if getgenv().Nebublox_Window then
-    pcall(function() getgenv().Nebublox_Window:Destroy() end)
-    getgenv().Nebublox_Window = nil
+
+-- [1] PREVENT MULTIPLE EXECUTIONS
+if getgenv().NebubloxLoaded then 
+    pcall(function()
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Nebublox",
+            Text = "Hub is already running!",
+            Duration = 3
+        })
+    end)
+    return 
 end
 
-if getgenv().UniversalHubLoaded then
-    getgenv().UniversalHubLoaded = false
-end
-
-local CoreGui = game:GetService("CoreGui")
+-- [2] SERVICES & VARS
 local Players = game:GetService("Players")
-local HttpService = game:GetService("HttpService")
+local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 local PlaceId = game.PlaceId
 local UniverseId = game.GameId
 
-local function CleanupGui(name)
-    if CoreGui:FindFirstChild(name) then CoreGui[name]:Destroy() end
-    if LocalPlayer and LocalPlayer:FindFirstChild("PlayerGui") and LocalPlayer.PlayerGui:FindFirstChild(name) then
-        LocalPlayer.PlayerGui[name]:Destroy()
-    end
-end
-
-CleanupGui("NebubloxAuth")
-CleanupGui("UniversalHub")
-
--- [2] LIBRARY LOADER
-local ANUI_URL = "https://raw.githubusercontent.com/LilNugOfWisdom/NebubloxUI/main/Library/anui_source.lua"
+-- [3] LIBRARY LOADER
+local ANUI_URL = "https://raw.githubusercontent.com/ANHub-Script/ANUI/refs/heads/main/dist/main.lua"
 local success, libraryCode = pcall(function() return game:HttpGet(ANUI_URL) end)
 
-if not success or not libraryCode or libraryCode:find("404: Not Found") then
+if not success or not libraryCode then
+    warn("[Nebublox] Failed to load UI Library.")
     return
 end
 
-local libFunc = loadstring(libraryCode)
-if not libFunc then return end
+local ANUI = loadstring(libraryCode)()
+getgenv().NebubloxLoaded = true 
 
-local ANUI = libFunc()
-getgenv().UniversalHubLoaded = true
-
--- [3] HELPER FUNCTIONS
+-- [4] HELPER FUNCTIONS
 local function SafeNotify(data)
     task.defer(function() 
         pcall(function() ANUI:Notify(data) end) 
@@ -51,184 +43,163 @@ local function SafeNotify(data)
 end
 
 local function LoadScript(url)
-    SafeNotify({Title = "Fetching...", Content = "Downloading script data...", Icon = "download", Duration = 2})
+    SafeNotify({Title = "Nebublox Cloud", Content = "Fetching script data...", Icon = "cloud-download", Duration = 2})
     
     local function Fetch(targetUrl)
-        local s, content = pcall(function() return game:HttpGet(targetUrl) end)
-        if s and content and not content:find("404: Not Found") and #content > 100 then
-            return content
-        end
+        local s, c = pcall(function() return game:HttpGet(targetUrl) end)
+        if s and c and not c:find("404: Not Found") and #c > 50 then return c end
         return nil
     end
 
     local content = Fetch(url)
-    if not content and url:find("/games/") then
-        content = Fetch(url:gsub("/games/", "/"))
-    end
     
     if content then
-        local func = loadstring(content)
+        local func, err = loadstring(content)
         if func then
             task.spawn(function()
-                local runSuccess = pcall(func)
+                local runSuccess, runError = pcall(func)
                 if not runSuccess then
-                    SafeNotify({Title = "Runtime Error", Content = "Script crashed.", Icon = "alert-triangle", Duration = 5})
+                    warn("[Nebublox] Script Error:", runError)
+                    SafeNotify({Title = "Execution Failed", Content = "Check Console (F9)", Icon = "alert-triangle", Duration = 4})
                 end
             end)
         else
-            SafeNotify({Title = "Syntax Error", Content = "Script contains code errors.", Icon = "alert-octagon", Duration = 5})
+            SafeNotify({Title = "Syntax Error", Content = "The script is broken.", Icon = "x-octagon", Duration = 4})
         end
     else
-        SafeNotify({Title = "Connection Error", Content = "Failed to reach GitHub.", Icon = "wifi-off", Duration = 7})
+        SafeNotify({Title = "Connection Failed", Content = "Could not reach GitHub (404).", Icon = "wifi-off", Duration = 4})
     end
 end
 
--- [4] GAME CONFIGURATION
+-- [5] GAME CONFIGURATION
+-- These links now match the exact filenames you provided
 local GameIds = {
-    [98199457453897] = { Name = "[UPD 1] Anime Storm 2", Url = "https://raw.githubusercontent.com/LilNugOfWisdom/NebubloxUI/main/Scripts/anime_storm_sim2_anui.lua" },
-    [133898125416947] = { Name = "[Release🔥] Anime Creatures💥", Url = "https://raw.githubusercontent.com/LilNugOfWisdom/NebubloxUI/main/Scripts/Anime_Creatures_Anui.lua" },
-    [136063393518705] = { Name = "[Release] Anime Destroyers", Url = "https://raw.githubusercontent.com/LilNugOfWisdom/NebubloxUI/main/Scripts/anime_destroyers_anui.lua" },
-    [15498808459] = { Name = "Anime Capture", Url = "https://raw.githubusercontent.com/LilNugOfWisdom/NebubloxUI/main/Scripts/anime_capture_anui.lua" }
+    -- Anime Storm 2
+    [98199457453897] = { 
+        Name = "Anime Storm 2", 
+        Url = "https://raw.githubusercontent.com/LilNugOfWisdom/NebubloxUI/main/anime_storm_sim2_anui.lua" 
+    },
+    
+    -- Anime Destroyers
+    [136063393518705] = { 
+        Name = "Anime Destroyers", 
+        Url = "https://raw.githubusercontent.com/LilNugOfWisdom/NebubloxUI/main/anime_destroyers_anui.lua" 
+    },
+    
+    -- Anime Creatures (Note the Capital Letters in filename)
+    [133898125416947] = { 
+        Name = "Anime Creatures", 
+        Url = "https://raw.githubusercontent.com/LilNugOfWisdom/NebubloxUI/main/Anime_Creatures_Anui.lua" 
+    },
+
+    -- Anime Capture (I kept this one just in case you add it later)
+    [15498808459] = { 
+        Name = "Anime Capture", 
+        Url = "https://raw.githubusercontent.com/LilNugOfWisdom/NebubloxUI/main/anime_capture_anui.lua" 
+    }
 }
 
--- [5] KEY SYSTEM
-local KeySystem = {}
-KeySystem.__index = KeySystem
+-- [6] AUTO-DETECTION LOGIC
+local DetectedGame = GameIds[PlaceId] or GameIds[UniverseId]
 
-local API_URL_KEY = "https://darkmatterv1.onrender.com/api/verify_key"
-local SETTINGS_FILE_KEY = "nebublox_key.data"
-local DISCORD_INVITE_KEY = "https://discord.gg/T2vw3QuJ9K"
-
-function KeySystem.new()
-    local self = setmetatable({}, KeySystem)
-    self.Key = ""
-    self.Tier = "Free"
-    self.IsVerified = false
-    return self
-end
-
-function KeySystem:Validate(inputKey)
-    local keyToCheck = inputKey or (isfile(SETTINGS_FILE_KEY) and readfile(SETTINGS_FILE_KEY))
-    if not keyToCheck or keyToCheck == "" then return false, "No key provided" end
-    
-    keyToCheck = keyToCheck:gsub("%s+", "")
-    local httpRequest = (syn and syn.request) or (http and http.request) or http_request or request
-    
-    if not httpRequest then return false, "Executor unsupported" end
-
-    local urls = {"http://127.0.0.1:10000/api/verify_key", API_URL_KEY}
-    for _, url in ipairs(urls) do
-        local success, response = pcall(function()
-            return httpRequest({
-                Url = url .. "?key=" .. keyToCheck .. "&hwid=" .. (gethwid and gethwid() or game:GetService("RbxAnalyticsService"):GetClientId()),
-                Method = "GET"
-            })
-        end)
-
-        if success and response.StatusCode == 200 then
-            local data = HttpService:JSONDecode(response.Body)
-            if data.valid then
-                self.IsVerified = true
-                self.Tier = data.tier
-                writefile(SETTINGS_FILE_KEY, keyToCheck)
-                return true, "Success"
-            end
-        end
-    end
-    return false, "Invalid Key or Connection Failed"
-end
-
-function KeySystem:ShowUI(onSuccess)
-    if self:Validate() then
-        SafeNotify({Title = "Welcome Back", Content = "Logged in as " .. tostring(self.Tier) .. " User", Icon = "check", Duration = 5})
-        onSuccess()
-        return
-    end
-
+if DetectedGame then
+    SafeNotify({Title = "Nebublox", Content = "Injecting: " .. DetectedGame.Name, Icon = "zap", Duration = 3})
+    task.wait(0.5)
+    LoadScript(DetectedGame.Url)
+else
+    -- [7] MANUAL SELECTION GUI
     local Window = ANUI:CreateWindow({
-        Title = "Nebublox Auth",
-        Author = "v1.0",
-        Folder = "NebubloxAuth",
-        Icon = "rbxassetid://121698194718505", 
+        Title = "Nebublox Hub",
+        Author = "Universal",
+        Folder = "Nebublox",
+        Icon = "rbxthumb://type=Asset&id=132367447015620&w=150&h=150", 
         IconSize = 44,
         Theme = "Dark",
-        SideBarWidth = 0,
+        Transparent = false,
+        SideBarWidth = 200,
+        HasOutline = true,
     })
-
-    getgenv().Nebublox_Window = Window
-    local MainTab = Window:Tab({ Title = "Key System", Icon = "key" })
-    local Section = MainTab:Section({ Title = "Authentication", Opened = true })
     
-    local KeyInput = ""
-    Section:TextBox({ Title = "License Key", Placeholder = "Paste Key (BLOX-...)", Callback = function(t) KeyInput = t end })
+    -- >> TAB: HOME
+    local MainTab = Window:Tab({ Title = "Home", Icon = "home" })
     
-    Section:Button({
-        Title = "Verify Key",
-        Callback = function()
-            if KeyInput == "" then return end
-            local valid, msg = self:Validate(KeyInput)
-            if valid then
-                Window:Destroy()
-                onSuccess()
-            else
-                SafeNotify({Title = "Denied", Content = msg, Icon = "x", Duration = 4})
+    -- Banner Injection
+    local BannerSection = MainTab:Section({ Title = "", Icon = "", Opened = true })
+    BannerSection:Paragraph({ Title = "Loading Banner...", Content = "" })
+    
+    task.defer(function()
+        task.wait(0.8)
+        local imgId = "rbxthumb://type=Asset&id=132367447015620&w=768&h=432"
+        
+        local function InjectBanner()
+            local targets = {LocalPlayer:FindFirstChild("PlayerGui"), CoreGui}
+            for _, root in ipairs(targets) do
+                if not root then continue end
+                for _, obj in ipairs(root:GetDescendants()) do
+                    if obj:IsA("TextLabel") and obj.Text == "Loading Banner..." then
+                        local p = obj.Parent
+                        if p and p.Parent then
+                            local f = Instance.new("ImageLabel")
+                            f.Name = "NebubloxBanner"
+                            f.Size = UDim2.new(1, 0, 0, 150)
+                            f.Position = p.Position
+                            f.BackgroundTransparency = 1
+                            f.Image = imgId
+                            f.ScaleType = Enum.ScaleType.Crop
+                            f.Parent = p.Parent
+                            pcall(function() p:Destroy() end)
+                            return true
+                        end
+                    end
+                end
             end
         end
+        pcall(InjectBanner)
+    end)
+
+    local InfoSection = MainTab:Section({ Title = "Welcome", Icon = "info", Opened = true })
+    
+    InfoSection:Paragraph({
+        Title = "About Nebublox",
+        Content = "Welcome to Nebublox! We are a dedicated team of developers redefining the Roblox experience.\n\nWe build powerful, optimized, and universal scripts. Select a game below."
     })
     
-    Section:Button({
-        Title = "Copy Discord Link",
+    -- >> TAB: GAMES
+    local GamesTab = Window:Tab({ Title = "Games", Icon = "gamepad-2" })
+    
+    local UtilitySection = GamesTab:Section({ Title = "Tools", Icon = "tool", Opened = false })
+    UtilitySection:Button({
+        Title = "Copy Game ID",
+        Callback = function() 
+            setclipboard(tostring(game.GameId)) 
+            SafeNotify({Title = "Copied", Content = "Universe ID copied!", Icon = "check", Duration = 2})
+        end
+    })
+
+    local GamesSection = GamesTab:Section({ Title = "Supported Games", Icon = "list", Opened = true })
+    
+    local sortedGames = {}
+    for id, data in pairs(GameIds) do table.insert(sortedGames, data) end
+    table.sort(sortedGames, function(a,b) return a.Name < b.Name end)
+    
+    for _, data in ipairs(sortedGames) do
+        GamesSection:Button({
+            Title = data.Name,
+            Callback = function()
+                SafeNotify({Title = "Nebublox", Content = "Loading " .. data.Name, Icon = "download", Duration = 2})
+                task.spawn(function() pcall(function() Window:Destroy() end) end)
+                LoadScript(data.Url)
+            end
+        })
+    end
+    
+    local SocialSection = MainTab:Section({ Title = "Community", Icon = "users", Opened = true })
+    
+    SocialSection:Button({
+        Title = "Join Discord Server",
         Callback = function()
-            setclipboard(DISCORD_INVITE_KEY)
-            SafeNotify({Title = "Copied", Content = "Link copied!", Icon = "link", Duration = 2})
+            setclipboard("https://discord.gg/T2vw3QuJ9K")
+            SafeNotify({Title = "Discord", Content = "Invite link copied!", Icon = "check", Duration = 3})
         end
     })
 end
-
--- [6] MAIN HUB LOGIC
-local function StartHub()
-    local DetectedGame = GameIds[PlaceId] or GameIds[UniverseId]
-
-    if DetectedGame then
-        SafeNotify({Title = "Universal Hub", Content = "Detected: " .. DetectedGame.Name, Icon = "check", Duration = 3})
-        task.wait(0.5)
-        LoadScript(DetectedGame.Url)
-    else
-        local Window = ANUI:CreateWindow({
-            Title = "Universal Hub",
-            Author = "by He Who Remains",
-            Folder = "UniversalHub",
-            Icon = "rbxthumb://type=Asset&id=132367447015620&w=150&h=150", 
-            IconSize = 44,
-            Theme = "Dark",
-            SideBarWidth = 200,
-            HasOutline = true,
-        })
-
-        getgenv().Nebublox_Window = Window
-        local MainTab = Window:Tab({ Title = "About", Icon = "info" })
-        local BannerSection = MainTab:Section({ Title = "", Opened = true })
-        BannerSection:Paragraph({ Title = "Universal Hub", Content = "Select a game from the list." })
-        
-        local GamesTab = Window:Tab({ Title = "Games List", Icon = "gamepad-2" })
-        local GamesSection = GamesTab:Section({ Title = "Available Scripts", Opened = true })
-        
-        local sortedGames = {}
-        for id, data in pairs(GameIds) do table.insert(sortedGames, data) end
-        table.sort(sortedGames, function(a,b) return a.Name < b.Name end)
-        
-        for _, data in ipairs(sortedGames) do
-            GamesSection:Button({
-                Title = data.Name,
-                Callback = function()
-                    pcall(function() Window:Destroy() end)
-                    LoadScript(data.Url)
-                end
-            })
-        end
-    end
-end
-
--- [7] INITIATE
-local Auth = KeySystem.new()
-Auth:ShowUI(StartHub)
