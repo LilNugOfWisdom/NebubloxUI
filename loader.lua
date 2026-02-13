@@ -42,7 +42,7 @@ local PlaceId = game.PlaceId
 local UniverseId = game.GameId
 
 -- [3] LIBRARY LOADER
-local ANUI_URL = "https://raw.githubusercontent.com/gamr46/NebubloxUI/main/Library/anui_source.lua"
+local ANUI_URL = "https://raw.githubusercontent.com/LilNugOfWisdom/NebubloxUIUI/main/Library/anui_source.lua"
 local success, libraryCode = pcall(function() return game:HttpGet(ANUI_URL) end)
 
 if not success or not libraryCode or libraryCode:find("404: Not Found") or libraryCode:find("<!DOCTYPE html>") then
@@ -112,10 +112,10 @@ end
 -- [5] GAME CONFIGURATION
 -- format: [ID] = { Name = "...", Url = "..." }
 local GameIds = {
-    [98199457453897] = { Name = "[UPD 1] Anime Storm 2", Url = "https://raw.githubusercontent.com/gamr46/NebubloxUI/main/Scripts/anime_storm_sim2_anui.lua" },
-    [133898125416947] = { Name = "[Release≡ƒöÑ] Anime Creatures≡ƒÆÑ", Url = "https://raw.githubusercontent.com/gamr46/NebubloxUI/main/Scripts/Anime_Creatures_Anui.lua" },
-    [136063393518705] = { Name = "[Release] Anime Destroyers", Url = "https://raw.githubusercontent.com/gamr46/NebubloxUI/main/Scripts/anime_destroyers_anui.lua" },
-    [15498808459] = { Name = "Anime Capture", Url = "https://raw.githubusercontent.com/gamr46/NebubloxUI/main/Scripts/anime_capture_anui.lua" }
+    [98199457453897] = { Name = "[UPD 1] Anime Storm 2", Url = "https://raw.githubusercontent.com/LilNugOfWisdom/NebubloxUIUI/main/Scripts/anime_storm_sim2_anui.lua" },
+    [133898125416947] = { Name = "[Release≡ƒöÑ] Anime Creatures≡ƒÆÑ", Url = "https://raw.githubusercontent.com/LilNugOfWisdom/NebubloxUIUI/main/Scripts/Anime_Creatures_Anui.lua" },
+    [136063393518705] = { Name = "[Release] Anime Destroyers", Url = "https://raw.githubusercontent.com/LilNugOfWisdom/NebubloxUIUI/main/Scripts/anime_destroyers_anui.lua" },
+    [15498808459] = { Name = "Anime Capture", Url = "https://raw.githubusercontent.com/LilNugOfWisdom/NebubloxUIUI/main/Scripts/anime_capture_anui.lua" }
 }
 
 -- [6] KEY SYSTEM INTEGRATION
