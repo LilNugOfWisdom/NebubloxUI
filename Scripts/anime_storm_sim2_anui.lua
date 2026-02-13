@@ -1190,7 +1190,7 @@ end)
 task.spawn(function()
     while true do
         if getgenv().NebuBlox_SessionID ~= SessionID then break end
-        local dt = task.wait(1) -- [LAG FIX] Slowed down to 1.0
+        local dt = task.wait(2) -- [LAG FIX] Slowed down to 2.0
         if Flags.SmartFarm or Flags.AutoTrialFarm or Flags.BossRushDBZ or Flags.BossRushJJK then
              pcall(function()
                 VirtualUser:CaptureController()
