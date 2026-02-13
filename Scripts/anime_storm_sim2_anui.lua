@@ -413,10 +413,16 @@ InputGroup:Button({
 
         -- 3. API Request
         local success, result = pcall(function()
+            local HttpService = game:GetService("HttpService")
             local hwid = game:GetService("RbxAnalyticsService"):GetClientId()
-            local url = string.format("%s/verify_key?key=%s&hwid=%s", API_URL_BASE, UserKeyInput, hwid)
-            local response = game:GetService("HttpService"):GetAsync(url)
-            return game:GetService("HttpService"):JSONDecode(response)
+            -- Encode inputs to prevent URL errors
+            local encodedKey = HttpService:UrlEncode(UserKeyInput)
+            local encodedHwid = HttpService:UrlEncode(hwid)
+            
+            local url = string.format("%s/verify_key?key=%s&hwid=%s", API_URL_BASE, encodedKey, encodedHwid)
+            print("[Nebublox] Requesting:", url) -- Debug print
+            local response = HttpService:GetAsync(url)
+            return HttpService:JSONDecode(response)
         end)
 
         -- 4. Handle Response
@@ -438,7 +444,7 @@ InputGroup:Button({
         else
             -- [API ERROR]
             warn("API Error:", result)
-            ANUI:Notify({Title = "Connection Error", Content = "Failed to reach server.", Icon = "wifi-off", Duration = 3})
+            ANUI:Notify({Title = "Connection Error", Content = "Error: " .. tostring(result), Icon = "wifi-off", Duration = 5})
         end
     end
 })
