@@ -558,7 +558,7 @@ local function CreateEmbeddedSelector(parent)
     
     local Header = Instance.new("TextLabel")
     Header.Size = UDim2.new(1, 0, 0, 35)
-    Header.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+    Header.BackgroundColor3 = Color3.new(0, 0, 0)
     Header.Text = "  Multi-Target Selector"
     Header.TextColor3 = Color3.fromRGB(255, 255, 255)
     Header.TextXAlignment = Enum.TextXAlignment.Left
@@ -634,7 +634,7 @@ local function CreateEmbeddedSelector(parent)
             local btn = Instance.new("TextButton")
             btn.Name = name
             btn.Size = UDim2.new(1, -4, 0, 25)
-            btn.BackgroundColor3 = SelectedEnemies[name] and Color3.fromRGB(45, 140, 220) or Color3.fromRGB(45, 45, 50)
+            btn.BackgroundColor3 = SelectedEnemies[name] and Color3.fromRGB(45, 140, 220) or Color3.new(0, 0, 0)
             btn.Text = name
             btn.TextColor3 = Color3.fromRGB(255, 255, 255)
             btn.Font = Enum.Font.Gotham
@@ -645,7 +645,7 @@ local function CreateEmbeddedSelector(parent)
             btn.MouseButton1Click:Connect(function()
                 if SelectedEnemies[name] then
                     SelectedEnemies[name] = nil
-                    btn.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+                    btn.BackgroundColor3 = Color3.new(0, 0, 0)
                 else
                     SelectedEnemies[name] = true
                     btn.BackgroundColor3 = Color3.fromRGB(45, 140, 220)
@@ -1190,7 +1190,7 @@ end)
 task.spawn(function()
     while true do
         if getgenv().NebuBlox_SessionID ~= SessionID then break end
-        local dt = task.wait(0.35) -- [LAG FIX] Slowed down from 0.1 to 0.35
+        local dt = task.wait(0.6) -- [LAG FIX] Slowed down to 0.6
         if Flags.SmartFarm or Flags.AutoTrialFarm or Flags.BossRushDBZ or Flags.BossRushJJK then
              pcall(function()
                 VirtualUser:CaptureController()
