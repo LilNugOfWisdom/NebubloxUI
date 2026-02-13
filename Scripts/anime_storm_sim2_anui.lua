@@ -503,8 +503,23 @@ InputGroup:Button({
         -- 3. API Request
         local success, result = pcall(function()
             local url = API_URL_BASE .. "/verify_key?key=" .. UserKeyInput .. "&hwid=" .. game:GetService("RbxAnalyticsService"):GetClientId()
-            local response = game:GetService("HttpService"):GetAsync(url)
-            return game:GetService("HttpService"):JSONDecode(response)
+            
+            -- [ROBUST REQUEST]
+            local responseBody = nil
+            local req = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
+            if req then
+                local res = req({Url = url, Method = "GET"})
+                if res.Success or res.StatusCode == 200 then
+                    responseBody = res.Body
+                end
+            end
+            
+            -- Fallback
+            if not responseBody then
+                responseBody = game:HttpGet(url)
+            end
+            
+            return game:GetService("HttpService"):JSONDecode(responseBody)
         end)
 
         -- 4. Handle Response
