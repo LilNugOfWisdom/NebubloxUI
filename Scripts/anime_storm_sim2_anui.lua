@@ -36,6 +36,7 @@ if getgenv().NebuBlox_Loaded then
         if player.PlayerGui:FindFirstChild("Nebublox") then player.PlayerGui.Nebublox:Destroy() end
     end)
     
+    getgenv().PremiumLoaded = nil
     getgenv().NebuBlox_TrialConnection = nil
     getgenv().NebuBlox_BossRushConnection = nil
     getgenv().NebuBlox_BossRushUIConnection = nil
@@ -363,7 +364,7 @@ task.spawn(function()
     end
 end)
 
--- [THEME: BLUE/VIOLET GRADIENT]
+-- [THEME: DARK BLUE/PURPLE GRADIENT]
 task.spawn(function()
     repeat task.wait(0.5) until Window and Window.UIElements and Window.UIElements.Main
     
@@ -382,21 +383,35 @@ task.spawn(function()
         end
         
         g.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 85, 255)), -- Deep Blue
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(138, 43, 226)) -- Blue Violet
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 30, 120)), -- Darker Blue
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(80, 0, 100)) -- Darker Purple
         })
         g.Rotation = 45
         
         -- FORCE BACKGROUND TO WHITE FOR GRADIENT TO SHOW
-        -- UIGradient multiplies with BackgroundColor3. If it's black (0,0,0), gradient won't show.
         frame.BackgroundColor3 = Color3.new(1, 1, 1)
-        frame.BackgroundTransparency = 0 -- Ensure visible
+        frame.BackgroundTransparency = 0 
+
+        -- [BLACK TEXT INJECTION]
+        -- Attempt to find all text elements and force them to black
+        task.spawn(function()
+            while task.wait(1) do
+                if getgenv().NebuBlox_SessionID ~= SessionID then break end
+                for _, v in ipairs(frame:GetDescendants()) do
+                    if v:IsA("TextLabel") or v:IsA("TextButton") or v:IsA("TextBox") then
+                        v.TextColor3 = Color3.new(0, 0, 0)
+                    elseif v:IsA("ImageLabel") or v:IsA("ImageButton") then
+                        -- Darken icons too
+                        v.ImageColor3 = Color3.new(0, 0, 0)
+                    end
+                end
+            end
+        end)
     end
     
     -- Apply to the Main Container
     ApplyToFrame(Window.UIElements.Main)
     
-    -- Also check for inner 'Main' frame (common in ANUI)
     if Window.UIElements.Main:FindFirstChild("Main") then
         ApplyToFrame(Window.UIElements.Main.Main)
     end
@@ -539,7 +554,7 @@ local MapOptions = {"Cursed World", "Pirate World", "Shinobi World", "Slayer Wor
 local function RefreshMapOptions() end
 
 -- [TAB 2: FARM (SMART FARM)]
-local TeleportTab = Window:Tab({ Title = "Farm", Icon = "map-pin" })
+TeleportTab = Window:Tab({ Title = "Farm", Icon = "map-pin" })
 local FarmSection = TeleportTab:Section({ Title = "Smart Farm", Icon = "zap", Opened = true })
 
 FarmSection:Toggle({
@@ -552,33 +567,42 @@ FarmSection:Toggle({
     end
 })
 -- [CUSTOM ENEMY SELECTOR UI]
+-- [CUSTOM ENEMY SELECTOR UI]
 local function CreateEmbeddedSelector(parent)
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "EnemySelectorFrame"
     MainFrame.Size = UDim2.new(1, -10, 0, 250)
-    MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    MainFrame.BackgroundColor3 = Color3.new(1, 1, 1) -- Set to white for gradient
     MainFrame.BorderSizePixel = 0
     MainFrame.Parent = parent
     
     local UICorner = Instance.new("UICorner"); UICorner.CornerRadius = UDim.new(0, 8); UICorner.Parent = MainFrame
     
+    -- [GRADIENT]
+    local g = Instance.new("UIGradient")
+    g.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 30, 120)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(80, 0, 100))
+    })
+    g.Rotation = 45
+    g.Parent = MainFrame
+
     local Header = Instance.new("TextLabel")
     Header.Size = UDim2.new(1, 0, 0, 35)
-    Header.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+    Header.BackgroundTransparency = 1
     Header.Text = "  Multi-Target Selector"
-    Header.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Header.TextColor3 = Color3.new(0,0,0) -- Black text
     Header.TextXAlignment = Enum.TextXAlignment.Left
     Header.Font = Enum.Font.GothamBold
     Header.TextSize = 14
     Header.Parent = MainFrame
-    Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
 
     local StatusLabel = Instance.new("TextLabel")
     StatusLabel.Size = UDim2.new(1, -10, 0, 20)
     StatusLabel.Position = UDim2.new(0, 5, 0, 38)
     StatusLabel.BackgroundTransparency = 1
     StatusLabel.Text = "Status: Attack All / Nearest"
-    StatusLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+    StatusLabel.TextColor3 = Color3.new(0,0,0) -- Black text
     StatusLabel.TextSize = 11
     StatusLabel.Font = Enum.Font.Gotham
     StatusLabel.Parent = MainFrame
@@ -588,7 +612,8 @@ local function CreateEmbeddedSelector(parent)
     ScrollFrame.Position = UDim2.new(0, 5, 0, 60)
     ScrollFrame.BackgroundTransparency = 1
     ScrollFrame.BorderSizePixel = 0
-    ScrollFrame.ScrollBarThickness = 4
+    ScrollFrame.ScrollBarThickness = 2
+    ScrollFrame.ScrollBarImageColor3 = Color3.new(0,0,0)
     ScrollFrame.Parent = MainFrame
     
     local ListLayout = Instance.new("UIListLayout")
@@ -640,9 +665,10 @@ local function CreateEmbeddedSelector(parent)
             local btn = Instance.new("TextButton")
             btn.Name = name
             btn.Size = UDim2.new(1, -4, 0, 25)
-            btn.BackgroundColor3 = SelectedEnemies[name] and Color3.fromRGB(45, 140, 220) or Color3.fromRGB(45, 45, 50)
+            btn.BackgroundColor3 = SelectedEnemies[name] and Color3.fromRGB(0, 0, 0) or Color3.fromRGB(255, 255, 255)
+            btn.BackgroundTransparency = 0.8
             btn.Text = name
-            btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+            btn.TextColor3 = Color3.new(0, 0, 0) -- Black text
             btn.Font = Enum.Font.Gotham
             btn.TextSize = 12
             btn.Parent = ScrollFrame
@@ -651,10 +677,10 @@ local function CreateEmbeddedSelector(parent)
             btn.MouseButton1Click:Connect(function()
                 if SelectedEnemies[name] then
                     SelectedEnemies[name] = nil
-                    btn.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+                    btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
                 else
                     SelectedEnemies[name] = true
-                    btn.BackgroundColor3 = Color3.fromRGB(45, 140, 220)
+                    btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
                 end
                 UpdateStatus()
                 getgenv().NebuBlox_CurrentTarget = nil 
@@ -668,9 +694,10 @@ local function CreateEmbeddedSelector(parent)
     local RefBtn = Instance.new("TextButton")
     RefBtn.Size = UDim2.new(0, 60, 0, 20)
     RefBtn.Position = UDim2.new(1, -65, 0, 7)
-    RefBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    RefBtn.BackgroundColor3 = Color3.new(0,0,0)
+    RefBtn.BackgroundTransparency = 0.5
     RefBtn.Text = "Refresh"
-    RefBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    RefBtn.TextColor3 = Color3.new(1, 1, 1)
     RefBtn.TextSize = 10
     RefBtn.Parent = MainFrame
     Instance.new("UICorner", RefBtn).CornerRadius = UDim.new(0, 4)
@@ -679,25 +706,35 @@ local function CreateEmbeddedSelector(parent)
     return MainFrame
 end
 
+-- Update Injection to be more robust
 local TargetSection = TeleportTab:Section({ Title = "Target List", Icon = "list", Opened = true })
 local Placeholder = TargetSection:Paragraph({ Title = "Loading UI...", Content = "" })
 task.spawn(function()
-    task.wait(0.5)
-    local function FindAndInject(root)
-        if not root then return end
-        for _, obj in ipairs(root:GetDescendants()) do
-            if obj:IsA("TextLabel") and obj.Text == "Loading UI..." then
-                local paragraph = obj.Parent
-                local section = paragraph and paragraph.Parent
-                if section then
-                    CreateEmbeddedSelector(section)
-                    paragraph:Destroy()
-                    return true
+    while true do
+        task.wait(1)
+        if getgenv().NebuBlox_SessionID ~= SessionID then break end
+        if Placeholder and Placeholder.Parent then
+            local function FindAndInject(root)
+                if not root then return end
+                for _, obj in ipairs(root:GetDescendants()) do
+                    if obj:IsA("TextLabel") and obj.Text == "Loading UI..." then
+                        local paragraph = obj.Parent
+                        local section = paragraph and paragraph.Parent
+                        if section then
+                            CreateEmbeddedSelector(section)
+                            paragraph:Destroy()
+                            return true
+                        end
+                    end
                 end
             end
+            if FindAndInject(game:GetService("CoreGui")) or FindAndInject(player.PlayerGui) then
+                break
+            end
+        else
+            break
         end
     end
-    if not FindAndInject(game:GetService("CoreGui")) then FindAndInject(player.PlayerGui) end
 end)
 
 
