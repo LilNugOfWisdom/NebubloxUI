@@ -41,7 +41,7 @@ local function ValidateKey(key)
     local success, result = pcall(function()
         local hwid = (gethwid and gethwid() or game:GetService("RbxAnalyticsService"):GetClientId())
         local encodedKey = game:GetService("HttpService"):UrlEncode(key)
-        return game:GetService("HttpService"):GetAsync(API_URL_BASE .. "/api/verify_key?key=" .. encodedKey .. "&hwid=" .. hwid)
+        return game:HttpGet(API_URL_BASE .. "/api/verify_key?key=" .. encodedKey .. "&hwid=" .. hwid)
     end)
     if success then
         local data = game:GetService("HttpService"):JSONDecode(result)

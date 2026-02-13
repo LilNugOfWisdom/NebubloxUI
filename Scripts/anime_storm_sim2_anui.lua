@@ -415,7 +415,7 @@ InputGroup:Button({
             
             local url = API_URL_BASE .. "/api/verify_key?key=" .. encodedKey .. "&hwid=" .. hwid
             
-            local response = HttpService:GetAsync(url)
+            local response = game:HttpGet(url)
             return HttpService:JSONDecode(response)
         end)
 
