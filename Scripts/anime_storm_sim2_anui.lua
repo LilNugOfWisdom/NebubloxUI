@@ -377,12 +377,26 @@ local TrialTab, GamemodesTab, GachaTab
 
 -- [THEME: DARK BLUE / PINK GRADIENT]
 task.spawn(function()
-    repeat task.wait(0.5) until Window and Window.UIElements and Window.UIElements.Main
+    -- Wait for UI to be ready
+    local attempts = 0
+    repeat 
+        task.wait(0.5)
+        attempts = attempts + 1
+    until (Window and Window.UIElements and Window.UIElements.Main) or attempts > 20
+    
+    if not Window or not Window.UIElements or not Window.UIElements.Main then 
+        warn("[Nebublox] UI Not Found for Gradient!")
+        return 
+    end
     
     local function ApplyToFrame(frame)
         if not frame then return end
         
-        -- Remove conflicting theme gradients from library
+        -- Force White Background for Gradient Visibility
+        frame.BackgroundColor3 = Color3.new(1, 1, 1)
+        frame.BackgroundTransparency = 0 
+        
+        -- Remove conflicting theme gradients from library (WindUI spec)
         local old = frame:FindFirstChild("WindUIGradient")
         if old then old:Destroy() end
         
@@ -399,38 +413,26 @@ task.spawn(function()
         })
         g.Rotation = 45
         
-        -- FORCE BACKGROUND TO WHITE FOR GRADIENT TO SHOW
-        frame.BackgroundColor3 = Color3.new(1, 1, 1)
-        frame.BackgroundTransparency = 0 
-
-        -- [TEXT COLOR INJECTION]
-        -- Attempt to find all text elements and force them to white/contrast
-        task.spawn(function()
-            while task.wait(1) do
-                if getgenv().NebuBlox_SessionID ~= SessionID then break end
-                for _, v in ipairs(frame:GetDescendants()) do
-                    if v:IsA("TextLabel") or v:IsA("TextButton") or v:IsA("TextBox") then
-                         -- Keep user's preferred text colors if they set them, or default to white for visibility on dark gradient
-                         if v.TextColor3 == Color3.new(0,0,0) then
-                             v.TextColor3 = Color3.new(1,1,1)
-                         end
-                    elseif v:IsA("ImageLabel") or v:IsA("ImageButton") then
-                        -- Darken icons? No, lighten them for dark bg
-                        if v.ImageColor3 == Color3.new(0,0,0) then
-                             v.ImageColor3 = Color3.new(1,1,1)
-                        end
-                    end
-                end
+        -- [TEXT COLOR INJECTION] - Force contrast
+        for _, v in ipairs(frame:GetDescendants()) do
+            if v:IsA("TextLabel") or v:IsA("TextButton") or v:IsA("TextBox") then
+                 if v.TextColor3 == Color3.new(0,0,0) or v.TextColor3.R < 0.2 then -- If black or very dark
+                     v.TextColor3 = Color3.new(1,1,1)
+                 end
             end
-        end)
+        end
     end
     
-    -- Apply to the Main Container
-    ApplyToFrame(Window.UIElements.Main)
-    
-    if Window.UIElements.Main:FindFirstChild("Main") then
-        ApplyToFrame(Window.UIElements.Main.Main)
-    end
+    -- Apply repeatedly to fight Library overrides
+    task.spawn(function()
+        for i = 1, 5 do
+            ApplyToFrame(Window.UIElements.Main)
+            if Window.UIElements.Main:FindFirstChild("Main") then
+                ApplyToFrame(Window.UIElements.Main.Main)
+            end
+            task.wait(1)
+        end
+    end)
 end)
 local MainTab = Window:Tab({ Title = "About", Icon = "info" })
 local BannerSection = MainTab:Section({ Title = "", Icon = "", Opened = true })
@@ -447,7 +449,7 @@ task.spawn(function()
                 if section then
                     local frame = Instance.new("ImageLabel")
                     frame.Name = "Banner"
-                    frame.Size = UDim2.new(1, 0, 0, 300)
+                    frame.Size = UDim2.new(1, 0, 0, 150) -- Smaller Banner
                     frame.Position = paragraph.Position
                     frame.BackgroundTransparency = 1
                     frame.Image = imgId
