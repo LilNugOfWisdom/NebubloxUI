@@ -343,7 +343,7 @@ end)
 -- [TAB 1: ABOUT] (Forward declare)
 local TrialTab, GamemodesTab, GachaTab 
 
--- [THEME: DARK BLUE / PINK GRADIENT]
+-- [THEME: PITCH BLACK]
 task.spawn(function()
     -- Wait for UI
     local attempts = 0
@@ -358,28 +358,17 @@ task.spawn(function()
     local function ApplyToFrame(frame)
         if not frame then return end
         
-        -- Force White Background
-        frame.BackgroundColor3 = Color3.new(1, 1, 1)
+        -- Force Black Background
+        frame.BackgroundColor3 = Color3.new(0, 0, 0)
         frame.BackgroundTransparency = 0 
         
-        -- Remove conflicting theme gradients
+        -- Remove conflicting themes
         local old = frame:FindFirstChild("WindUIGradient")
         if old then old:Destroy() end
-        
         local g = frame:FindFirstChild("NebuGradient")
-        if not g then
-            g = Instance.new("UIGradient")
-            g.Name = "NebuGradient"
-            g.Parent = frame
-        end
+        if g then g:Destroy() end
         
-        g.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 0, 139)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 20, 147))
-        })
-        g.Rotation = 45
-        
-        -- Text Contrast
+        -- Text Contrast (White Text on Black BG)
         for _, v in ipairs(frame:GetDescendants()) do
             if v:IsA("TextLabel") or v:IsA("TextButton") or v:IsA("TextBox") then
                  if v.TextColor3 == Color3.new(0,0,0) or v.TextColor3.R < 0.2 then
@@ -389,7 +378,7 @@ task.spawn(function()
         end
     end
     
-    -- Apply multiple times to override library
+    -- Apply multiple times
     for i = 1, 5 do
         ApplyToFrame(Window.UIElements.Main)
         if Window.UIElements.Main:FindFirstChild("Main") then
@@ -413,7 +402,7 @@ task.spawn(function()
                 if section then
                     local frame = Instance.new("ImageLabel")
                     frame.Name = "Banner"
-                    frame.Size = UDim2.new(1, 0, 0, 150) -- Smaller Banner
+                    frame.Size = UDim2.new(1, 0, 0, 300) -- Original Banner Size
                     frame.Position = paragraph.Position
                     frame.BackgroundTransparency = 1
                     frame.Image = imgId
