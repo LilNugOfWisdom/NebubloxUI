@@ -1,7 +1,7 @@
 -- // NEBUBLOX UNIVERSAL HUB //
--- // Final Build for LilNugOfWisdom //
+-- // Optimized & Branded for LilNugOfWisdom //
 
--- [0] COMPATIBILITY PATCH
+-- [0] COMPATIBILITY PATCH (Fixes "nil value" errors on some executors)
 local getgenv = getgenv or function() return _G end
 
 -- [1] KILL PREVIOUS INSTANCE (allows re-execution without rejoining)
@@ -66,7 +66,9 @@ local function LoadScript(url)
     SafeNotify({Title = "Nebublox Cloud", Content = "Fetching script data...", Icon = "cloud-download", Duration = 2})
     
     local function Fetch(targetUrl)
-        local s, c = pcall(function() return game:HttpGet(targetUrl) end)
+        -- [CACHE BUSTING] Append timestamp to force fresh fetch
+        local freshUrl = targetUrl .. "?t=" .. tostring(os.time())
+        local s, c = pcall(function() return game:HttpGet(freshUrl) end)
         if s and c and not c:find("404: Not Found") and #c > 50 then return c end
         return nil
     end
@@ -87,30 +89,16 @@ local function LoadScript(url)
             SafeNotify({Title = "Syntax Error", Content = "The script is broken.", Icon = "x-octagon", Duration = 4})
         end
     else
-        SafeNotify({Title = "Connection Failed", Content = "Could not reach GitHub (404).", Icon = "wifi-off", Duration = 4})
+        SafeNotify({Title = "Connection Failed", Content = "Could not reach GitHub.", Icon = "wifi-off", Duration = 4})
     end
 end
 
 -- [5] GAME CONFIGURATION
--- These links now match the exact filenames you provided
+-- [UPDATED] Changed gamr46 -> LilNugOfWisdom
 local GameIds = {
-    -- Anime Storm 2
-    [98199457453897] = { 
-        Name = "Anime Storm 2", 
-        Url = "https://raw.githubusercontent.com/LilNugOfWisdom/NebubloxUI/main/Scripts/anime_storm_sim2_anui.lua" 
-    },
-    
-    -- Anime Destroyers
-    [136063393518705] = { 
-        Name = "Anime Destroyers", 
-        Url = "https://raw.githubusercontent.com/LilNugOfWisdom/NebubloxUI/main/Scripts/anime_destroyers_anui.lua" 
-    },
-    
-    -- Anime Creatures (Note the Capital Letters in filename)
-    [133898125416947] = { 
-        Name = "Anime Creatures", 
-        Url = "https://raw.githubusercontent.com/LilNugOfWisdom/NebubloxUI/main/Scripts/Anime_Creatures_Anui.lua" 
-    }
+    [98199457453897] = { Name = "Anime Storm 2", Url = "https://raw.githubusercontent.com/LilNugOfWisdom/NebubloxUI/main/Scripts/anime_storm_sim2_anui.lua" },
+    [136063393518705] = { Name = "Anime Destroyers", Url = "https://raw.githubusercontent.com/LilNugOfWisdom/NebubloxUI/main/Scripts/anime_destroyers_anui.lua" },
+    [133898125416947] = { Name = "Anime Creatures", Url = "https://raw.githubusercontent.com/LilNugOfWisdom/NebubloxUI/main/Scripts/Anime_Creatures_Anui.lua" },
 }
 
 -- [6] AUTO-DETECTION LOGIC
@@ -175,7 +163,7 @@ else
     
     InfoSection:Paragraph({
         Title = "About Nebublox",
-        Content = "Welcome to Nebublox! We are a dedicated team of developers redefining the Roblox experience.\n\nWe build powerful, optimized, and universal scripts. Select a game below."
+        Content = "Welcome to Nebublox! We are a dedicated team of developers redefining the Roblox experience.\n\nWe build powerful, optimized, and universal scripts to help you play by your own rules. Select a game below to begin."
     })
     
     -- >> TAB: GAMES
@@ -209,6 +197,7 @@ else
     
     local SocialSection = MainTab:Section({ Title = "Community", Icon = "users", Opened = true })
     
+    -- [UPDATED] New Discord Link
     SocialSection:Button({
         Title = "Join Discord Server",
         Callback = function()
