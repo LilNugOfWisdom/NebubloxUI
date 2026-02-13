@@ -6,17 +6,28 @@ print("-----------------------------------------")
 print("[Nebublox] KEY SYSTEM v" .. SCRIPT_VERSION .. " (Freemium)")
 print("-----------------------------------------")
 
--- [1] PREVENT MULTIPLE EXECUTIONS
-if getgenv().UniversalHubLoaded then 
-    pcall(function()
-        game:GetService("StarterGui"):SetCore("SendNotification", {
-            Title = "Hub Already Loaded",
-            Text = "The script is already running.",
-            Duration = 3
-        })
-    end)
-    return 
+-- [1] SCRIPT KILLER / RELOAD LOGIC
+if getgenv().Nebublox_Window then
+    pcall(function() getgenv().Nebublox_Window:Destroy() end)
+    getgenv().Nebublox_Window = nil
 end
+
+if getgenv().UniversalHubLoaded then
+    -- Optional: Add specific cleanup for the UI library if needed
+    getgenv().UniversalHubLoaded = false
+end
+
+-- Cleanup legacy GUIs
+local CoreGui = game:GetService("CoreGui")
+local Players = game:GetService("Players")
+local function CleanupGui(name)
+    if CoreGui:FindFirstChild(name) then CoreGui[name]:Destroy() end
+    if Players.LocalPlayer and Players.LocalPlayer:FindFirstChild("PlayerGui") and Players.LocalPlayer.PlayerGui:FindFirstChild(name) then
+        Players.LocalPlayer.PlayerGui[name]:Destroy()
+    end
+end
+CleanupGui("NebubloxAuth")
+CleanupGui("UniversalHub")
 
 -- [2] SERVICES & VARS
 local Players = game:GetService("Players")
@@ -192,7 +203,7 @@ function KeySystem:ShowUI(onSuccess)
     -- 2. Create Login Window
     local Window = ANUI:CreateWindow({
         Title = "Nebublox Auth",
-        Author = "v" .. SCRIPT_VERSION,
+        Author = "v1.0",
         Folder = "NebubloxAuth",
         Icon = "rbxassetid://121698194718505", 
         IconSize = 44,
@@ -203,6 +214,43 @@ function KeySystem:ShowUI(onSuccess)
     })
     
     local MainTab = Window:Tab({ Title = "Key System", Icon = "key", SidebarProfile = false })
+
+    -- >> BANNER INJECTION (Restored)
+    local BannerSection = MainTab:Section({ Title = "", Icon = "", Opened = true })
+    BannerSection:Paragraph({ Title = "Loading Banner...", Content = "" })
+    
+    task.defer(function()
+        task.wait(0.5) 
+        local imgId = "rbxthumb://type=Asset&id=132367447015620&w=768&h=432"
+        
+        local function InjectBanner()
+            local targets = {game:GetService("CoreGui"), game:GetService("Players").LocalPlayer:FindFirstChild("PlayerGui")}
+            for _, root in ipairs(targets) do
+                if not root then continue end
+                for _, obj in ipairs(root:GetDescendants()) do
+                    if obj:IsA("TextLabel") and obj.Text == "Loading Banner..." then
+                        local paragraph = obj.Parent
+                        local section = paragraph and paragraph.Parent
+                        if section then
+                            local frame = Instance.new("ImageLabel")
+                            frame.Name = "Banner"
+                            frame.Size = UDim2.new(1, 0, 0, 150)
+                            frame.Position = paragraph.Position
+                            frame.BackgroundTransparency = 1
+                            frame.Image = imgId
+                            frame.ScaleType = Enum.ScaleType.Crop
+                            frame.Parent = section
+                            
+                            pcall(function() paragraph:Destroy() end)
+                            return true
+                        end
+                    end
+                end
+            end
+        end
+        pcall(InjectBanner)
+    end)
+
     local Section = MainTab:Section({ Title = "Authentication", Icon = "lock", Opened = true })
     
     Section:Paragraph({
@@ -266,7 +314,7 @@ local function StartHub()
         -- MANUAL SELECTION GUI
         local Window = ANUI:CreateWindow({
             Title = "Universal Hub",
-            Author = "by Lil'Nug",
+            Author = "by He Who Remains",
             Folder = "UniversalHub",
             Icon = "rbxthumb://type=Asset&id=132367447015620&w=150&h=150", 
             IconSize = 44,
