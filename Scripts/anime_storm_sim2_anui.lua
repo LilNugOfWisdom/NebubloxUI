@@ -1,4 +1,4 @@
-﻿-- // NEBUBLOX | ANIME STORM SIMULATOR 2 (v3.1: ERROR FIX) //
+-- // NEBUBLOX | ANIME STORM SIMULATOR 2 (v3.1: ERROR FIX) //
 print("/// NEBUBLOX v3.1 LOADED - " .. os.date("%X") .. " ///")
 -- // UI Library: ANUI //
 
@@ -455,7 +455,7 @@ local AboutSection = MainTab:Section({ Title = "Authentication", Icon = "shield"
 -- Welcome Message
 -- Community Message
 AboutSection:Paragraph({
-    Title = "Thank You for using Nebublox! Ã¢ÂÂ¤Ã¯Â¸Â",
+    Title = "Thank You for using Nebublox! â¤ï¸",
     Content = "We appreciate your support! \nThis script features a powerful Auto Farm (Free) and specialized modes for Premium users.\n\nJoin our Discord for keys, updates, and a great community!"
 })
 
@@ -566,6 +566,7 @@ FarmSection:Toggle({
         if not state then getgenv().NebuBlox_CurrentTarget = nil end
     end
 })
+
 
 -- [CUSTOM ENEMY SELECTOR UI]
 local function CreateEmbeddedSelector(parent)
@@ -808,7 +809,7 @@ MiscSection:Toggle({ Title = "Auto Rebirth", Value = false, Callback = function(
 MiscSection:Toggle({ Title = "Claim Timed Rewards", Value = false, Callback = function(s) Flags.AutoTimedRewards = s end })
 
 -- [TAB 3: TRIAL (TIME TRIAL)]
-TrialTab = Window:Tab({ Title = "Trial Ã°Å¸â€˜â€˜", Icon = "clock" })
+TrialTab = Window:Tab({ Title = "Trial ðŸ‘‘", Icon = "clock" })
 if TrialTab and TrialTab.Button then TrialTab.Button.Visible = false end -- HIDE BY DEFAULT
 
 -- Easy Trial Section
@@ -851,7 +852,7 @@ TrialSection:Toggle({ Title = "Auto Drop Potion (On Start)", Value = false, Call
 TrialSection:Toggle({ Title = "Attack ALL (Trial Only)", Value = false, Callback = function(s) Flags.TrialAttackAll = s end })
 
 -- [TAB 4: GAMEMODES]
-GamemodesTab = Window:Tab({ Title = "Gamemodes Ã°Å¸â€˜â€˜", Icon = "swords" })
+GamemodesTab = Window:Tab({ Title = "Gamemodes ðŸ‘‘", Icon = "swords" })
 if GamemodesTab and GamemodesTab.Button then GamemodesTab.Button.Visible = false end -- HIDE BY DEFAULT
 
 local BossSection = GamemodesTab:Section({ Title = "World Boss Rushes", Icon = "skull", Opened = true })
@@ -871,7 +872,7 @@ InvSection:Toggle({ Title = "Auto Invasion (Slayer World)", Value = false, Callb
 end })
 
 -- [TAB 4: GACHA]
-GachaTab = Window:Tab({ Title = "Gacha Ã°Å¸â€˜â€˜", Icon = "gift" })
+GachaTab = Window:Tab({ Title = "Gacha ðŸ‘‘", Icon = "gift" })
 if GachaTab and GachaTab.Button then GachaTab.Button.Visible = false end -- HIDE BY DEFAULT
 
 local OPSection = GachaTab:Section({ Title = "One Piece", Icon = "anchor" })
@@ -1033,7 +1034,7 @@ ConfigSection:Button({
 
 local PerfSection = SettingsTab:Section({ Title = "System Performance", Icon = "cpu", Opened = true })
 PerfSection:Toggle({ Title = "Anti-AFK / Anti-Kick", Value = getgenv().NebubloxSettings.AntiAfkEnabled, Callback = function(s) getgenv().NebubloxSettings.AntiAfkEnabled = s; ToggleAntiAFK(s) end })
-PerfSection:Button({ Title = "Ã¢Å¡Â¡ Low GFX Mode (FPS Boost)", Callback = function() BoostFPS() end })
+PerfSection:Button({ Title = "âš¡ Low GFX Mode (FPS Boost)", Callback = function() BoostFPS() end })
 
 ConfigSystem.CheckAutoload()
 
