@@ -2,10 +2,9 @@
 print("/// NEBUBLOX v3.1 LOADED - " .. os.date("%X") .. " ///")
 -- // UI Library: ANUI //
 
-local API_URL_BASE = "https://darkmatterv1.onrender.com/api" -- [PATCH] Added API URL Base
-
 -- // 0. SESSION & CLEANUP //
-SessionID = tick()
+local API_URL_BASE = "https://darkmatterv1.onrender.com/api"
+local SessionID = tick()
 getgenv().NebuBlox_SessionID = SessionID
 
 local function SafeDisconnect(conn)
@@ -36,7 +35,6 @@ if getgenv().NebuBlox_Loaded then
         if player.PlayerGui:FindFirstChild("Nebublox") then player.PlayerGui.Nebublox:Destroy() end
     end)
     
-    getgenv().PremiumLoaded = nil
     getgenv().NebuBlox_TrialConnection = nil
     getgenv().NebuBlox_BossRushConnection = nil
     getgenv().NebuBlox_BossRushUIConnection = nil
@@ -54,9 +52,6 @@ local function LoadScript(url)
     -- [DEV] Try Local File First (for testing updates)
     if isfile and isfile("ANUI_source.lua") then return readfile("ANUI_source.lua") end
     if isfile and isfile("ANUI-Library/games/ANUI_source.lua") then return readfile("ANUI-Library/games/ANUI_source.lua") end
-    
-    -- [USER PATCH] Try NEBUBLOX Public Path 
-    if isfile and isfile("Nebublox Public/Scripts/anui_patched.lua") then return readfile("Nebublox Public/Scripts/anui_patched.lua") end
 
     local success, result = pcall(function() return game:HttpGet(url) end)
     if not success then
@@ -75,30 +70,7 @@ local function LoadScript(url)
     return result
 end
 
--- [HTTP HELPER] Robust Request Function
-local function MakeRequest(url)
-    local req = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
-    if req then
-        local response = req({
-            Url = url, 
-            Method = "GET",
-            Headers = {
-                ["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-            }
-        })
-        if response.Success or response.StatusCode == 200 then
-            return response.Body
-        else
-            warn("[Nebublox] Request failed with Status:", response.StatusCode)
-        end
-    end
-    -- Fallback to HttpGet (Cache-busting included)
-    local freshUrl = url .. (url:find("?") and "&" or "?") .. "t=" .. tick()
-    return game:HttpGet(freshUrl)
-end
-
--- [PATCH] Use Custom Patched Library
-local ANUI = loadstring(LoadScript("https://raw.githubusercontent.com/LilNugOfWisdom/NebubloxUI/main/Scripts/anui_patched.lua"))()
+local ANUI = loadstring(LoadScript("https://raw.githubusercontent.com/ANHub-Script/ANUI/refs/heads/main/dist/main.lua"))()
 
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
@@ -118,7 +90,7 @@ if not getgenv().NebubloxSettings then
 end
 
 -- // 1. CONFIGURATION //
-Flags = {
+local Flags = {
     SmartFarm = false,
     TrialAttackAll = false,
     TargetName = "",
@@ -325,7 +297,7 @@ task.spawn(function()
 end)
 
 -- // 2. UI SETUP //
-Window = ANUI:CreateWindow({
+local Window = ANUI:CreateWindow({
     Title = "Nebublox", 
     Author = "He Who Remains Lil'Nug",
     Folder = "Nebublox",
@@ -364,61 +336,8 @@ task.spawn(function()
     end
 end)
 
--- [THEME: DARK BLUE/PURPLE GRADIENT]
-task.spawn(function()
-    repeat task.wait(0.5) until Window and Window.UIElements and Window.UIElements.Main
-    
-    local function ApplyToFrame(frame)
-        if not frame then return end
-        
-        -- Remove conflicting theme gradients
-        local old = frame:FindFirstChild("WindUIGradient")
-        if old then old:Destroy() end
-        
-        local g = frame:FindFirstChild("NebuGradient")
-        if not g then
-            g = Instance.new("UIGradient")
-            g.Name = "NebuGradient"
-            g.Parent = frame
-        end
-        
-        g.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 30, 120)), -- Darker Blue
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(80, 0, 100)) -- Darker Purple
-        })
-        g.Rotation = 45
-        
-        -- FORCE BACKGROUND TO WHITE FOR GRADIENT TO SHOW
-        frame.BackgroundColor3 = Color3.new(1, 1, 1)
-        frame.BackgroundTransparency = 0 
-
-        -- [BLACK TEXT INJECTION]
-        -- Attempt to find all text elements and force them to black
-        task.spawn(function()
-            while task.wait(1) do
-                if getgenv().NebuBlox_SessionID ~= SessionID then break end
-                for _, v in ipairs(frame:GetDescendants()) do
-                    if v:IsA("TextLabel") or v:IsA("TextButton") or v:IsA("TextBox") then
-                        v.TextColor3 = Color3.new(0, 0, 0)
-                    elseif v:IsA("ImageLabel") or v:IsA("ImageButton") then
-                        -- Darken icons too
-                        v.ImageColor3 = Color3.new(0, 0, 0)
-                    end
-                end
-            end
-        end)
-    end
-    
-    -- Apply to the Main Container
-    ApplyToFrame(Window.UIElements.Main)
-    
-    if Window.UIElements.Main:FindFirstChild("Main") then
-        ApplyToFrame(Window.UIElements.Main.Main)
-    end
-end)
-
 -- [TAB 1: ABOUT]
-TrialTab, GamemodesTab, GachaTab = nil, nil, nil -- Use Globals
+local TrialTab, GamemodesTab, GachaTab -- Forward declare for Key System
 local MainTab = Window:Tab({ Title = "About", Icon = "info" })
 local BannerSection = MainTab:Section({ Title = "", Icon = "", Opened = true })
 BannerSection:Paragraph({ Title = "Loading Banner...", Content = "" })
@@ -455,7 +374,7 @@ local AboutSection = MainTab:Section({ Title = "Authentication", Icon = "shield"
 -- Welcome Message
 -- Community Message
 AboutSection:Paragraph({
-    Title = "Thank You for using Nebublox! â¤ï¸",
+    Title = "Thank You for using Nebublox! ❤️",
     Content = "We appreciate your support! \nThis script features a powerful Auto Farm (Free) and specialized modes for Premium users.\n\nJoin our Discord for keys, updates, and a great community!"
 })
 
@@ -489,17 +408,9 @@ InputGroup:Button({
 
         -- 3. API Request
         local success, result = pcall(function()
-            local HttpService = game:GetService("HttpService")
-            local hwid = game:GetService("RbxAnalyticsService"):GetClientId()
-            -- Encode inputs to prevent URL errors
-            local encodedKey = HttpService:UrlEncode(UserKeyInput)
-            local encodedHwid = HttpService:UrlEncode(hwid)
-            
-            local url = string.format("%s/verify_key?key=%s&hwid=%s", API_URL_BASE, encodedKey, encodedHwid)
-            print("[Nebublox] Requesting:", url)
-            
-            local responseBody = MakeRequest(url)
-            return HttpService:JSONDecode(responseBody)
+            local url = API_URL_BASE .. "/verify_key?key=" .. UserKeyInput .. "&hwid=" .. game:GetService("RbxAnalyticsService"):GetClientId()
+            local response = game:GetService("HttpService"):GetAsync(url)
+            return game:GetService("HttpService"):JSONDecode(response)
         end)
 
         -- 4. Handle Response
@@ -510,15 +421,9 @@ InputGroup:Button({
                 ANUI:Notify({Title = "Access Granted", Content = "Welcome, " .. tostring(data.username or "User"), Icon = "check", Duration = 5})
                 
                 -- >> UNLOCK FEATURES <<
-                if getgenv().LoadPremiumTabs then
-                    if not getgenv().PremiumLoaded then
-                        getgenv().LoadPremiumTabs()
-                        getgenv().PremiumLoaded = true
-                        ANUI:Notify({Title = "Premium", Content = "Features Loaded & Unlocked!", Icon = "star", Duration = 3})
-                    end
-                else
-                    warn("LoadPremiumTabs function missing!")
-                end
+                if TrialTab then TrialTab:Unlock() end
+                if GamemodesTab then GamemodesTab:Unlock() end
+                if GachaTab then GachaTab:Unlock() end
                 
             else
                 -- [INVALID OR EXPIRED KEY]
@@ -527,7 +432,7 @@ InputGroup:Button({
         else
             -- [API ERROR]
             warn("API Error:", result)
-            ANUI:Notify({Title = "Connection Error", Content = "Error: " .. tostring(result), Icon = "wifi-off", Duration = 5})
+            ANUI:Notify({Title = "Connection Error", Content = "Failed to reach server.", Icon = "wifi-off", Duration = 3})
         end
     end
 })
@@ -541,20 +446,20 @@ AboutSection:Button({
 })
 
 -- [MAP CONFIGURATION]
-MapDisplayToInternal = {
+local MapDisplayToInternal = {
     ["Z World"] = "Dbz",
     ["Cursed World"] = "Jjk",
     ["Shinobi World"] = "Naruto",
     ["Pirate World"] = "OnePiece",
     ["Slayer World"] = "DemonSlayer"
 }
-MapInternalToDisplay = {}
+local MapInternalToDisplay = {}
 for k, v in pairs(MapDisplayToInternal) do MapInternalToDisplay[v] = k end
-MapOptions = {"Cursed World", "Pirate World", "Shinobi World", "Slayer World", "Z World"} 
-function RefreshMapOptions() end
+local MapOptions = {"Cursed World", "Pirate World", "Shinobi World", "Slayer World", "Z World"} 
+local function RefreshMapOptions() end
 
 -- [TAB 2: FARM (SMART FARM)]
-TeleportTab = Window:Tab({ Title = "Farm", Icon = "map-pin" })
+local TeleportTab = Window:Tab({ Title = "Farm", Icon = "map-pin" })
 local FarmSection = TeleportTab:Section({ Title = "Smart Farm", Icon = "zap", Opened = true })
 
 FarmSection:Toggle({
@@ -567,45 +472,36 @@ FarmSection:Toggle({
     end
 })
 
-
 -- [CUSTOM ENEMY SELECTOR UI]
 local function CreateEmbeddedSelector(parent)
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "EnemySelectorFrame"
     MainFrame.Size = UDim2.new(1, -10, 0, 250)
-    MainFrame.BackgroundColor3 = Color3.new(1, 1, 1) -- Set to white for gradient
+    MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
     MainFrame.BorderSizePixel = 0
     MainFrame.Parent = parent
     
     local UICorner = Instance.new("UICorner"); UICorner.CornerRadius = UDim.new(0, 8); UICorner.Parent = MainFrame
     
-    -- [GRADIENT]
-    local g = Instance.new("UIGradient")
-    g.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 30, 120)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(80, 0, 100))
-    })
-    g.Rotation = 45
-    g.Parent = MainFrame
-
     local Header = Instance.new("TextLabel")
     Header.Size = UDim2.new(1, 0, 0, 35)
-    Header.BackgroundTransparency = 1
+    Header.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
     Header.Text = "  Multi-Target Selector"
-    Header.TextColor3 = Color3.new(0,0,0) -- Black text
+    Header.TextColor3 = Color3.fromRGB(255, 255, 255)
     Header.TextXAlignment = Enum.TextXAlignment.Left
-    Header.Font = Enum.Font.SourceSansSemibold
+    Header.Font = Enum.Font.GothamBold
     Header.TextSize = 14
     Header.Parent = MainFrame
+    Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 8)
 
     local StatusLabel = Instance.new("TextLabel")
     StatusLabel.Size = UDim2.new(1, -10, 0, 20)
     StatusLabel.Position = UDim2.new(0, 5, 0, 38)
     StatusLabel.BackgroundTransparency = 1
     StatusLabel.Text = "Status: Attack All / Nearest"
-    StatusLabel.TextColor3 = Color3.new(0,0,0) -- Black text
+    StatusLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
     StatusLabel.TextSize = 11
-    StatusLabel.Font = Enum.Font.SourceSans
+    StatusLabel.Font = Enum.Font.Gotham
     StatusLabel.Parent = MainFrame
 
     local ScrollFrame = Instance.new("ScrollingFrame")
@@ -613,8 +509,7 @@ local function CreateEmbeddedSelector(parent)
     ScrollFrame.Position = UDim2.new(0, 5, 0, 60)
     ScrollFrame.BackgroundTransparency = 1
     ScrollFrame.BorderSizePixel = 0
-    ScrollFrame.ScrollBarThickness = 2
-    ScrollFrame.ScrollBarImageColor3 = Color3.new(0,0,0)
+    ScrollFrame.ScrollBarThickness = 4
     ScrollFrame.Parent = MainFrame
     
     local ListLayout = Instance.new("UIListLayout")
@@ -666,11 +561,10 @@ local function CreateEmbeddedSelector(parent)
             local btn = Instance.new("TextButton")
             btn.Name = name
             btn.Size = UDim2.new(1, -4, 0, 25)
-            btn.BackgroundColor3 = SelectedEnemies[name] and Color3.fromRGB(0, 0, 0) or Color3.fromRGB(255, 255, 255)
-            btn.BackgroundTransparency = 0.8
+            btn.BackgroundColor3 = SelectedEnemies[name] and Color3.fromRGB(45, 140, 220) or Color3.fromRGB(45, 45, 50)
             btn.Text = name
-            btn.TextColor3 = Color3.new(0, 0, 0) -- Black text
-            btn.Font = Enum.Font.SourceSans
+            btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+            btn.Font = Enum.Font.Gotham
             btn.TextSize = 12
             btn.Parent = ScrollFrame
             Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
@@ -678,10 +572,10 @@ local function CreateEmbeddedSelector(parent)
             btn.MouseButton1Click:Connect(function()
                 if SelectedEnemies[name] then
                     SelectedEnemies[name] = nil
-                    btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                    btn.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
                 else
                     SelectedEnemies[name] = true
-                    btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+                    btn.BackgroundColor3 = Color3.fromRGB(45, 140, 220)
                 end
                 UpdateStatus()
                 getgenv().NebuBlox_CurrentTarget = nil 
@@ -695,10 +589,9 @@ local function CreateEmbeddedSelector(parent)
     local RefBtn = Instance.new("TextButton")
     RefBtn.Size = UDim2.new(0, 60, 0, 20)
     RefBtn.Position = UDim2.new(1, -65, 0, 7)
-    RefBtn.BackgroundColor3 = Color3.new(0,0,0)
-    RefBtn.BackgroundTransparency = 0.5
+    RefBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
     RefBtn.Text = "Refresh"
-    RefBtn.TextColor3 = Color3.new(1, 1, 1)
+    RefBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     RefBtn.TextSize = 10
     RefBtn.Parent = MainFrame
     Instance.new("UICorner", RefBtn).CornerRadius = UDim.new(0, 4)
@@ -707,117 +600,41 @@ local function CreateEmbeddedSelector(parent)
     return MainFrame
 end
 
--- Update Injection to be more robust
 local TargetSection = TeleportTab:Section({ Title = "Target List", Icon = "list", Opened = true })
 local Placeholder = TargetSection:Paragraph({ Title = "Loading UI...", Content = "" })
 task.spawn(function()
-    while true do
-        task.wait(1)
-        if getgenv().NebuBlox_SessionID ~= SessionID then break end
-        if Placeholder and Placeholder.Parent then
-            local function FindAndInject(root)
-                if not root then return end
-                for _, obj in ipairs(root:GetDescendants()) do
-                    if obj:IsA("TextLabel") and obj.Text == "Loading UI..." then
-                        local paragraph = obj.Parent
-                        local section = paragraph and paragraph.Parent
-                        if section then
-                            CreateEmbeddedSelector(section)
-                            paragraph:Destroy()
-                            return true
-                        end
-                    end
+    task.wait(0.5)
+    local function FindAndInject(root)
+        if not root then return end
+        for _, obj in ipairs(root:GetDescendants()) do
+            if obj:IsA("TextLabel") and obj.Text == "Loading UI..." then
+                local paragraph = obj.Parent
+                local section = paragraph and paragraph.Parent
+                if section then
+                    CreateEmbeddedSelector(section)
+                    paragraph:Destroy()
+                    return true
                 end
             end
-            if FindAndInject(game:GetService("CoreGui")) or FindAndInject(player.PlayerGui) then
-                break
-            end
-        else
-            break
         end
     end
+    if not FindAndInject(game:GetService("CoreGui")) then FindAndInject(player.PlayerGui) end
 end)
 
 
 
 -- [TAB 3: TRIAL (TIME TRIAL)]
+TrialTab = Window:Tab({ Title = "Trial 👑", Icon = "clock", Locked = true })
 
--- [ROBUST RETURN LOGIC]
-local SavedCFrame = nil
-local BackupMap = {
-    ["Z World"] = CFrame.new(273, 26, -1194),
-    ["Cursed World"] = CFrame.new(-329, 29, -1274), 
-    ["Shinobi World"] = CFrame.new(183, 29, -1355),
-    ["Pirate World"] = CFrame.new(-100, 29, -1355),
-    ["Slayer World"] = CFrame.new(100, 29, -1355) 
-}
--- If exact coords are unknown, we can default to 0,10,0 or try to find spawn
--- For now, I'll use placeholders that look "safe" (elevated) based on user's sample
--- or better, dynamically find spawns if BackupMap is nil.
-
-local function SavePosition()
-    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-        SavedCFrame = player.Character.HumanoidRootPart.CFrame
-        ANUI:Notify({Title = "Position Saved", Content = "Location recorded for return.", Icon = "pin", Duration = 2})
-    end
-end
-
-local function ReturnToFarm()
-    if not PerformReturn then return end
-    
-    local char = player.Character
-    if not char then return end
-    local root = char:FindFirstChild("HumanoidRootPart")
-    if not root then return end
-    
-    if SavedCFrame then
-        -- Plan A: Go back exactly where we were
-        root.CFrame = SavedCFrame
-        ANUI:Notify({Title = "Returning", Content = "Teleported to saved position.", Icon = "rewind", Duration = 3})
-    else
-        -- Plan B: Backup Map Spawn
-        -- Try to find the spawn of the "SelectedReturnMap"
-        local mapName = SelectedReturnMap or "Z World"
-        local internalName = MapDisplayToInternal[mapName] or "Dbz" -- Default
-        
-        -- Try dynamic find first
-        local maps = Workspace:FindFirstChild("Maps")
-        local backupCF = nil
-        
-        if maps then
-             local m = maps:FindFirstChild(internalName) or maps:FindFirstChild(mapName)
-             if m then
-                 local s = m:FindFirstChild("Spawn") or m:FindFirstChild("SpawnPoint")
-                 if s then backupCF = s.CFrame + Vector3.new(0, 5, 0) end
-             end
-        end
-        
-        if not backupCF then
-             -- Fallback to hardcoded safe spots (approximate hub area?)
-             backupCF = CFrame.new(0, 50, 0) 
-        end
-        
-        root.CFrame = backupCF
-        ANUI:Notify({Title = "Returning (Backup)", Content = "Saved position lost! Sent to " .. mapName, Icon = "alert-circle", Duration = 3})
-    end
-end
--- [PREMIUM TABS LOGIC]
--- [TAB 5: PROGRESSION] (Free Features)
-MiscTab = Window:Tab({ Title = "Progression", Icon = "chevrons-up" })
-local MiscSection = MiscTab:Section({ Title = "Progression", Icon = "chevrons-up", Opened = true })
-MiscSection:Toggle({ Title = "Auto Rebirth", Value = false, Callback = function(s) Flags.AutoRebirth = s end })
-MiscSection:Toggle({ Title = "Claim Timed Rewards", Value = false, Callback = function(s) Flags.AutoTimedRewards = s end })
-
--- [TAB 3: TRIAL (TIME TRIAL)]
-TrialTab = Window:Tab({ Title = "Trial ðŸ‘‘", Icon = "clock" })
-if TrialTab and TrialTab.Button then TrialTab.Button.Visible = false end -- HIDE BY DEFAULT
-
--- Easy Trial Section
+-- Easy Trial Section (Moved)
 local TrialSection = TrialTab:Section({ Title = "Easy Time Trial", Icon = "play", Opened = true })
 TrialSection:Toggle({ Title = "Auto Join Trial (Smart)", Value = false, Callback = function(s) 
     Flags.AutoTrial = s; 
     Flags.AutoTrialFarm = s
-    if s then SavePosition() end
+    if s and (not SavedCFrame or SavedCFrame == nil) and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        SavedCFrame = player.Character.HumanoidRootPart.CFrame
+        ANUI:Notify({Title = "Position Saved", Content = "Auto-saved current spot for return.", Icon = "pin", Duration = 3})
+    end
 end })
 -- Return Toggle Renamed for Clarity
 TrialSection:Toggle({ Title = "Return After (Trial/Invasion)", Value = false, Callback = function(s) PerformReturn = s end })
@@ -825,7 +642,7 @@ TrialSection:Toggle({ Title = "Return After (Trial/Invasion)", Value = false, Ca
 local MapDropdown = TrialSection:Dropdown({
     Title = "Select Return Map",
     Options = MapOptions,
-    Default = "Z World", 
+    Default = "Z World", -- Default to Z World (Dbz)
     Callback = function(v) SelectedReturnMap = v end
 })
 
@@ -834,7 +651,7 @@ TrialSection:Button({
     Callback = function()
         RefreshMapOptions()
         if MapDropdown and MapDropdown.Refresh then
-            MapDropdown:Refresh(MapOptions) 
+            MapDropdown:Refresh(MapOptions) -- Attempt to refresh if supported
         else
             ANUI:Notify({Title = "Maps", Content = "Refreshed internally. Re-open UI to see changes if blocked.", Icon = "refresh", Duration = 3})
         end
@@ -844,37 +661,63 @@ TrialSection:Button({
 TrialSection:Button({
     Title = "Save Current Position (For Selected Map)",
     Callback = function()
-        SavePosition()
+        local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+        if root then
+            -- We assume user is IN the map they want to save for?
+            -- Or we detect map?
+            -- Simple logic: Provide override.
+            -- If user saves position, we store it.
+            -- When returning, if Selected Map matches the map associated with this position?
+            -- We don't track map association strictly.
+            -- But user said "user should choose the map they saved their position in".
+            -- I'll define SavedCFrame as GLOBAL value.
+            SavedCFrame = root.CFrame
+            -- We also try to guess the map name to be smart
+            local currentMap = "Unknown"
+            local maps = Workspace:FindFirstChild("Maps")
+            if maps then
+                local bestDist = 999999
+                for _, m in ipairs(maps:GetChildren()) do
+                    local spawn = m:FindFirstChild("Spawn") or m:FindFirstChild("SpawnPoint")
+                    if spawn then
+                        local dist = (root.Position - spawn.Position).Magnitude
+                        if dist < bestDist then bestDist = dist; currentMap = m.Name end
+                    end
+                end
+            end
+            -- Store map
+            getgenv().SavedMapInternalName = currentMap
+            
+            local disp = MapInternalToDisplay[currentMap] or currentMap
+            ANUI:Notify({Title = "Position Saved", Content = "Saved for: " .. disp, Icon = "check", Duration = 3})
+        else
+            ANUI:Notify({Title = "Error", Content = "Character not found!", Icon = "alert-triangle", Duration = 3})
+        end
     end
 })
 
 TrialSection:Toggle({ Title = "Auto Drop Potion (On Start)", Value = false, Callback = function(s) Flags.AutoDropPotion = s end })
 TrialSection:Toggle({ Title = "Attack ALL (Trial Only)", Value = false, Callback = function(s) Flags.TrialAttackAll = s end })
 
--- [TAB 4: GAMEMODES]
-GamemodesTab = Window:Tab({ Title = "Gamemodes ðŸ‘‘", Icon = "swords" })
-if GamemodesTab and GamemodesTab.Button then GamemodesTab.Button.Visible = false end -- HIDE BY DEFAULT
+-- Trial Upgrades Section (New)
+
+
+
+
+-- [TAB 4: GAMEMODES (SWAPPED LOGIC)]
+GamemodesTab = Window:Tab({ Title = "Gamemodes 👑", Icon = "swords", Locked = true })
 
 local BossSection = GamemodesTab:Section({ Title = "World Boss Rushes", Icon = "skull", Opened = true })
-BossSection:Toggle({ Title = "Auto World Boss Rush ( Z World)", Value = false, Callback = function(s) 
-    Flags.BossRushDBZ = s
-    if s then SavePosition() end
-end })
-BossSection:Toggle({ Title = "Auto World Boss Rush ( Cursed World)", Value = false, Callback = function(s) 
-    Flags.BossRushJJK = s
-    if s then SavePosition() end
-end })
+BossSection:Toggle({ Title = "Auto World Boss Rush ( Z World)", Value = false, Callback = function(s) Flags.BossRushDBZ = s end })
+BossSection:Toggle({ Title = "Auto World Boss Rush ( Cursed World)", Value = false, Callback = function(s) Flags.BossRushJJK = s end })
 
 local InvSection = GamemodesTab:Section({ Title = "Invasion", Icon = "shield", Opened = true })
-InvSection:Toggle({ Title = "Auto Invasion (Slayer World)", Value = false, Callback = function(s) 
-    Flags.AutoInvasionStart = s 
-    if s then SavePosition() end
-end })
+InvSection:Toggle({ Title = "Auto Invasion (Slayer World)", Value = false, Callback = function(s) Flags.AutoInvasionStart = s end })
+
 
 -- [TAB 4: GACHA]
-GachaTab = Window:Tab({ Title = "Gacha ðŸ‘‘", Icon = "gift" })
-if GachaTab and GachaTab.Button then GachaTab.Button.Visible = false end -- HIDE BY DEFAULT
-
+-- [TAB 4: GACHA]
+GachaTab = Window:Tab({ Title = "Gacha 👑", Icon = "gift", Locked = true })
 local OPSection = GachaTab:Section({ Title = "One Piece", Icon = "anchor" })
 OPSection:Toggle({ Title = "Auto Roll Fruit", Value = false, Callback = function(s) Flags.OnePieceFruit = s end })
 OPSection:Toggle({ Title = "Auto Roll Crew", Value = false, Callback = function(s) Flags.OnePieceCrew = s end })
@@ -897,22 +740,18 @@ local SlayerSection = GachaTab:Section({ Title = "Demon Slayer", Icon = "sword" 
 SlayerSection:Toggle({ Title = "Auto Roll Breathing", Value = false, Callback = function(s) Flags.SlayerBreathing = s end })
 SlayerSection:Toggle({ Title = "Auto Roll Art", Value = false, Callback = function(s) Flags.SlayerArt = s end })
 
--- [TAB 5: PROGRESSION] (Free Features)
--- Already defined above but we can add Trial Upgrades here
+-- [TAB 5: PROGRESSION]
+local MiscTab = Window:Tab({ Title = "Progression", Icon = "chevrons-up" })
+local MiscSection = MiscTab:Section({ Title = "Progression", Icon = "chevrons-up", Opened = true })
+MiscSection:Toggle({ Title = "Auto Rebirth", Value = false, Callback = function(s) Flags.AutoRebirth = s end })
+MiscSection:Toggle({ Title = "Claim Timed Rewards", Value = false, Callback = function(s) Flags.AutoTimedRewards = s end })
+
 local UpgradeSection = MiscTab:Section({ Title = "Trial Upgrades", Icon = "trending-up" })
 UpgradeSection:Toggle({ Title = "Auto Upgrade Strength", Value = false, Callback = function(s) Flags.TrialUpgradeStrength = s end })
 UpgradeSection:Toggle({ Title = "Auto Upgrade Gems", Value = false, Callback = function(s) Flags.TrialUpgradeGems = s end })
 UpgradeSection:Toggle({ Title = "Auto Upgrade Drops", Value = false, Callback = function(s) Flags.TrialUpgradeDrops = s end })
 UpgradeSection:Toggle({ Title = "Auto Upgrade Luck", Value = false, Callback = function(s) Flags.TrialUpgradeLuck = s end })
 UpgradeSection:Toggle({ Title = "Auto Upgrade Walkspeed", Value = false, Callback = function(s) Flags.TrialUpgradeWalkspeed = s end })
-
--- [PREMIUM UNLOCK LOGIC]
-getgenv().LoadPremiumTabs = function()
-    if TrialTab and TrialTab.Button then TrialTab.Button.Visible = true end
-    if GamemodesTab and GamemodesTab.Button then GamemodesTab.Button.Visible = true end
-    if GachaTab and GachaTab.Button then GachaTab.Button.Visible = true end
-    ANUI:Notify({Title = "Pro Features", Content = "Tabs Unlocked & Ready!", Icon = "unlock", Duration = 3})
-end
 
 -- [TAB 6: SETTINGS]
 local SettingsTab = Window:Tab({ Title = "Settings", Icon = "settings" })
@@ -1034,7 +873,7 @@ ConfigSection:Button({
 
 local PerfSection = SettingsTab:Section({ Title = "System Performance", Icon = "cpu", Opened = true })
 PerfSection:Toggle({ Title = "Anti-AFK / Anti-Kick", Value = getgenv().NebubloxSettings.AntiAfkEnabled, Callback = function(s) getgenv().NebubloxSettings.AntiAfkEnabled = s; ToggleAntiAFK(s) end })
-PerfSection:Button({ Title = "âš¡ Low GFX Mode (FPS Boost)", Callback = function() BoostFPS() end })
+PerfSection:Button({ Title = "⚡ Low GFX Mode (FPS Boost)", Callback = function() BoostFPS() end })
 
 ConfigSystem.CheckAutoload()
 
@@ -1585,55 +1424,98 @@ task.spawn(function()
                 
                 -- Check Trial State
                 local tf = Workspace:FindFirstChild("TrialRoomNpc")
-                
+                -- local InTrialNow = tf and CountLiveEnemies(tf) > 0 -- Moved to top
+
+                -- State Tracking (Moved to top)
+                -- if Flags.AutoInvasionStart then ... end
                 local InInvasionNow = invF and CountLiveEnemies(invF) > 0
                 
                 -- Track Invasion State
                 if Flags.AutoInvasionStart then
                     if InInvasionNow then
-                        -- We are IN invasion
+                        InInvasion = true
                         LastInvasionCheck = now
                     end
                 end
                 
-                -- TRIAL RETURN
+                -- TRIAL RETURN: If we joined a trial AND it's now empty
+                -- Removed 300s timeout to allow long runs
+                -- ADDED: TrialSuccess check
                 if Flags.AutoTrial and (now - LastTrialJoinTime > 10) then
                     if not InTrialArea then
                         if getgenv().TrialSuccess then
+                            -- print("[Nebublox] Trial Success Verified! Returning...")
                             -- Trial ended! Perform return
-                            ReturnToFarm()
+                            local internalName = MapDisplayToInternal[SelectedReturnMap] or SelectedReturnMap
+                            
+                            -- Check for saved position match
+                            if SavedCFrame and getgenv().SavedMapInternalName then
+                                local savedMap = getgenv().SavedMapInternalName:lower()
+                                if internalName:lower() == savedMap then
+                                    root.CFrame = SavedCFrame
+                                    ANUI:Notify({Title = "Trial Complete!", Content = "Returned to saved spot in " .. SelectedReturnMap, Icon = "check", Duration = 3})
+                                    LastTrialJoinTime = now + 999999
+                                    getgenv().TrialSuccess = false -- Reset
+                                    return
+                                end
+                            end
+                            
+                            -- Use World Remote for spawn teleport
+                            local WorldRemote = Remotes:FindFirstChild("World")
+                            local teleported = false
+                            pcall(function()
+                                if WorldRemote then
+                                    -- Try multiple teleport call formats
+                                    WorldRemote:FireServer("Teleport", internalName)
+                                    WorldRemote:FireServer(internalName, "Teleport")
+                                    WorldRemote:FireServer("TeleportToWorld", internalName)
+                                    ANUI:Notify({Title = "Trial Complete!", Content = "Returned to: " .. SelectedReturnMap, Icon = "map-pin", Duration = 3})
+                                    teleported = true
+                                end
+                            end)
+                            
+                            if not teleported then
+                                -- Fallback: Try Maps folder teleport
+                                local maps = Workspace:FindFirstChild("Maps")
+                                local targetMap = maps and maps:FindFirstChild(internalName)
+                                local spawn = targetMap and (targetMap:FindFirstChild("Spawn") or targetMap:FindFirstChild("SpawnPoint"))
+                                if spawn then
+                                    root.CFrame = spawn.CFrame + Vector3.new(0, 5, 0)
+                                    ANUI:Notify({Title = "Trial Complete!", Content = "Teleported to: " .. SelectedReturnMap, Icon = "map-pin", Duration = 3})
+                                end
+                            end
                             
                             LastTrialJoinTime = now + 999999
                             getgenv().TrialSuccess = false -- Reset
+                        else
+                             -- print("[Nebublox] Trial Ended but Success NOT detected. Staying in lobby.")
                         end
                     end
                 end
                 
                 -- INVASION RETURN: If we were in invasion AND it's now empty for 5s
-                if Flags.AutoInvasionStart and not InInvasionNow and (now - LastInvasionCheck > 5) then
-                     -- Check if we legitimately just finished one
-                     -- (We assume we did if we are checking this)
-                     -- Reset invasion timer/check
-                     LastInvasionCheck = now + 99999
-                     ReturnToFarm()
-                end
-
-                -- BOSS RUSH RETURN 
-                -- We track if we were in BossRush last check, and now we are not (and map is gone or empty)
-                if Flags.BossRushDBZ or Flags.BossRushJJK then
-                     local Mode = Flags.BossRushDBZ and "DbzBossRush" or "JjkBossRush"
-                     local maps = Workspace:FindFirstChild("Maps")
-                     local inBRMap = maps and maps:FindFirstChild(Mode)
-                     
-                     -- If we were in BR, and now we are NOT in BR map (or it's deleted), we returned
-                     -- Using a session flag to track "WasInBossRush"
-                     if inBRMap then
-                         getgenv().WasInBossRush = true
-                         getgenv().LastBossRushTime = now
-                     elseif getgenv().WasInBossRush and (now - (getgenv().LastBossRushTime or 0) > 5) then
-                         getgenv().WasInBossRush = false
-                         ReturnToFarm()
-                     end
+                if Flags.AutoInvasionStart and InInvasion and not InInvasionNow and (now - LastInvasionCheck > 5) then
+                    InInvasion = false -- Reset
+                    local internalName = MapDisplayToInternal[SelectedReturnMap] or SelectedReturnMap
+                    
+                    local WorldRemote = Remotes:FindFirstChild("World")
+                    if WorldRemote then
+                        -- Try multiple teleport call formats
+                        pcall(function() WorldRemote:FireServer("Teleport", internalName) end)
+                        pcall(function() WorldRemote:FireServer(internalName, "Teleport") end)
+                        pcall(function() WorldRemote:FireServer("TeleportToWorld", internalName) end)
+                        pcall(function() WorldRemote:FireServer(internalName) end)
+                        ANUI:Notify({Title = "Invasion Complete!", Content = "Returned to: " .. SelectedReturnMap, Icon = "map-pin", Duration = 3})
+                    else
+                        -- Fallback: Direct teleport to map spawn
+                        local maps = Workspace:FindFirstChild("Maps")
+                        local targetMap = maps and maps:FindFirstChild(internalName)
+                        local spawn = targetMap and (targetMap:FindFirstChild("Spawn") or targetMap:FindFirstChild("SpawnPoint"))
+                        if spawn then
+                            root.CFrame = spawn.CFrame + Vector3.new(0, 5, 0)
+                            ANUI:Notify({Title = "Invasion Complete!", Content = "Teleported to: " .. SelectedReturnMap, Icon = "map-pin", Duration = 3})
+                        end
+                    end
                 end
             end
         end)
