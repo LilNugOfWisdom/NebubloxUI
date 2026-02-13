@@ -113,7 +113,7 @@ InputGroup:Button({
 
 AboutSection:Button({
     Title = "- Join Discord Community",
-    Callback = function() setclipboard("https://discord.gg/nebublox") ANUI:Notify({Title = "Discord", Content = "Invite copied!", Icon = "check", Duration = 3}) end
+    Callback = function() setclipboard("https://discord.gg/T2vw3QuJ9K") ANUI:Notify({Title = "Discord", Content = "Invite copied!", Icon = "check", Duration = 3}) end
 })
 
 local SettingsTab = Window:Tab({ Title = "Settings", Icon = "settings" })

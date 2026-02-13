@@ -449,7 +449,7 @@ InputGroup:Button({
 AboutSection:Button({
     Title = "- Get Premium Key / Discord",
     Callback = function()
-        setclipboard("https://discord.gg/nebublox")
+        setclipboard("https://discord.gg/T2vw3QuJ9K")
         ANUI:Notify({Title = "Discord", Content = "Invite copied to clipboard!", Icon = "copy", Duration = 3})
     end
 })
