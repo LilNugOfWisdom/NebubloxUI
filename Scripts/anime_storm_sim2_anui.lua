@@ -43,6 +43,7 @@ if getgenv().NebuBlox_Loaded then
     getgenv().NebuBlox_BossRushConnection = nil
     getgenv().NebuBlox_BossRushUIConnection = nil
     getgenv().NebuBlox_CurrentTarget = nil
+    getgenv().GameTabsLoaded = nil -- [FIX] Ensure tabs reload on script re-execution
 end
 
 getgenv().NebuBlox_Loaded = true
