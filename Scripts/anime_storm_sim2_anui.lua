@@ -413,7 +413,8 @@ InputGroup:Button({
 
         -- 3. API Request
         local success, result = pcall(function()
-            local url = API_URL_BASE .. "/verify_key?key=" .. UserKeyInput .. "&hwid=" .. game:GetService("RbxAnalyticsService"):GetClientId()
+            local hwid = game:GetService("RbxAnalyticsService"):GetClientId()
+            local url = string.format("%s/verify_key?key=%s&hwid=%s", API_URL_BASE, UserKeyInput, hwid)
             local response = game:GetService("HttpService"):GetAsync(url)
             return game:GetService("HttpService"):JSONDecode(response)
         end)
