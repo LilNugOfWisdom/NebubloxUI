@@ -363,6 +363,49 @@ task.spawn(function()
     end
 end)
 
+-- [THEME: BLUE/VIOLET GRADIENT]
+task.spawn(function()
+    task.wait(1)
+    local function ApplyGradient(root)
+        if not root then return end
+        -- Attempt to find the Main Background Frame
+        -- ANUI typically has a 'Main' frame or similar. We look for the largest frame.
+        local mainFrame = nil
+        local maxArea = 0
+        
+        for _, v in ipairs(root:GetDescendants()) do
+            if v:IsA("Frame") and v.Visible then
+                local area = v.AbsoluteSize.X * v.AbsoluteSize.Y
+                if area > maxArea and area > 50000 then -- Filter out small buttons
+                    maxArea = area
+                    mainFrame = v
+                end
+            end
+        end
+        
+        if mainFrame and not mainFrame:FindFirstChild("NebuGradient") then
+            local g = Instance.new("UIGradient")
+            g.Name = "NebuGradient"
+            g.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 85, 255)), -- Deep Blue
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(138, 43, 226)) -- Blue Violet
+            })
+            g.Rotation = 45
+            g.Parent = mainFrame
+            
+            -- Optional: Add a glow/stroke if supported
+            local s = Instance.new("UIStroke")
+            s.Color = Color3.fromRGB(100, 100, 255)
+            s.Thickness = 1
+            s.Transparency = 0.5
+            s.Parent = mainFrame
+        end
+    end
+    
+    ApplyGradient(game:GetService("CoreGui"):FindFirstChild("Nebublox"))
+    ApplyGradient(player.PlayerGui:FindFirstChild("Nebublox"))
+end)
+
 -- [TAB 1: ABOUT]
 local TrialTab, GamemodesTab, GachaTab -- Forward declare for Key System
 local MainTab = Window:Tab({ Title = "About", Icon = "info" })
@@ -456,9 +499,15 @@ InputGroup:Button({
                 ANUI:Notify({Title = "Access Granted", Content = "Welcome, " .. tostring(data.username or "User"), Icon = "check", Duration = 5})
                 
                 -- >> UNLOCK FEATURES <<
-                if TrialTab then TrialTab:Unlock() end
-                if GamemodesTab then GamemodesTab:Unlock() end
-                if GachaTab then GachaTab:Unlock() end
+                if getgenv().LoadPremiumTabs then
+                    if not getgenv().PremiumLoaded then
+                        getgenv().LoadPremiumTabs()
+                        getgenv().PremiumLoaded = true
+                        ANUI:Notify({Title = "Premium", Content = "Features Loaded & Unlocked!", Icon = "star", Duration = 3})
+                    end
+                else
+                    warn("LoadPremiumTabs function missing!")
+                end
                 
             else
                 -- [INVALID OR EXPIRED KEY]
@@ -658,134 +707,137 @@ end)
 
 
 -- [TAB 3: TRIAL (TIME TRIAL)]
-TrialTab = Window:Tab({ Title = "Trial 👑", Icon = "clock", Locked = true })
-
--- Easy Trial Section (Moved)
-local TrialSection = TrialTab:Section({ Title = "Easy Time Trial", Icon = "play", Opened = true })
-TrialSection:Toggle({ Title = "Auto Join Trial (Smart)", Value = false, Callback = function(s) 
-    Flags.AutoTrial = s; 
-    Flags.AutoTrialFarm = s
-    if s and (not SavedCFrame or SavedCFrame == nil) and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-        SavedCFrame = player.Character.HumanoidRootPart.CFrame
-        ANUI:Notify({Title = "Position Saved", Content = "Auto-saved current spot for return.", Icon = "pin", Duration = 3})
-    end
-end })
--- Return Toggle Renamed for Clarity
-TrialSection:Toggle({ Title = "Return After (Trial/Invasion)", Value = false, Callback = function(s) PerformReturn = s end })
-
-local MapDropdown = TrialSection:Dropdown({
-    Title = "Select Return Map",
-    Options = MapOptions,
-    Default = "Z World", -- Default to Z World (Dbz)
-    Callback = function(v) SelectedReturnMap = v end
-})
-
-TrialSection:Button({
-    Title = "Refresh Map List",
-    Callback = function()
-        RefreshMapOptions()
-        if MapDropdown and MapDropdown.Refresh then
-            MapDropdown:Refresh(MapOptions) -- Attempt to refresh if supported
-        else
-            ANUI:Notify({Title = "Maps", Content = "Refreshed internally. Re-open UI to see changes if blocked.", Icon = "refresh", Duration = 3})
-        end
-    end
-})
-
-TrialSection:Button({
-    Title = "Save Current Position (For Selected Map)",
-    Callback = function()
-        local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-        if root then
-            -- We assume user is IN the map they want to save for?
-            -- Or we detect map?
-            -- Simple logic: Provide override.
-            -- If user saves position, we store it.
-            -- When returning, if Selected Map matches the map associated with this position?
-            -- We don't track map association strictly.
-            -- But user said "user should choose the map they saved their position in".
-            -- I'll define SavedCFrame as GLOBAL value.
-            SavedCFrame = root.CFrame
-            -- We also try to guess the map name to be smart
-            local currentMap = "Unknown"
-            local maps = Workspace:FindFirstChild("Maps")
-            if maps then
-                local bestDist = 999999
-                for _, m in ipairs(maps:GetChildren()) do
-                    local spawn = m:FindFirstChild("Spawn") or m:FindFirstChild("SpawnPoint")
-                    if spawn then
-                        local dist = (root.Position - spawn.Position).Magnitude
-                        if dist < bestDist then bestDist = dist; currentMap = m.Name end
-                    end
-                end
-            end
-            -- Store map
-            getgenv().SavedMapInternalName = currentMap
-            
-            local disp = MapInternalToDisplay[currentMap] or currentMap
-            ANUI:Notify({Title = "Position Saved", Content = "Saved for: " .. disp, Icon = "check", Duration = 3})
-        else
-            ANUI:Notify({Title = "Error", Content = "Character not found!", Icon = "alert-triangle", Duration = 3})
-        end
-    end
-})
-
-TrialSection:Toggle({ Title = "Auto Drop Potion (On Start)", Value = false, Callback = function(s) Flags.AutoDropPotion = s end })
-TrialSection:Toggle({ Title = "Attack ALL (Trial Only)", Value = false, Callback = function(s) Flags.TrialAttackAll = s end })
-
--- Trial Upgrades Section (New)
-
-
-
-
--- [TAB 4: GAMEMODES (SWAPPED LOGIC)]
-GamemodesTab = Window:Tab({ Title = "Gamemodes 👑", Icon = "swords", Locked = true })
-
-local BossSection = GamemodesTab:Section({ Title = "World Boss Rushes", Icon = "skull", Opened = true })
-BossSection:Toggle({ Title = "Auto World Boss Rush ( Z World)", Value = false, Callback = function(s) Flags.BossRushDBZ = s end })
-BossSection:Toggle({ Title = "Auto World Boss Rush ( Cursed World)", Value = false, Callback = function(s) Flags.BossRushJJK = s end })
-
-local InvSection = GamemodesTab:Section({ Title = "Invasion", Icon = "shield", Opened = true })
-InvSection:Toggle({ Title = "Auto Invasion (Slayer World)", Value = false, Callback = function(s) Flags.AutoInvasionStart = s end })
-
-
--- [TAB 4: GACHA]
--- [TAB 4: GACHA]
-GachaTab = Window:Tab({ Title = "Gacha 👑", Icon = "gift", Locked = true })
-local OPSection = GachaTab:Section({ Title = "One Piece", Icon = "anchor" })
-OPSection:Toggle({ Title = "Auto Roll Fruit", Value = false, Callback = function(s) Flags.OnePieceFruit = s end })
-OPSection:Toggle({ Title = "Auto Roll Crew", Value = false, Callback = function(s) Flags.OnePieceCrew = s end })
-OPSection:Toggle({ Title = "Auto Haki (Progression)", Value = false, Callback = function(s) Flags.HakiProgression = s end })
-
-local DBZSection = GachaTab:Section({ Title = "Dragon Ball", Icon = "zap" })
-DBZSection:Toggle({ Title = "Auto Roll Saiyan", Value = false, Callback = function(s) Flags.DbzSaiyan = s end })
-DBZSection:Toggle({ Title = "Auto Ki Progression", Value = false, Callback = function(s) Flags.KiProgression = s end })
-
-local NarutoSection = GachaTab:Section({ Title = "Naruto", Icon = "eye" })
-NarutoSection:Toggle({ Title = "Auto Roll Kekkei Genkai", Value = false, Callback = function(s) Flags.NarutoKekkeiGenkai = s end })
-NarutoSection:Toggle({ Title = "Auto Roll Clan", Value = false, Callback = function(s) Flags.NarutoClan = s end })
-NarutoSection:Toggle({ Title = "Auto Roll Tailed Beast", Value = false, Callback = function(s) Flags.NarutoTailedBeast = s end })
-
-local JJKSection = GachaTab:Section({ Title = "Jiu-Jitsu Kaisen", Icon = "flame" })
-JJKSection:Toggle({ Title = "Auto Roll Domain", Value = false, Callback = function(s) Flags.JjkDomain = s end })
-JJKSection:Toggle({ Title = "Auto Cursed Energy", Value = false, Callback = function(s) Flags.CursedProgression = s end })
-
-local SlayerSection = GachaTab:Section({ Title = "Demon Slayer", Icon = "sword" })
-SlayerSection:Toggle({ Title = "Auto Roll Breathing", Value = false, Callback = function(s) Flags.SlayerBreathing = s end })
-SlayerSection:Toggle({ Title = "Auto Roll Art", Value = false, Callback = function(s) Flags.SlayerArt = s end })
-
--- [TAB 5: PROGRESSION]
-local MiscTab = Window:Tab({ Title = "Progression", Icon = "chevrons-up" })
+-- [PREMIUM TABS LOGIC]
+-- [TAB 5: PROGRESSION] (Free Features)
+MiscTab = Window:Tab({ Title = "Progression", Icon = "chevrons-up" })
 local MiscSection = MiscTab:Section({ Title = "Progression", Icon = "chevrons-up", Opened = true })
 MiscSection:Toggle({ Title = "Auto Rebirth", Value = false, Callback = function(s) Flags.AutoRebirth = s end })
 MiscSection:Toggle({ Title = "Claim Timed Rewards", Value = false, Callback = function(s) Flags.AutoTimedRewards = s end })
 
-local UpgradeSection = MiscTab:Section({ Title = "Trial Upgrades", Icon = "trending-up" })
-UpgradeSection:Toggle({ Title = "Auto Upgrade Strength", Value = false, Callback = function(s) Flags.TrialUpgradeStrength = s end })
-UpgradeSection:Toggle({ Title = "Auto Upgrade Gems", Value = false, Callback = function(s) Flags.TrialUpgradeGems = s end })
-UpgradeSection:Toggle({ Title = "Auto Upgrade Drops", Value = false, Callback = function(s) Flags.TrialUpgradeDrops = s end })
-UpgradeSection:Toggle({ Title = "Auto Upgrade Luck", Value = false, Callback = function(s) Flags.TrialUpgradeLuck = s end })
-UpgradeSection:Toggle({ Title = "Auto Upgrade Walkspeed", Value = false, Callback = function(s) Flags.TrialUpgradeWalkspeed = s end })
+-- [PREMIUM TABS LOGIC]
+getgenv().LoadPremiumTabs = function()
+    -- [TAB 3: TRIAL (TIME TRIAL)]
+    TrialTab = Window:Tab({ Title = "Trial 👑", Icon = "clock" }) -- Not locked, just hidden by default now
+
+    -- Easy Trial Section (Moved)
+    local TrialSection = TrialTab:Section({ Title = "Easy Time Trial", Icon = "play", Opened = true })
+    TrialSection:Toggle({ Title = "Auto Join Trial (Smart)", Value = false, Callback = function(s) 
+        Flags.AutoTrial = s; 
+        Flags.AutoTrialFarm = s
+        if s and (not SavedCFrame or SavedCFrame == nil) and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            SavedCFrame = player.Character.HumanoidRootPart.CFrame
+            ANUI:Notify({Title = "Position Saved", Content = "Auto-saved current spot for return.", Icon = "pin", Duration = 3})
+        end
+    end })
+    -- Return Toggle Renamed for Clarity
+    TrialSection:Toggle({ Title = "Return After (Trial/Invasion)", Value = false, Callback = function(s) PerformReturn = s end })
+
+    local MapDropdown = TrialSection:Dropdown({
+        Title = "Select Return Map",
+        Options = MapOptions,
+        Default = "Z World", -- Default to Z World (Dbz)
+        Callback = function(v) SelectedReturnMap = v end
+    })
+
+    TrialSection:Button({
+        Title = "Refresh Map List",
+        Callback = function()
+            RefreshMapOptions()
+            if MapDropdown and MapDropdown.Refresh then
+                MapDropdown:Refresh(MapOptions) -- Attempt to refresh if supported
+            else
+                ANUI:Notify({Title = "Maps", Content = "Refreshed internally. Re-open UI to see changes if blocked.", Icon = "refresh", Duration = 3})
+            end
+        end
+    })
+
+    TrialSection:Button({
+        Title = "Save Current Position (For Selected Map)",
+        Callback = function()
+            local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+            if root then
+                -- We assume user is IN the map they want to save for?
+                -- Or we detect map?
+                -- Simple logic: Provide override.
+                -- If user saves position, we store it.
+                -- When returning, if Selected Map matches the map associated with this position?
+                -- We don't track map association strictly.
+                -- But user said "user should choose the map they saved their position in".
+                -- I'll define SavedCFrame as GLOBAL value.
+                SavedCFrame = root.CFrame
+                -- We also try to guess the map name to be smart
+                local currentMap = "Unknown"
+                local maps = Workspace:FindFirstChild("Maps")
+                if maps then
+                    local bestDist = 999999
+                    for _, m in ipairs(maps:GetChildren()) do
+                        local spawn = m:FindFirstChild("Spawn") or m:FindFirstChild("SpawnPoint")
+                        if spawn then
+                            local dist = (root.Position - spawn.Position).Magnitude
+                            if dist < bestDist then bestDist = dist; currentMap = m.Name end
+                        end
+                    end
+                end
+                -- Store map
+                getgenv().SavedMapInternalName = currentMap
+                
+                local disp = MapInternalToDisplay[currentMap] or currentMap
+                ANUI:Notify({Title = "Position Saved", Content = "Saved for: " .. disp, Icon = "check", Duration = 3})
+            else
+                ANUI:Notify({Title = "Error", Content = "Character not found!", Icon = "alert-triangle", Duration = 3})
+            end
+        end
+    })
+
+    TrialSection:Toggle({ Title = "Auto Drop Potion (On Start)", Value = false, Callback = function(s) Flags.AutoDropPotion = s end })
+    TrialSection:Toggle({ Title = "Attack ALL (Trial Only)", Value = false, Callback = function(s) Flags.TrialAttackAll = s end })
+
+    -- Trial Upgrades Section (New)
+    
+    -- [TAB 4: GAMEMODES]
+    GamemodesTab = Window:Tab({ Title = "Gamemodes 👑", Icon = "swords" })
+
+    local BossSection = GamemodesTab:Section({ Title = "World Boss Rushes", Icon = "skull", Opened = true })
+    BossSection:Toggle({ Title = "Auto World Boss Rush ( Z World)", Value = false, Callback = function(s) Flags.BossRushDBZ = s end })
+    BossSection:Toggle({ Title = "Auto World Boss Rush ( Cursed World)", Value = false, Callback = function(s) Flags.BossRushJJK = s end })
+
+    local InvSection = GamemodesTab:Section({ Title = "Invasion", Icon = "shield", Opened = true })
+    InvSection:Toggle({ Title = "Auto Invasion (Slayer World)", Value = false, Callback = function(s) Flags.AutoInvasionStart = s end })
+
+
+    -- [TAB 4: GACHA]
+    -- [TAB 4: GACHA]
+    GachaTab = Window:Tab({ Title = "Gacha 👑", Icon = "gift" })
+    local OPSection = GachaTab:Section({ Title = "One Piece", Icon = "anchor" })
+    OPSection:Toggle({ Title = "Auto Roll Fruit", Value = false, Callback = function(s) Flags.OnePieceFruit = s end })
+    OPSection:Toggle({ Title = "Auto Roll Crew", Value = false, Callback = function(s) Flags.OnePieceCrew = s end })
+    OPSection:Toggle({ Title = "Auto Haki (Progression)", Value = false, Callback = function(s) Flags.HakiProgression = s end })
+
+    local DBZSection = GachaTab:Section({ Title = "Dragon Ball", Icon = "zap" })
+    DBZSection:Toggle({ Title = "Auto Roll Saiyan", Value = false, Callback = function(s) Flags.DbzSaiyan = s end })
+    DBZSection:Toggle({ Title = "Auto Ki Progression", Value = false, Callback = function(s) Flags.KiProgression = s end })
+
+    local NarutoSection = GachaTab:Section({ Title = "Naruto", Icon = "eye" })
+    NarutoSection:Toggle({ Title = "Auto Roll Kekkei Genkai", Value = false, Callback = function(s) Flags.NarutoKekkeiGenkai = s end })
+    NarutoSection:Toggle({ Title = "Auto Roll Clan", Value = false, Callback = function(s) Flags.NarutoClan = s end })
+    NarutoSection:Toggle({ Title = "Auto Roll Tailed Beast", Value = false, Callback = function(s) Flags.NarutoTailedBeast = s end })
+
+    local JJKSection = GachaTab:Section({ Title = "Jiu-Jitsu Kaisen", Icon = "flame" })
+    JJKSection:Toggle({ Title = "Auto Roll Domain", Value = false, Callback = function(s) Flags.JjkDomain = s end })
+    JJKSection:Toggle({ Title = "Auto Cursed Energy", Value = false, Callback = function(s) Flags.CursedProgression = s end })
+
+    local SlayerSection = GachaTab:Section({ Title = "Demon Slayer", Icon = "sword" })
+    SlayerSection:Toggle({ Title = "Auto Roll Breathing", Value = false, Callback = function(s) Flags.SlayerBreathing = s end })
+    SlayerSection:Toggle({ Title = "Auto Roll Art", Value = false, Callback = function(s) Flags.SlayerArt = s end })
+
+    -- Ensure Misc Tab uses this Premium section (Trial Upgrades)
+    local UpgradeSection = MiscTab:Section({ Title = "Trial Upgrades", Icon = "trending-up" })
+    UpgradeSection:Toggle({ Title = "Auto Upgrade Strength", Value = false, Callback = function(s) Flags.TrialUpgradeStrength = s end })
+    UpgradeSection:Toggle({ Title = "Auto Upgrade Gems", Value = false, Callback = function(s) Flags.TrialUpgradeGems = s end })
+    UpgradeSection:Toggle({ Title = "Auto Upgrade Drops", Value = false, Callback = function(s) Flags.TrialUpgradeDrops = s end })
+    UpgradeSection:Toggle({ Title = "Auto Upgrade Luck", Value = false, Callback = function(s) Flags.TrialUpgradeLuck = s end })
+    UpgradeSection:Toggle({ Title = "Auto Upgrade Walkspeed", Value = false, Callback = function(s) Flags.TrialUpgradeWalkspeed = s end })
+end
 
 -- [TAB 6: SETTINGS]
 local SettingsTab = Window:Tab({ Title = "Settings", Icon = "settings" })
