@@ -21,7 +21,6 @@ print("/// NEBUBLOX ANIME GHOST MASTERPIECE - " .. os.date("%X") .. " ///")
 local SessionID = tostring(math.random(1, 1000000)) .. tostring(tick())
 getgenv().NebuBlox_SessionID = SessionID
 getgenv().AutoAttack = false
-getgenv().AutoQuest = false
 getgenv().AutoAscension = false
 getgenv().SmoothFarm = true
 
@@ -75,7 +74,7 @@ end)
 --  TARGETING SYSTEM CORE (FULL PORT)
 -- ═══════════════════════════════════════
 getgenv().Nebu_TargetSettings = { ScanRange = 1000, AttackDist = 5, TickRate = 0.1 }
-local TargetState = { CurrentTarget = nil, ScannerEnabled = true, Highlight = nil, IsAttacking = false, QuestTargetName = nil, QuestPriority = true }
+local TargetState = { CurrentTarget = nil, IsAttacking = false }
 
 local function IsEnemyAlive(mob)
     if mob:GetAttribute("Dead") or mob:GetAttribute("Shield") then return false end
@@ -118,11 +117,7 @@ local function ScanFolder(folder, myRoot, bestTarget, shortestDist)
         elseif typeof(selection) == "string" then isSelected = string.find(realName, selection) or string.find(mob.Name, selection) end
         if isSelected then
             local dist = (rootPart.Position - myRoot.Position).Magnitude
-            local effectiveDist = dist
-            if TargetState.QuestPriority and TargetState.QuestTargetName then
-                if string.find(mob.Name, TargetState.QuestTargetName) or string.find(realName, TargetState.QuestTargetName) then effectiveDist = dist - 10000 end
-            end
-            if effectiveDist < shortestDist then shortestDist = effectiveDist; bestTarget = mob end
+            if dist < shortestDist then shortestDist = dist; bestTarget = mob end
         end
     end
     return bestTarget, shortestDist
@@ -157,7 +152,7 @@ getgenv().NebuBlox_MovementConnection = RunService.Stepped:Connect(function()
     if not getgenv().AutoAttack then platform.Position = Vector3.new(0, 99999, 0); return end
     local char = player.Character; local root = char and char:FindFirstChild("HumanoidRootPart"); local target = TargetState.CurrentTarget
     if root and target and target.Parent then
-        local tRoot = target:FindFirstChild("HumanoidRootPart") or target:FindFirstChild("EnemyHitbox") or target.PrimaryPart
+        local tRoot = target:FindFirstChild("EnemyHitbox") or target:FindFirstChild("HumanoidRootPart") or target.PrimaryPart
         if tRoot then root.CFrame = tRoot.CFrame * CFrame.new(0, -2, 5); platform.CFrame = CFrame.new(root.Position.X, root.Position.Y - 3, root.Position.Z); root.AssemblyLinearVelocity = Vector3.zero; root.AssemblyAngularVelocity = Vector3.zero
         else platform.Position = Vector3.new(0, 99999, 0) end
     else platform.Position = Vector3.new(0, 99999, 0) end
@@ -173,7 +168,7 @@ local function ClaimAchievements() pcall(function() if GameLibrary and GameLibra
 local function ClaimChests() pcall(function() if GameLibrary and GameLibrary.Remote then GameLibrary.Remote:Fire("ChestSystem","Claim","Group Chest"); GameLibrary.Remote:Fire("ChestSystem","Claim","Premium Chest"); GameLibrary.Remote:Fire("ChestSystem","Claim","VIP Chest") end end) end
 local function HatchScroll(name, amount) pcall(function() if GameLibrary and GameLibrary.Remote then GameLibrary.Remote:Fire("PetSystem","Open",name,(amount and amount > 1) and "All" or "One") end end) end
 local function SpinGacha(t, b) pcall(function() if GameLibrary and GameLibrary.Remote then GameLibrary.Remote:Fire("GachaSystem","Spin",t or "Enchantments",b or "Normal",{}) end end) end
-local function ClaimQuests() pcall(function() if GameLibrary and GameLibrary.Remote then GameLibrary.Remote:Fire("QuestSystem","ClaimReward","Main"); GameLibrary.Remote:Fire("QuestSystem","ClaimReward","Side") end; if GameLibrary and GameLibrary.PlayerData then local mq = GameLibrary.PlayerData.Quests and GameLibrary.PlayerData.Quests.Main; if mq and mq.Objectives then for _, obj in pairs(mq.Objectives) do if obj.Type == "DefeatEnemy" and obj.Id ~= "Any" then TargetState.QuestTargetName = obj.Id; break end end end end end) end
+local function ClaimQuests() pcall(function() if GameLibrary and GameLibrary.Remote then GameLibrary.Remote:Fire("QuestSystem","ClaimReward","Main"); GameLibrary.Remote:Fire("QuestSystem","ClaimReward","Side") end end) end
 
 local function get_hwid() local hwid = "Unknown"; pcall(function() hwid = gethwid() or game:GetService("RbxAnalyticsService"):GetClientId() end); return hwid end
 local function ValidateKey(key)
@@ -298,15 +293,16 @@ end
 local CombatTab = Window:MakeTab({Name = "⚔️", Icon = ""})
 local CombatSec = CombatTab:MakeSection({Name = "Target System"})
 
+local combRow = CombatSec:AddRow({Columns = 2})
 getgenv().SelectedEnemy = {"All"}
-getgenv().SelectedEnemyDropdown = CombatSec:AddMultiDropdown({
+getgenv().SelectedEnemyDropdown = combRow[1]:AddMultiDropdown({
     Name = "Select Enemy",
     Options = {"All"},
     Default = {"All"},
     Callback = function(v) getgenv().SelectedEnemy = v end
 })
 
-CombatSec:AddButton({Name = "Refresh Enemies", Icon = "star", Callback = function()
+combRow[2]:AddButton({Name = "Refresh 🔄", Color = Color3.fromRGB(0, 255, 255), Callback = function()
     local mobs = {"All"}
     pcall(function()
         local enemiesFolder = Workspace:FindFirstChild("_ENEMIES") and Workspace._ENEMIES:FindFirstChild("Client")
@@ -343,29 +339,56 @@ CombatSec:AddToggle({Name = "Auto Attack", Default = false, Callback = function(
 -- ═══════════════════════════════════════
 local GamemodesTab = Window:MakeTab({Name = "🎮", Icon = ""})
 
-local DungSec = GamemodesTab:MakeSection({Name = "Dungeon Automation"})
+local DungSec = GamemodesTab:MakeSection({Name = "Auto Dungeon"})
 getgenv().SelectedDungeon = "Dungeon"
-local DungDrop = DungSec:AddDropdown({Name = "Dungeon", Options = {"Dungeon"}, Default = "Dungeon", Callback = function(v) getgenv().SelectedDungeon = v end})
+local dungRow = DungSec:AddRow({Columns = 2})
+local DungDrop = dungRow[1]:AddDropdown({Name = "Selected", Options = {"Dungeon"}, Default = "Dungeon", Callback = function(v) getgenv().SelectedDungeon = v end})
 
-DungSec:AddButton({Name = "Refresh Dungeons", Icon = "star", Callback = function()
-    -- Assuming dungeons are mapped similarly, standard list for now
-    local dlist = {"Dungeon"}
-    if DungDrop and DungDrop.Refresh then DungDrop:Refresh(dlist, dlist[1]) end
-    Window:Notify({Title="Dungeons", Content="Refreshed list!", Type="success"})
+dungRow[2]:AddButton({Name = "Refresh 🔄", Color = Color3.fromRGB(0, 255, 255), Callback = function()
+    local dList = {"Dungeon"}
+    pcall(function()
+        local portalFolder = Workspace:FindFirstChild("Lobby") and Workspace.Lobby:FindFirstChild("Portals")
+        if portalFolder then
+            for _, v in ipairs(portalFolder:GetChildren()) do
+                if v:FindFirstChild("Dungeon") and not table.find(dList, v.Name) then table.insert(dList, v.Name) end
+            end
+        end
+    end)
+    if DungDrop and DungDrop.Refresh then DungDrop:Refresh(dList, dList[1]) end
 end})
-DungSec:AddButton({Name = "Auto Join Dungeon", Icon = "sword", Callback = function() pcall(function() if GameLibrary and GameLibrary.Remote then GameLibrary.Remote:Fire("GamemodeSystem","Create","Dungeon",getgenv().SelectedDungeon,"Hard",false,n=6) end end) end})
+
+DungSec:AddButton({Name = "Join Dungeon ⚔️", Icon = "sword", Callback = function() pcall(function() if GameLibrary and GameLibrary.Remote then GameLibrary.Remote:Fire("GamemodeSystem","Create","Dungeon",getgenv().SelectedDungeon,"Hard",false,n=6) end end) end})
 DungSec:AddTextbox({Name = "Leave at Level", Placeholder = "0 = Disabled", Callback = function(t) getgenv().DungeonLeaveLevel = tonumber(t) or 0 end})
 
-local RaidSec = GamemodesTab:MakeSection({Name = "Raid Automation"})
+local RaidSec = GamemodesTab:MakeSection({Name = "Auto Raid"})
 getgenv().SelectedRaid = "TitanTown"
 getgenv().SelectedRaidDiff = "Easy"
-local RaidDrop = RaidSec:AddDropdown({Name = "Raid", Options = {"TitanTown"}, Default = "TitanTown", Callback = function(v) getgenv().SelectedRaid = v end})
-local RaidDiffDrop = RaidSec:AddDropdown({Name = "Difficulty", Options = {"Easy", "Normal", "Hard"}, Default = "Easy", Callback = function(v) getgenv().SelectedRaidDiff = v end})
 
-RaidSec:AddButton({Name = "Refresh Raids", Icon = "star", Callback = function()
-    local rlist = {"TitanTown"}
-    if RaidDrop and RaidDrop.Refresh then RaidDrop:Refresh(rlist, rlist[1]) end
-    Window:Notify({Title="Raids", Content="Refreshed list!", Type="success"})
+local raidRow1 = RaidSec:AddRow({Columns = 2})
+local RaidDrop = raidRow1[1]:AddDropdown({Name = "Selected", Options = {"TitanTown"}, Default = "TitanTown", Callback = function(v) getgenv().SelectedRaid = v end})
+
+raidRow1[2]:AddButton({Name = "Refresh 🔄", Color = Color3.fromRGB(0, 255, 255), Callback = function()
+    local rList = {"TitanTown"}
+    pcall(function()
+        local portalFolder = Workspace:FindFirstChild("Lobby") and Workspace.Lobby:FindFirstChild("Portals")
+        if portalFolder then
+            for _, v in ipairs(portalFolder:GetChildren()) do
+                if v:FindFirstChild("Raid") and not table.find(rList, v.Name) then table.insert(rList, v.Name) end
+            end
+        end
+    end)
+    if RaidDrop and RaidDrop.Refresh then RaidDrop:Refresh(rList, rList[1]) end
+end})
+
+local raidRow2 = RaidSec:AddRow({Columns = 2})
+raidRow2[1]:AddDropdown({Name = "Difficulty", Options = {"Easy", "Normal", "Hard"}, Default = "Easy", Callback = function(v) getgenv().SelectedRaidDiff = v end})
+raidRow2[2]:AddToggle({Name = "Auto Start", Default = false, Callback = function(s)
+    getgenv().AutoStartRaid = s
+    task.spawn(function() while getgenv().AutoStartRaid do if not getgenv().Nebublox_Running then break end; pcall(function()
+        local Event = game:GetService("ReplicatedStorage"):FindFirstChild("ffrostflame_bridgenet2@1.0.0")
+        if Event then Event = Event.dataRemoteEvent end
+        if Event then Event:FireServer({{"GamemodeSystem", "Start", "Raid", 8221438525, n = 4}, "\x02"}) end
+    end); task.wait(2) end end)
 end})
 
 RaidSec:AddToggle({Name = "Auto Start Raid", Default = false, Callback = function(s)
@@ -399,50 +422,42 @@ AutoSec:AddToggle({Name = "Auto Equip Best Weapon", Default = false, Callback = 
 AutoSec:AddToggle({Name = "Auto Equip Best Form", Default = false, Callback = function(s) getgenv().AutoEquipForm = s; task.spawn(function() while getgenv().AutoEquipForm and task.wait(10) do if not getgenv().Nebublox_Running then break end; pcall(function() if GameLibrary and GameLibrary.Remote then GameLibrary.Remote:Fire("ItemSystem","EquipBest","Form") end end) end end) end})
 
 local GachaSec = AutoTab:MakeSection({Name = "Gacha & Scrolls"})
-getgenv().SelectedScroll = "Solo Scroll"
-local ScrollDrop = GachaSec:AddDropdown({Name = "Scroll", Options = {"Titan Scroll","Supernatural Scroll","Spiritual Scroll","Solo Scroll"}, Default = "Solo Scroll", Callback = function(v) getgenv().SelectedScroll = v end})
+local gRow1 = GachaSec:AddRow({Columns = 2})
+local ScrollDrop = gRow1[1]:AddDropdown({Name = "Selected Scroll", Options = {"Titan Scroll","Supernatural Scroll","Spiritual Scroll","Solo Scroll"}, Default = "Solo Scroll", Callback = function(v) getgenv().SelectedScroll = v end})
 
-GachaSec:AddButton({Name = "Refresh Scrolls", Icon = "star", Callback = function()
+gRow1[2]:AddButton({Name = "Refresh 🔄", Color = Color3.fromRGB(138, 43, 226), Callback = function()
     local sList = {"Solo Scroll"}
     pcall(function()
-        local root = player.Character and player.Character.PrimaryPart
-        if root then
-            for _, v in ipairs(Workspace:GetDescendants()) do
-                if v:IsA("Model") and v.Name:match("Scroll") and v.PrimaryPart and (v.PrimaryPart.Position - root.Position).Magnitude <= 500 then
-                    if not table.find(sList, v.Name) then table.insert(sList, v.Name) end
-                end
+        for _, v in ipairs(Workspace:GetDescendants()) do
+            if v:IsA("Model") and v.Name:match("Scroll") and not table.find(sList, v.Name) then
+                table.insert(sList, v.Name)
             end
         end
     end)
     if ScrollDrop and ScrollDrop.Refresh then ScrollDrop:Refresh(sList, sList[1]) end
-    Window:Notify({Title="Scrolls", Content="Found " .. #sList .. " scrolls nearby", Type="info"})
 end})
 
-GachaSec:AddToggle({Name = "Auto Hatch Selected", Default = false, Callback = function(s)
-    getgenv().AutoHatch = s
-    task.spawn(function() while getgenv().AutoHatch and task.wait(0.1) do if not getgenv().Nebublox_Running then break end; HatchScroll(getgenv().SelectedScroll, 5); local wt = (GameLibrary and GameLibrary.PlayerData and GameLibrary.PlayerData.Gamepasses and GameLibrary.PlayerData.Gamepasses.FastOpen) and 0.1 or 0.8; task.wait(wt) end end)
-end})
+local gRow2 = GachaSec:AddRow({Columns = 2})
+local GachaDrop = gRow2[1]:AddDropdown({Name = "Selected Gacha", Options = {"Enchantments","Hunter Ranks","Traits","Titan Serums","Passives","Soul Foundation","Avatars","Weapons"}, Default = "Enchantments", Callback = function(v) getgenv().SelectedGachaType = v end})
 
-getgenv().SelectedGachaType = "Enchantments"
-local GachaDrop = GachaSec:AddDropdown({Name = "Gacha", Options = {"Enchantments","Hunter Ranks","Traits","Titan Serums","Passives","Soul Foundation","Avatars","Weapons"}, Default = "Enchantments", Callback = function(v) getgenv().SelectedGachaType = v end})
-
-GachaSec:AddButton({Name = "Refresh Gachas", Icon = "star", Callback = function()
+gRow2[2]:AddButton({Name = "Refresh 🔄", Color = Color3.fromRGB(0, 255, 255), Callback = function()
     local gList = {"Enchantments"}
     pcall(function()
-        local root = player.Character and player.Character.PrimaryPart
-        if root then
-            for _, v in ipairs(Workspace:GetDescendants()) do
-                if v:IsA("Model") and v.PrimaryPart and (v.Name:match("Gacha") or v.Name:match("Roll") or v.Name:match("Spin")) and (v.PrimaryPart.Position - root.Position).Magnitude <= 500 then
-                    if not table.find(gList, v.Name) then table.insert(gList, v.Name) end
-                end
+        for _, v in ipairs(Workspace:GetDescendants()) do
+            if v:IsA("Model") and (v.Name:match("Gacha") or v.Name:match("Roll") or v.Name:match("Spin")) and not table.find(gList, v.Name) then
+                table.insert(gList, v.Name)
             end
         end
     end)
     if GachaDrop and GachaDrop.Refresh then GachaDrop:Refresh(gList, gList[1]) end
-    Window:Notify({Title="Gachas", Content="Found " .. #gList .. " gachas nearby", Type="info"})
 end})
 
-GachaSec:AddToggle({Name = "Auto Spin Gacha", Default = false, Callback = function(s) getgenv().AutoSpinGacha = s; task.spawn(function() while getgenv().AutoSpinGacha and task.wait(1) do if not getgenv().Nebublox_Running then break end; SpinGacha(getgenv().SelectedGachaType, "Normal") end end) end})
+local gRow3 = GachaSec:AddRow({Columns = 2})
+gRow3[1]:AddToggle({Name = "Auto Hatch", Default = false, Callback = function(s)
+    getgenv().AutoHatch = s
+    task.spawn(function() while getgenv().AutoHatch and task.wait(0.1) do if not getgenv().Nebublox_Running then break end; HatchScroll(getgenv().SelectedScroll, 5); local wt = (GameLibrary and GameLibrary.PlayerData and GameLibrary.PlayerData.Gamepasses and GameLibrary.PlayerData.Gamepasses.FastOpen) and 0.1 or 0.8; task.wait(wt) end end)
+end})
+gRow3[2]:AddToggle({Name = "Auto Spin", Default = false, Callback = function(s) getgenv().AutoSpinGacha = s; task.spawn(function() while getgenv().AutoSpinGacha and task.wait(1) do if not getgenv().Nebublox_Running then break end; SpinGacha(getgenv().SelectedGachaType, "Normal") end end) end})
 
 local SpeedSec = AutoTab:MakeSection({Name = "Movement Hacks"})
 SpeedSec:AddToggle({Name = "Walkspeed", Default = false, Callback = function(s) getgenv().AutoWalkSpeed = s; if s then task.spawn(function() while getgenv().AutoWalkSpeed do if not getgenv().Nebublox_Running then break end; pcall(function() local h = player.Character and player.Character:FindFirstChild("Humanoid"); if h then h.WalkSpeed = getgenv().AutoWalkSpeedVal or 100 end end); task.wait(0.1) end end) else pcall(function() local h = player.Character and player.Character:FindFirstChild("Humanoid"); if h then h.WalkSpeed = 16 end end) end end})
@@ -467,12 +482,7 @@ end
 -- ═══════════════════════════════════════
 --  TAB 7: TELEPORTS
 -- ═══════════════════════════════════════
-local TPTab = Window:MakeTab({Name = "🌍", Icon = ""})
-local TPSec = TPTab:MakeSection({Name = "World Navigation"})
-TPSec:AddButton({Name = "Map 1 (Spawn)", Callback = function() pcall(function() local sp = Workspace:FindFirstChild("_MAP") and Workspace._MAP:FindFirstChild("1") and Workspace._MAP["1"]:FindFirstChild("Spawn") and Workspace._MAP["1"].Spawn:FindFirstChild("hf sp"); if sp and sp:IsA("BasePart") then player.Character.HumanoidRootPart.CFrame = sp.CFrame * CFrame.new(0,3,0); Window:Notify({Title="Teleport",Content="Map 1!",Type="success"}) end end) end})
-for i = 2, 4 do
-    TPSec:AddButton({Name = "Map " .. i, Callback = function() pcall(function() local portal = Workspace:FindFirstChild("Lobby") and Workspace.Lobby:FindFirstChild("Portals") and Workspace.Lobby.Portals:FindFirstChild(tostring(i)); if portal and portal:FindFirstChild("Portal") then player.Character.HumanoidRootPart.CFrame = portal.Portal.CFrame * CFrame.new(0,3,0); Window:Notify({Title="Teleport",Content="Map "..i.."!",Type="success"}) end end) end})
-end
+-- Tab Removed (Merged with Tab 3)
 
 -- ═══════════════════════════════════════
 --  TAB 8: SETTINGS
