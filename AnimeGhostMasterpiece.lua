@@ -204,10 +204,16 @@ end
 -- ═══════════════════════════════════════
 --  LOAD NEBUBLOX UI LIBRARY
 -- ═══════════════════════════════════════
-local success, Nebublox = pcall(function()
-    return loadstring(game:HttpGet("https://raw.githubusercontent.com/LilNugOfWisdom/NebubloxUI/main/NebubloxUI.lua"))()
-end)
-if not success then warn("NEBUBLOX LOAD FAILED: " .. tostring(Nebublox)); return end
+local rawCode = game:HttpGet("https://raw.githubusercontent.com/LilNugOfWisdom/NebubloxUI/main/NebubloxUI.lua")
+print("[NEBUBLOX] Fetched " .. #rawCode .. " bytes")
+local loader, loadErr = loadstring(rawCode)
+if not loader then
+    warn("NEBUBLOX LOADSTRING SYNTAX ERROR: " .. tostring(loadErr))
+    warn("First 200 chars: " .. rawCode:sub(1, 200))
+    return
+end
+local success, Nebublox = pcall(loader)
+if not success then warn("NEBUBLOX RUNTIME ERROR: " .. tostring(Nebublox)); return end
 Nebublox:IgniteKillSwitch()
 getgenv().Nebublox_Running = true
 
