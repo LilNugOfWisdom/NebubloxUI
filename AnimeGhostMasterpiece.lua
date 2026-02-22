@@ -221,13 +221,15 @@ getgenv().Nebublox_Running = true
 --  CREATE WINDOW
 -- ═══════════════════════════════════════
 local Window = Nebublox:MakeWindow({
-    Title = "NEBUBLOX : ANIME GHOST",
-    Subtitle = "by LilNugOfWisdom",
+    Title = "NEBUBLOX",
+    Subtitle = "ANIME GHOST",
     Profile = {
         Title = player.DisplayName,
-        Desc = "@"..player.Name,
+        Desc = "Ready  ●  " .. math.random(30, 80) .. "ms",
         Avatar = "rbxthumb://type=AvatarHeadShot&id="..player.UserId.."&w=420&h=420",
-        Status = true
+        Status = true,
+        DiscordId = Configuration.DiscordID,
+        LanyardKey = Configuration.LanyardKey
     },
     Size = UDim2.new(0, 680, 0, 480),
     CyberBackground = true
@@ -239,7 +241,7 @@ Nebublox:MakeWatermark({Text = "Nebublox : Anime Ghost"})
 -- ═══════════════════════════════════════
 --  TAB 1: HOME
 -- ═══════════════════════════════════════
-local HomeTab = Window:MakeTab({Name = "🏠 Home", Icon = ""})
+local HomeTab = Window:MakeTab({Name = "🏠", Icon = ""})
 
 local InfoCard = HomeTab:MakeSection({Name = "Information"})
 local InfoTabs = InfoCard:AddSubTabs({Tabs = {"About", "Changelog", "Credits"}})
@@ -252,10 +254,10 @@ AboutTab:AddButton({Name = "Copy JobID", Icon = "clipboard", Callback = function
 
 ChangeTab:AddParagraph({Title = "Recent Updates", Content = "- Overhauled NebubloxUI Layout\n- Improved Engine Stability\n- Rebuilt Settings Tab"})
 
-CredTab:AddParagraph({Title = "Developer", Content = player.DisplayName})
+CredTab:AddParagraph({Title = "Developer", Content = "Nebublox Founder, Hes a chicken Nugget wizard..."})
 CredTab:AddDualButton(
-    {Name = "Update Info", Icon = "info", Callback = function() Window:Notify({Title="Info", Content="Version 1.1 Active"}) end},
-    {Name = "Discord", Icon = "star", Callback = function() setclipboard(Configuration.Discord); Window:Notify({Title="Discord", Content="Link Copied!", Type="success"}) end}
+    {Name = "Update Info", Icon = "info", Color = Color3.fromRGB(0, 255, 255), Callback = function() Window:Notify({Title="Info", Content="Version 1.1 Active"}) end},
+    {Name = "Discord", Icon = "star", Color = Color3.fromRGB(138, 43, 226), Callback = function() setclipboard(Configuration.Discord); Window:Notify({Title="Discord", Content="Link Copied!", Type="success"}) end}
 )
 
 local AccountCard = HomeTab:MakeSection({Name = "Account Information"})
@@ -269,7 +271,7 @@ if not getgenv().NebubloxKeyValid then
     local KeySec = HomeTab:MakeSection({Name = "Authentication"})
     local KeyInputString = ""
     KeySec:AddTextbox({Name = "Galaxy Key", Placeholder = "Enter Key...", Callback = function(t) KeyInputString = t end})
-    KeySec:AddButton({Name = "Verify Key", Icon = "shield", Callback = function()
+    KeySec:AddButton({Name = "Verify Key", Icon = "shield", Color = Color3.fromRGB(0, 255, 255), Callback = function()
         local trimmedKey = KeyInputString:gsub("^%s*(.-)%s*$", "%1")
         if trimmedKey == "" then Window:Notify({Title = "Error", Content = "Enter a key!", Type = "error"}); return end
         Window:Notify({Title = "Verifying...", Content = "Checking server...", Type = "info"})
@@ -286,7 +288,7 @@ end
 -- ═══════════════════════════════════════
 --  TAB 2: COMBAT
 -- ═══════════════════════════════════════
-local CombatTab = Window:MakeTab({Name = "⚔️ Combat", Icon = ""})
+local CombatTab = Window:MakeTab({Name = "⚔️", Icon = ""})
 local CombatSec = CombatTab:MakeSection({Name = "Target System"})
 
 getgenv().SelectedEnemy = {"All"}
@@ -299,55 +301,87 @@ getgenv().SelectedEnemyDropdown = CombatSec:AddMultiDropdown({
 
 CombatSec:AddButton({Name = "Refresh Enemies", Icon = "star", Callback = function()
     local mobs = {"All"}
-    for id, displayName in pairs(getgenv().Nebu_EnemyData) do if displayName ~= "" and not table.find(mobs, displayName) then table.insert(mobs, displayName) end end
+    pcall(function()
+        local enemiesFolder = Workspace:FindFirstChild("_ENEMIES") and Workspace._ENEMIES:FindFirstChild("Client")
+        if enemiesFolder then
+            for _, mob in ipairs(enemiesFolder:GetChildren()) do
+                if mob:IsA("Model") and not table.find(mobs, mob.Name) then
+                    table.insert(mobs, mob.Name)
+                end
+            end
+        end
+    end)
     pcall(function() if getgenv().SelectedEnemyDropdown and getgenv().SelectedEnemyDropdown.Refresh then getgenv().SelectedEnemyDropdown:Refresh(mobs, {"All"}) end end)
     Window:Notify({Title = "Combat", Content = "Found " .. (#mobs-1) .. " enemy types!", Type = "success"})
 end})
 
 -- Auto-refresh on load
 task.spawn(function() task.wait(3); pcall(function()
-    local mobs = {"All"}; for id, dn in pairs(getgenv().Nebu_EnemyData) do if dn ~= "" and not table.find(mobs, dn) then table.insert(mobs, dn) end end
+    local mobs = {"All"}
+    local enemiesFolder = Workspace:FindFirstChild("_ENEMIES") and Workspace._ENEMIES:FindFirstChild("Client")
+    if enemiesFolder then
+        for _, mob in ipairs(enemiesFolder:GetChildren()) do
+            if mob:IsA("Model") and not table.find(mobs, mob.Name) then
+                table.insert(mobs, mob.Name)
+            end
+        end
+    end
     if #mobs > 1 then pcall(function() if getgenv().SelectedEnemyDropdown and getgenv().SelectedEnemyDropdown.Refresh then getgenv().SelectedEnemyDropdown:Refresh(mobs, {"All"}) end end) end
 end) end)
 
 CombatSec:AddToggle({Name = "Auto Attack", Default = false, Callback = function(s) getgenv().AutoAttack = s end})
-CombatSec:AddToggle({Name = "Auto Quest", Default = false, Callback = function(s)
-    getgenv().AutoQuest = s
-    task.spawn(function() while getgenv().AutoQuest and task.wait(5) do if not getgenv().Nebublox_Running then break end; ClaimQuests() end end)
-end})
-CombatSec:AddToggle({Name = "Quest Priority", Default = true, Tooltip = "Prioritize quest targets over nearest", Callback = function(s) TargetState.QuestPriority = s end})
-
-local TargetParagraph = CombatSec:AddParagraph({Title = "Scanner: Target Info", Content = "Waiting for engagement..."})
-task.spawn(function() while task.wait(0.5) do if not getgenv().Nebublox_Running then break end; pcall(function() if TargetState.CurrentTarget and TargetState.CurrentTarget:FindFirstChild("Humanoid") then local h = TargetState.CurrentTarget.Humanoid; TargetParagraph:Set("🎯 " .. TargetState.CurrentTarget.Name .. " | HP: " .. math.floor(h.Health) .. "/" .. math.floor(h.MaxHealth)) else TargetParagraph:Set("Searching for target...") end end) end end)
-
--- Highlight Loop
-local CurrentHighlight = Instance.new("Highlight"); CurrentHighlight.FillColor = Color3.fromRGB(255, 0, 0); CurrentHighlight.FillTransparency = 0.5; CurrentHighlight.OutlineTransparency = 1; CurrentHighlight.Name = "NebubloxHighlight"
-task.spawn(function() while task.wait(0.1) do if not getgenv().Nebublox_Running then CurrentHighlight:Destroy(); break end; if TargetState.CurrentTarget and TargetState.CurrentTarget.Parent then if CurrentHighlight.Parent ~= TargetState.CurrentTarget then CurrentHighlight.Parent = TargetState.CurrentTarget; CurrentHighlight.Enabled = true end else CurrentHighlight.Parent = nil; CurrentHighlight.Enabled = false end end end)
 
 -- ═══════════════════════════════════════
 --  TAB 3: GAMEMODES
 -- ═══════════════════════════════════════
-local GamemodesTab = Window:MakeTab({Name = "🎮 Gamemodes", Icon = ""})
+local GamemodesTab = Window:MakeTab({Name = "🎮", Icon = ""})
 
 local DungSec = GamemodesTab:MakeSection({Name = "Dungeon Automation"})
-DungSec:AddButton({Name = "Auto Join Crystal Cave (Hard)", Icon = "sword", Callback = function() pcall(function() if GameLibrary and GameLibrary.Remote then GameLibrary.Remote:Fire("GamemodeSystem","Create","Dungeon","CrystalCave","Hard") end end) end})
+getgenv().SelectedDungeon = "Dungeon"
+local DungDrop = DungSec:AddDropdown({Name = "Dungeon", Options = {"Dungeon"}, Default = "Dungeon", Callback = function(v) getgenv().SelectedDungeon = v end})
+
+DungSec:AddButton({Name = "Refresh Dungeons", Icon = "star", Callback = function()
+    -- Assuming dungeons are mapped similarly, standard list for now
+    local dlist = {"Dungeon"}
+    if DungDrop and DungDrop.Refresh then DungDrop:Refresh(dlist, dlist[1]) end
+    Window:Notify({Title="Dungeons", Content="Refreshed list!", Type="success"})
+end})
+DungSec:AddButton({Name = "Auto Join Dungeon", Icon = "sword", Callback = function() pcall(function() if GameLibrary and GameLibrary.Remote then GameLibrary.Remote:Fire("GamemodeSystem","Create","Dungeon",getgenv().SelectedDungeon,"Hard",false,n=6) end end) end})
 DungSec:AddTextbox({Name = "Leave at Level", Placeholder = "0 = Disabled", Callback = function(t) getgenv().DungeonLeaveLevel = tonumber(t) or 0 end})
 
 local RaidSec = GamemodesTab:MakeSection({Name = "Raid Automation"})
+getgenv().SelectedRaid = "TitanTown"
+getgenv().SelectedRaidDiff = "Easy"
+local RaidDrop = RaidSec:AddDropdown({Name = "Raid", Options = {"TitanTown"}, Default = "TitanTown", Callback = function(v) getgenv().SelectedRaid = v end})
+local RaidDiffDrop = RaidSec:AddDropdown({Name = "Difficulty", Options = {"Easy", "Normal", "Hard"}, Default = "Easy", Callback = function(v) getgenv().SelectedRaidDiff = v end})
+
+RaidSec:AddButton({Name = "Refresh Raids", Icon = "star", Callback = function()
+    local rlist = {"TitanTown"}
+    if RaidDrop and RaidDrop.Refresh then RaidDrop:Refresh(rlist, rlist[1]) end
+    Window:Notify({Title="Raids", Content="Refreshed list!", Type="success"})
+end})
+
 RaidSec:AddToggle({Name = "Auto Start Raid", Default = false, Callback = function(s)
     getgenv().AutoStartRaid = s
     task.spawn(function() while getgenv().AutoStartRaid do if not getgenv().Nebublox_Running then break end; pcall(function()
-        local gamemodeUI = player.PlayerGui:FindFirstChild("CenterGUI") and player.PlayerGui.CenterGUI:FindFirstChild("Gamemode")
-        if gamemodeUI then local createBtn = gamemodeUI:FindFirstChild("Main") and gamemodeUI.Main:FindFirstChild("Create"); if createBtn and getconnections then for _, conn in ipairs(getconnections(createBtn.MouseButton1Click)) do conn:Fire() end end end
+        local Event = game:GetService("ReplicatedStorage"):FindFirstChild("ffrostflame_bridgenet2@1.0.0")
+        if Event then Event = Event.dataRemoteEvent end
+        if Event then Event:FireServer({{"GamemodeSystem", "Start", "Raid", 8221438525, n = 4}, "\x02"}) end
     end); task.wait(2) end end)
 end})
-RaidSec:AddButton({Name = "Auto Join Raid (World 1)", Icon = "sword", Callback = function() pcall(function() if GameLibrary and GameLibrary.Remote then GameLibrary.Remote:Fire("GamemodeSystem","Create","Raid",1) end end) end})
+RaidSec:AddButton({Name = "Create Raid", Icon = "sword", Callback = function()
+    pcall(function()
+        local Event = game:GetService("ReplicatedStorage"):FindFirstChild("ffrostflame_bridgenet2@1.0.0")
+        if Event then Event = Event.dataRemoteEvent end
+        if Event then Event:FireServer({{"GamemodeSystem", "Create", "Raid", getgenv().SelectedRaid, getgenv().SelectedRaidDiff, false, n = 6}, "\x02"}) end
+    end)
+end})
 RaidSec:AddTextbox({Name = "Leave at Wave", Placeholder = "0 = Disabled", Callback = function(t) getgenv().RaidLeaveWave = tonumber(t) or 0 end})
 
 -- ═══════════════════════════════════════
 --  TAB 5: AUTOMATION
 -- ═══════════════════════════════════════
-local AutoTab = Window:MakeTab({Name = "🤖 Automation", Icon = ""})
+local AutoTab = Window:MakeTab({Name = "🤖", Icon = ""})
 local AutoSec = AutoTab:MakeSection({Name = "Core Automations"})
 
 AutoSec:AddToggle({Name = "Auto Claim Rewards", Default = false, Callback = function(s) getgenv().AutoClaimQuests = s; task.spawn(function() while getgenv().AutoClaimQuests and task.wait(5) do if not getgenv().Nebublox_Running then break end; ClaimQuests() end end) end})
@@ -359,20 +393,54 @@ AutoSec:AddToggle({Name = "Auto Equip Best Form", Default = false, Callback = fu
 
 local GachaSec = AutoTab:MakeSection({Name = "Gacha & Scrolls"})
 getgenv().SelectedScroll = "Solo Scroll"
-GachaSec:AddDropdown({Name = "Select Scroll", Options = {"Titan Scroll","Supernatural Scroll","Spiritual Scroll","Solo Scroll"}, Default = "Solo Scroll", Callback = function(v) getgenv().SelectedScroll = v end})
+local ScrollDrop = GachaSec:AddDropdown({Name = "Scroll", Options = {"Titan Scroll","Supernatural Scroll","Spiritual Scroll","Solo Scroll"}, Default = "Solo Scroll", Callback = function(v) getgenv().SelectedScroll = v end})
+
+GachaSec:AddButton({Name = "Refresh Scrolls", Icon = "star", Callback = function()
+    local sList = {"Solo Scroll"}
+    pcall(function()
+        local root = player.Character and player.Character.PrimaryPart
+        if root then
+            for _, v in ipairs(Workspace:GetDescendants()) do
+                if v:IsA("Model") and v.Name:match("Scroll") and v.PrimaryPart and (v.PrimaryPart.Position - root.Position).Magnitude <= 500 then
+                    if not table.find(sList, v.Name) then table.insert(sList, v.Name) end
+                end
+            end
+        end
+    end)
+    if ScrollDrop and ScrollDrop.Refresh then ScrollDrop:Refresh(sList, sList[1]) end
+    Window:Notify({Title="Scrolls", Content="Found " .. #sList .. " scrolls nearby", Type="info"})
+end})
+
 GachaSec:AddToggle({Name = "Auto Hatch Selected", Default = false, Callback = function(s)
     getgenv().AutoHatch = s
     task.spawn(function() while getgenv().AutoHatch and task.wait(0.1) do if not getgenv().Nebublox_Running then break end; HatchScroll(getgenv().SelectedScroll, 5); local wt = (GameLibrary and GameLibrary.PlayerData and GameLibrary.PlayerData.Gamepasses and GameLibrary.PlayerData.Gamepasses.FastOpen) and 0.1 or 0.8; task.wait(wt) end end)
 end})
 
 getgenv().SelectedGachaType = "Enchantments"
-GachaSec:AddDropdown({Name = "Gacha Category", Options = {"Enchantments","Hunter Ranks","Traits","Titan Serums","Passives","Soul Foundation","Avatars","Weapons"}, Default = "Enchantments", Callback = function(v) getgenv().SelectedGachaType = v end})
+local GachaDrop = GachaSec:AddDropdown({Name = "Gacha", Options = {"Enchantments","Hunter Ranks","Traits","Titan Serums","Passives","Soul Foundation","Avatars","Weapons"}, Default = "Enchantments", Callback = function(v) getgenv().SelectedGachaType = v end})
+
+GachaSec:AddButton({Name = "Refresh Gachas", Icon = "star", Callback = function()
+    local gList = {"Enchantments"}
+    pcall(function()
+        local root = player.Character and player.Character.PrimaryPart
+        if root then
+            for _, v in ipairs(Workspace:GetDescendants()) do
+                if v:IsA("Model") and v.PrimaryPart and (v.Name:match("Gacha") or v.Name:match("Roll") or v.Name:match("Spin")) and (v.PrimaryPart.Position - root.Position).Magnitude <= 500 then
+                    if not table.find(gList, v.Name) then table.insert(gList, v.Name) end
+                end
+            end
+        end
+    end)
+    if GachaDrop and GachaDrop.Refresh then GachaDrop:Refresh(gList, gList[1]) end
+    Window:Notify({Title="Gachas", Content="Found " .. #gList .. " gachas nearby", Type="info"})
+end})
+
 GachaSec:AddToggle({Name = "Auto Spin Gacha", Default = false, Callback = function(s) getgenv().AutoSpinGacha = s; task.spawn(function() while getgenv().AutoSpinGacha and task.wait(1) do if not getgenv().Nebublox_Running then break end; SpinGacha(getgenv().SelectedGachaType, "Normal") end end) end})
 
 local SpeedSec = AutoTab:MakeSection({Name = "Movement Hacks"})
-SpeedSec:AddToggle({Name = "Auto WalkSpeed", Default = false, Callback = function(s) getgenv().AutoWalkSpeed = s; if s then task.spawn(function() while getgenv().AutoWalkSpeed do if not getgenv().Nebublox_Running then break end; pcall(function() local h = player.Character and player.Character:FindFirstChild("Humanoid"); if h then h.WalkSpeed = getgenv().AutoWalkSpeedVal or 100 end end); task.wait(0.1) end end) end end})
+SpeedSec:AddToggle({Name = "Walkspeed", Default = false, Callback = function(s) getgenv().AutoWalkSpeed = s; if s then task.spawn(function() while getgenv().AutoWalkSpeed do if not getgenv().Nebublox_Running then break end; pcall(function() local h = player.Character and player.Character:FindFirstChild("Humanoid"); if h then h.WalkSpeed = getgenv().AutoWalkSpeedVal or 100 end end); task.wait(0.1) end end) else pcall(function() local h = player.Character and player.Character:FindFirstChild("Humanoid"); if h then h.WalkSpeed = 16 end end) end end})
 SpeedSec:AddSlider({Name = "WalkSpeed Value", Min = 16, Max = 500, Increment = 1, Default = 100, Callback = function(v) getgenv().AutoWalkSpeedVal = v end})
-SpeedSec:AddToggle({Name = "Auto JumpPower", Default = false, Callback = function(s) getgenv().AutoJumpPower = s; if s then task.spawn(function() while getgenv().AutoJumpPower do if not getgenv().Nebublox_Running then break end; pcall(function() local h = player.Character and player.Character:FindFirstChild("Humanoid"); if h then h.JumpPower = getgenv().AutoJumpPowerVal or 100 end end); task.wait(0.1) end end) end end})
+SpeedSec:AddToggle({Name = "Jump", Default = false, Callback = function(s) getgenv().AutoJumpPower = s; if s then task.spawn(function() while getgenv().AutoJumpPower do if not getgenv().Nebublox_Running then break end; pcall(function() local h = player.Character and player.Character:FindFirstChild("Humanoid"); if h then h.UseJumpPower = true; h.JumpPower = getgenv().AutoJumpPowerVal or 100 end end); task.wait(0.1) end end) else pcall(function() local h = player.Character and player.Character:FindFirstChild("Humanoid"); if h then h.JumpPower = 50 end end) end end})
 SpeedSec:AddSlider({Name = "JumpPower Value", Min = 50, Max = 500, Increment = 1, Default = 100, Callback = function(v) getgenv().AutoJumpPowerVal = v end})
 
 -- ═══════════════════════════════════════
@@ -392,7 +460,7 @@ end
 -- ═══════════════════════════════════════
 --  TAB 7: TELEPORTS
 -- ═══════════════════════════════════════
-local TPTab = Window:MakeTab({Name = "🌍 Teleports", Icon = ""})
+local TPTab = Window:MakeTab({Name = "🌍", Icon = ""})
 local TPSec = TPTab:MakeSection({Name = "World Navigation"})
 TPSec:AddButton({Name = "Map 1 (Spawn)", Callback = function() pcall(function() local sp = Workspace:FindFirstChild("_MAP") and Workspace._MAP:FindFirstChild("1") and Workspace._MAP["1"]:FindFirstChild("Spawn") and Workspace._MAP["1"].Spawn:FindFirstChild("hf sp"); if sp and sp:IsA("BasePart") then player.Character.HumanoidRootPart.CFrame = sp.CFrame * CFrame.new(0,3,0); Window:Notify({Title="Teleport",Content="Map 1!",Type="success"}) end end) end})
 for i = 2, 4 do
@@ -402,36 +470,37 @@ end
 -- ═══════════════════════════════════════
 --  TAB 8: SETTINGS
 -- ═══════════════════════════════════════
-local SettingsTab = Window:MakeTab({Name = "⚙️ Settings", Icon = ""})
+local SettingsTab = Window:MakeTab({Name = "⚙️", Icon = ""})
 
 local UtilSec = SettingsTab:MakeSection({Name = "Utilities"})
-UtilSec:AddToggle({Name = "Anti-AFK Mechanism", Default = false, Callback = function(s) if s then getgenv().AntiAfkConnection = player.Idled:Connect(function() VirtualUser:CaptureController(); VirtualUser:ClickButton2(Vector2.new()) end) else if getgenv().AntiAfkConnection then getgenv().AntiAfkConnection:Disconnect() end end end})
+local utilRow = UtilSec:AddRow({Columns = 3})
 
-UtilSec:AddDualButton(
-    {Name = "FPS Boost (Potato)", Icon = "zap", Callback = function()
-        task.spawn(function() pcall(function()
-            Lighting.GlobalShadows = false; Lighting.FogEnd = 9e9; Lighting.Brightness = 1
-            for _, c in ipairs(Lighting:GetChildren()) do if c:IsA("PostEffect") or c:IsA("BlurEffect") or c:IsA("SunRaysEffect") or c:IsA("ColorCorrectionEffect") or c:IsA("BloomEffect") or c:IsA("DepthOfFieldEffect") or c:IsA("Atmosphere") or c:IsA("Sky") then c:Destroy() end end
-            for _, v in ipairs(Workspace:GetDescendants()) do
-                if v:IsA("BasePart") then v.Material = Enum.Material.Plastic; v.Reflectance = 0; v.CastShadow = false
-                elseif v:IsA("Decal") or v:IsA("Texture") then v:Destroy()
-                elseif v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Sparkles") or v:IsA("Fire") or v:IsA("Smoke") then v:Destroy()
-                elseif v:IsA("MeshPart") then v.Material = Enum.Material.Plastic; v.TextureID = ""
-                elseif v:IsA("Sound") then v:Stop(); v:Destroy() end
-            end
-            settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
-        end); Window:Notify({Title="FPS Boost", Content="Potato Mode Applied!", Type="success"}) end)
-    end},
-    {Name = "Unload Script", Icon = "shield", Callback = function()
-        getgenv().Nebublox_Running = false
-        if getgenv().AntiAfkConnection then getgenv().AntiAfkConnection:Disconnect() end
-        if CurrentHighlight then pcall(function() CurrentHighlight:Destroy() end) end
-        if getgenv().NebuBlox_Platform then pcall(function() getgenv().NebuBlox_Platform:Destroy() end) end
-        if getgenv().NebuBlox_NoClipConnection then getgenv().NebuBlox_NoClipConnection:Disconnect() end
-        if getgenv().NebuBlox_MovementConnection then getgenv().NebuBlox_MovementConnection:Disconnect() end
-        pcall(function() Window:Destroy() end)
-    end}
-)
+utilRow[1]:AddToggle({Name = "Anti-AFK", Default = false, Callback = function(s) if s then getgenv().AntiAfkConnection = player.Idled:Connect(function() VirtualUser:CaptureController(); VirtualUser:ClickButton2(Vector2.new()) end) else if getgenv().AntiAfkConnection then getgenv().AntiAfkConnection:Disconnect() end end end})
+
+utilRow[2]:AddButton({Name = "FPS Boost", Icon = "zap", Callback = function()
+    task.spawn(function() pcall(function()
+        Lighting.GlobalShadows = false; Lighting.FogEnd = 9e9; Lighting.Brightness = 1
+        for _, c in ipairs(Lighting:GetChildren()) do if c:IsA("PostEffect") or c:IsA("BlurEffect") or c:IsA("SunRaysEffect") or c:IsA("ColorCorrectionEffect") or c:IsA("BloomEffect") or c:IsA("DepthOfFieldEffect") or c:IsA("Atmosphere") or c:IsA("Sky") then c:Destroy() end end
+        for _, v in ipairs(Workspace:GetDescendants()) do
+            if v:IsA("BasePart") then v.Material = Enum.Material.Plastic; v.Reflectance = 0; v.CastShadow = false
+            elseif v:IsA("Decal") or v:IsA("Texture") then v:Destroy()
+            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Sparkles") or v:IsA("Fire") or v:IsA("Smoke") then v:Destroy()
+            elseif v:IsA("MeshPart") then v.Material = Enum.Material.Plastic; v.TextureID = ""
+            elseif v:IsA("Sound") then v:Stop(); v:Destroy() end
+        end
+        settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+    end); Window:Notify({Title="FPS Boost", Content="Potato Mode Applied!", Type="success"}) end)
+end})
+
+utilRow[3]:AddButton({Name = "Unload / Kill Script", Icon = "shield", Callback = function()
+    getgenv().Nebublox_Running = false
+    if getgenv().AntiAfkConnection then getgenv().AntiAfkConnection:Disconnect() end
+    if CurrentHighlight then pcall(function() CurrentHighlight:Destroy() end) end
+    if getgenv().NebuBlox_Platform then pcall(function() getgenv().NebuBlox_Platform:Destroy() end) end
+    if getgenv().NebuBlox_NoClipConnection then getgenv().NebuBlox_NoClipConnection:Disconnect() end
+    if getgenv().NebuBlox_MovementConnection then getgenv().NebuBlox_MovementConnection:Disconnect() end
+    pcall(function() Window:Destroy() end)
+end})
 
 local SetSec = SettingsTab:MakeSection({Name = "Configuration Management"})
 local FolderName = "Nebublox"
@@ -439,12 +508,20 @@ local ConfigsFolder = FolderName .. "/Configs"
 pcall(function() if not isfolder(FolderName) then makefolder(FolderName) end; if not isfolder(ConfigsFolder) then makefolder(ConfigsFolder) end end)
 
 local ConfName = ""
-SetSec:AddTextbox({Name = "Config Profile", Placeholder = "Enter config name...", Callback = function(t) ConfName = t end})
+local function GetConfigs() local files = {"None"}; pcall(function() for _, f in ipairs(listfiles(ConfigsFolder)) do if f:match("%.json$") then table.insert(files, f:match("([^/\\]+)%.json$")) end end end); return files end
+local ConfDrop = SetSec:AddDropdown({Name = "Saved Profiles", Options = GetConfigs(), Default = "None", Callback = function(v) if v ~= "None" then ConfName = v end end})
 
-SetSec:AddDualButton(
-    {Name = "Save Settings", Icon = "download", Callback = function() if ConfName ~= "" then pcall(function() writefile(ConfigsFolder.."/"..ConfName..".json", HttpService:JSONEncode(getgenv().NebubloxSettings or {})) end); Window:Notify({Title="Config",Content="Saved: "..ConfName,Type="success"}) end end},
-    {Name = "Load Settings", Icon = "upload", Callback = function() if ConfName ~= "" then pcall(function() local p = ConfigsFolder.."/"..ConfName..".json"; if isfile(p) then for k,v in pairs(HttpService:JSONDecode(readfile(p))) do getgenv().NebubloxSettings = getgenv().NebubloxSettings or {}; getgenv().NebubloxSettings[k] = v end end end); Window:Notify({Title="Config",Content="Loaded: "..ConfName,Type="success"}) end end}
-)
+SetSec:AddButton({Name = "Refresh Profiles", Icon = "star", Callback = function()
+    local files = GetConfigs()
+    if ConfDrop and ConfDrop.Refresh then ConfDrop:Refresh(files, files[1]) end
+end})
+
+SetSec:AddTextbox({Name = "Profile Name", Placeholder = "Enter config name...", Callback = function(t) ConfName = t end})
+
+local cfgRow = SetSec:AddRow({Columns = 3})
+cfgRow[1]:AddButton({Name = "Save", Icon = "download", Callback = function() if ConfName ~= "" and ConfName ~= "None" then pcall(function() writefile(ConfigsFolder.."/"..ConfName..".json", HttpService:JSONEncode(getgenv().NebubloxSettings or {})) end); Window:Notify({Title="Config",Content="Saved: "..ConfName,Type="success"}) end end})
+cfgRow[2]:AddButton({Name = "Load", Icon = "upload", Callback = function() if ConfName ~= "" and ConfName ~= "None" then pcall(function() local p = ConfigsFolder.."/"..ConfName..".json"; if isfile(p) then for k,v in pairs(HttpService:JSONDecode(readfile(p))) do getgenv().NebubloxSettings = getgenv().NebubloxSettings or {}; getgenv().NebubloxSettings[k] = v end end end); Window:Notify({Title="Config",Content="Loaded: "..ConfName,Type="success"}) end end})
+cfgRow[3]:AddButton({Name = "Delete", Icon = "shield", Callback = function() if ConfName ~= "" and ConfName ~= "None" then pcall(function() delfile(ConfigsFolder.."/"..ConfName..".json") end); Window:Notify({Title="Config",Content="Deleted: "..ConfName,Type="error"}) end end})
 
 -- ═══════════════════════════════════════
 --  FINAL INIT

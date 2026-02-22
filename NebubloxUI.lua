@@ -125,6 +125,31 @@ local function track(conn)
     return conn
 end
 
+local function rainbowStroke(obj, thickness)
+    local s = Instance.new("UIStroke")
+    s.Thickness = thickness or 1
+    s.Color = Color3.fromHSV(0, 1, 1)
+    s.Parent = obj
+    track(RunService.Heartbeat:Connect(function()
+        s.Color = Color3.fromHSV((tick() % 5) / 5, 1, 1)
+    end))
+    return s
+end
+
+local function waveGradient(obj, col1, col2)
+    local g = Instance.new("UIGradient")
+    g.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, col1 or Theme.Purple),
+        ColorSequenceKeypoint.new(1, col2 or Theme.Accent)
+    })
+    g.Rotation = 0
+    g.Parent = obj
+    track(RunService.Heartbeat:Connect(function()
+        g.Rotation = math.sin(tick() * 2) * 45
+    end))
+    return g
+end
+
 local function gradient3D(obj, topCol, botCol, rot)
     local g = Instance.new("UIGradient")
     g.Color = ColorSequence.new({
@@ -168,6 +193,37 @@ local function glowStroke(obj, col, thick, trans)
     local pulse = TweenService:Create(s, TweenInfo.new(1.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Transparency = math.min(1, tBase + 0.4)})
     pulse:Play()
     
+    return s
+end
+
+local function rainbowTextOutline(lbl)
+    local s = Instance.new("UIStroke")
+    s.Color = Color3.new(1,0,0)
+    s.Thickness = 1.2
+    s.Parent = lbl
+    task.spawn(function()
+        local hue = 0
+        while lbl.Parent do
+            hue = (hue + 1) % 360
+            s.Color = Color3.fromHSV(hue/360, 1, 1)
+            task.wait()
+        end
+    end)
+    return s
+end
+
+local function waveBorder(obj, col1, col2)
+    local s = Instance.new("UIStroke")
+    s.Color = col1
+    s.Thickness = 1.5
+    s.Parent = obj
+    task.spawn(function()
+        while obj.Parent do
+            tween(s, {Color = col2}, 1.5).Completed:Wait()
+            if not obj.Parent then break end
+            tween(s, {Color = col1}, 1.5).Completed:Wait()
+        end
+    end)
     return s
 end
 
@@ -231,15 +287,21 @@ function Section:AddButton(cfg)
     local btn = Instance.new("TextButton")
     btn.Name = "Btn_"..name
     btn.Size = UDim2.new(1,0,0, height)
-    btn.BackgroundColor3 = Theme.PurpleDark
-    btn.BackgroundTransparency = 0.6
+    btn.BackgroundColor3 = Color3.new(0,0,0)
+    btn.BackgroundTransparency = 0.8
     btn.ZIndex = self:NextZ()
     btn.Text = ""
     btn.BorderSizePixel = 0
     btn.Parent = self.Container
     corner(btn, Theme.CornerSmall)
 
-    local btnStroke = stroke(btn, Color3.new(0,0,0), 1, 0.2)
+    local btnStroke
+    if cfg.Color then
+        btnStroke = stroke(btn, cfg.Color, 1.5, 0.2)
+        glowStroke(btn, cfg.Color, 2, 0.4)
+    else
+        btnStroke = waveBorder(btn, Color3.fromRGB(138,43,226), Color3.fromRGB(0,255,255))
+    end
     innerShine(btn)
 
     if self.Window and cfg.Tooltip then self.Window.TrackTooltip(btn, cfg.Tooltip) end
@@ -251,7 +313,7 @@ function Section:AddButton(cfg)
         img.AnchorPoint = Vector2.new(0,0.5)
         img.BackgroundTransparency = 1
         img.Image = resolveIcon(icon)
-        img.ImageColor3 = Theme.Accent
+        img.ImageColor3 = cfg.Color or Theme.Accent
         img.Parent = btn
         img.ZIndex = btn.ZIndex + 2
 
@@ -309,19 +371,20 @@ function Section:AddButton(cfg)
     end
 
     btn.MouseEnter:Connect(function()
-        tween(btn, {BackgroundTransparency = 0.4}, 0.15)
-        tween(btnStroke, {Transparency = 0.1}, 0.15)
+        tween(btn, {BackgroundTransparency = 0.2}, 0.15)
+        if cfg.Color then tween(btnStroke, {Transparency = 0.1}, 0.15) end
     end)
     btn.MouseLeave:Connect(function()
-        tween(btn, {BackgroundTransparency = 0.6}, 0.15)
-        tween(btnStroke, {Color = Color3.new(0,0,0), Transparency = 0.2}, 0.15)
+        tween(btn, {BackgroundTransparency = 0.5}, 0.15)
+        if cfg.Color then tween(btnStroke, {Transparency = 0.2}, 0.15) end
     end)
-    -- Click: energy flash
     btn.MouseButton1Click:Connect(function()
-        tween(btnStroke, {Color = Theme.Accent, Transparency = 0, Thickness = 2}, 0.06)
-        task.delay(0.15, function()
-            tween(btnStroke, {Color = Color3.new(0,0,0), Transparency = 0.2, Thickness = 1}, 0.25)
-        end)
+        if cfg.Color then
+            tween(btnStroke, {Color = Theme.Text, Transparency = 0, Thickness = 2}, 0.06)
+            task.delay(0.15, function()
+                tween(btnStroke, {Color = cfg.Color, Transparency = 0.2, Thickness = 1.5}, 0.25)
+            end)
+        end
         pcall(cb)
     end)
     return btn
@@ -344,22 +407,31 @@ function Section:AddDualButton(cfg1, cfg2)
         local cb = cfg.Callback or function() end
         local btn = Instance.new("TextButton")
         btn.Size = UDim2.new(0.5, -4, 1, 0)
-        btn.BackgroundColor3 = Theme.PurpleDark
-        btn.BackgroundTransparency = 0.6
+        btn.BackgroundColor3 = cfg.Color or Color3.new(0,0,0)
+        btn.BackgroundTransparency = 0.5
         btn.Text = cfg.Name or "Button"
         btn.TextColor3 = Theme.Text
         btn.FontFace = Theme.Font
         btn.TextSize = 13
         btn.Parent = container
         corner(btn, Theme.CornerSmall)
-        local s = stroke(btn, Color3.new(0,0,0), 1, 0.2)
+        
+        local s
+        if cfg.Color then
+            s = stroke(btn, cfg.Color, 1.5, 0.2)
+            glowStroke(btn, cfg.Color, 2, 0.4)
+        else
+            s = waveBorder(btn, Color3.fromRGB(138,43,226), Color3.fromRGB(0,255,255))
+        end
         innerShine(btn)
         
-        btn.MouseEnter:Connect(function() tween(btn, {BackgroundTransparency = 0.4}, 0.15); tween(s, {Transparency = 0.1}, 0.15) end)
-        btn.MouseLeave:Connect(function() tween(btn, {BackgroundTransparency = 0.6}, 0.15); tween(s, {Color = Color3.new(0,0,0), Transparency = 0.2}, 0.15) end)
+        btn.MouseEnter:Connect(function() tween(btn, {BackgroundTransparency = 0.2}, 0.15); if cfg.Color then tween(s, {Transparency = 0.1}, 0.15) end end)
+        btn.MouseLeave:Connect(function() tween(btn, {BackgroundTransparency = 0.5}, 0.15); if cfg.Color then tween(s, {Transparency = 0.2}, 0.15) end end)
         btn.MouseButton1Click:Connect(function()
-            tween(s, {Color = Theme.Accent, Transparency = 0, Thickness = 2}, 0.06)
-            task.delay(0.15, function() tween(s, {Color = Color3.new(0,0,0), Transparency = 0.2, Thickness = 1}, 0.25) end)
+            if cfg.Color then
+                tween(s, {Color = Theme.Text, Transparency = 0, Thickness = 2}, 0.06)
+                task.delay(0.15, function() tween(s, {Color = cfg.Color, Transparency = 0.2, Thickness = 1.5}, 0.25) end)
+            end
             pcall(cb)
         end)
     end
@@ -395,29 +467,22 @@ function Section:AddToggle(cfg)
     if self.Window and cfg.Tooltip then self.Window.TrackTooltip(lbl, cfg.Tooltip) end
 
     local sw = Instance.new("TextButton")
-    sw.Size = UDim2.new(0,36,0,18)
-    sw.Position = UDim2.new(1,-46,0.5,0)
+    sw.Size = UDim2.new(0,24,0,24)
+    sw.Position = UDim2.new(1,-34,0.5,0)
     sw.AnchorPoint = Vector2.new(0,0.5)
-    sw.BackgroundColor3 = state and Theme.Accent or Theme.SurfaceDark
-    sw.Text = ""
+    sw.BackgroundTransparency = 1
+    sw.Text = state and "●" or "○"
+    sw.TextColor3 = state and Color3.new(1,1,1) or Theme.TextDim
+    sw.TextSize = 24
     sw.BorderSizePixel = 0
     sw.Parent = f
-    corner(sw, Theme.CornerPill)
-    local swStroke = stroke(sw, state and Theme.Accent or Color3.new(0,0,0), 1, 0.2)
-
-    local knob = Instance.new("Frame")
-    knob.Size = UDim2.new(0,14,0,14)
-    knob.Position = state and UDim2.new(1,-16,0.5,0) or UDim2.new(0,2,0.5,0)
-    knob.AnchorPoint = Vector2.new(0,0.5)
-    knob.BackgroundColor3 = Color3.new(1,1,1)
-    knob.BorderSizePixel = 0
-    knob.Parent = sw
-    corner(knob, Theme.CornerPill)
+    local swR = rainbowStroke(sw, 1.2)
+    swR.Enabled = state
 
     local function upd()
-        tween(sw, {BackgroundColor3 = state and Theme.Accent or Theme.SurfaceDark}, 0.2)
-        tween(knob, {Position = state and UDim2.new(1,-16,0.5,0) or UDim2.new(0,2,0.5,0)}, 0.2)
-        tween(swStroke, {Color = state and Theme.Accent or Color3.new(0,0,0)}, 0.2)
+        sw.Text = state and "●" or "○"
+        sw.TextColor3 = state and Color3.new(1,1,1) or Theme.TextDim
+        swR.Enabled = state
     end
     sw.MouseButton1Click:Connect(function() state = not state; upd(); pcall(cb, state) end)
 
@@ -438,11 +503,12 @@ function Section:AddSlider(cfg)
     local f = Instance.new("Frame")
     f.Name = "Sld_"..name
     f.Size = UDim2.new(1,0,0,50)
-    f.BackgroundColor3 = Theme.Surface
-    f.BackgroundTransparency = 0.4
+    f.BackgroundColor3 = Color3.new(0,0,0)
+    f.BackgroundTransparency = 0.8
     f.BorderSizePixel = 0
     f.Parent = self.Container
     corner(f, Theme.CornerSmall)
+    waveBorder(f, Color3.fromRGB(138,43,226), Color3.fromRGB(0,255,255))
 
     local lbl = Instance.new("TextLabel")
     lbl.Size = UDim2.new(1,-60,0,20)
@@ -548,13 +614,14 @@ function Section:AddDropdown(cfg)
     f.Name = "Dd_"..name
     f.Size = UDim2.new(1,0,0,32)
     f.AutomaticSize = Enum.AutomaticSize.Y
-    f.BackgroundColor3 = Theme.Surface
-    f.BackgroundTransparency = 0.4
+    f.BackgroundColor3 = Color3.new(0,0,0)
+    f.BackgroundTransparency = 0.8
     f.BorderSizePixel = 0
     f.ClipsDescendants = true
     f.ZIndex = self:NextZ()
     f.Parent = self.Container
     corner(f, Theme.CornerSmall)
+    waveBorder(f, Color3.fromRGB(138,43,226), Color3.fromRGB(0,255,255))
 
     local lbl = Instance.new("TextLabel")
     lbl.Size = UDim2.new(0.5,-8,0,32)
@@ -666,13 +733,14 @@ function Section:AddMultiDropdown(cfg)
     f.Name = "MDd_"..name
     f.Size = UDim2.new(1,0,0,32)
     f.AutomaticSize = Enum.AutomaticSize.Y
-    f.BackgroundColor3 = Theme.Surface
-    f.BackgroundTransparency = 0.4
+    f.BackgroundColor3 = Color3.new(0,0,0)
+    f.BackgroundTransparency = 0.8
     f.BorderSizePixel = 0
     f.ClipsDescendants = true
     f.ZIndex = self:NextZ()
     f.Parent = self.Container
     corner(f, Theme.CornerSmall)
+    waveBorder(f, Color3.fromRGB(138,43,226), Color3.fromRGB(0,255,255))
 
     local lbl = Instance.new("TextLabel")
     lbl.Size = UDim2.new(0.5,-8,0,32)
@@ -718,7 +786,8 @@ function Section:AddMultiDropdown(cfg)
         ob.Size = UDim2.new(1,0,0,26)
         ob.BackgroundColor3 = Theme.Background
         ob.BackgroundTransparency = 0.4
-        ob.Text = (sel[opt] and "  ☑ " or "  ☐ ")..tostring(opt)
+        ob.Text = (sel[opt] and "  ● " or "  ○ ")..tostring(opt)
+        rainbowTextOutline(ob)
         ob.TextColor3 = sel[opt] and Theme.Accent or Theme.TextDim
         ob.TextSize = 12
         ob.FontFace = Theme.FontBody
@@ -727,7 +796,7 @@ function Section:AddMultiDropdown(cfg)
         ob.Parent = optC
         ob.MouseButton1Click:Connect(function()
             sel[opt] = not sel[opt] or nil
-            ob.Text = (sel[opt] and "  ☑ " or "  ☐ ")..tostring(opt)
+            ob.Text = (sel[opt] and "  ● " or "  ○ ")..tostring(opt)
             ob.TextColor3 = sel[opt] and Theme.Accent or Theme.TextDim
             valBtn.Text = countSel().." selected  ▾"
             pcall(cb, getResult())
@@ -756,11 +825,12 @@ function Section:AddKeybind(cfg)
     local f = Instance.new("Frame")
     f.Name = "Kb_"..name
     f.Size = UDim2.new(1,0,0,32)
-    f.BackgroundColor3 = Theme.Surface
-    f.BackgroundTransparency = 0.4
+    f.BackgroundColor3 = Color3.new(0,0,0)
+    f.BackgroundTransparency = 0.8
     f.BorderSizePixel = 0
     f.Parent = self.Container
     corner(f, Theme.CornerSmall)
+    waveBorder(f, Color3.fromRGB(138,43,226), Color3.fromRGB(0,255,255))
 
     local lbl = Instance.new("TextLabel")
     lbl.Size = UDim2.new(1,-80,1,0)
@@ -821,11 +891,12 @@ function Section:AddTextbox(cfg)
     local f = Instance.new("Frame")
     f.Name = "Tb_"..name
     f.Size = UDim2.new(1,0,0,32)
-    f.BackgroundColor3 = Theme.Surface
-    f.BackgroundTransparency = 0.4
+    f.BackgroundColor3 = Color3.new(0,0,0)
+    f.BackgroundTransparency = 0.8
     f.BorderSizePixel = 0
     f.Parent = self.Container
     corner(f, Theme.CornerSmall)
+    waveBorder(f, Color3.fromRGB(138,43,226), Color3.fromRGB(0,255,255))
 
     local lbl = Instance.new("TextLabel")
     lbl.Size = UDim2.new(0.4,-8,1,0)
@@ -983,6 +1054,7 @@ function Section:AddConsole(cfg)
     f.Name = "Console_"..name
     f.Size = UDim2.new(1,0,0, cfg.Height or 120)
     f.BackgroundColor3 = Color3.fromRGB(5,2,12)
+    f.BackgroundTransparency = 1
     f.BorderSizePixel = 0
     f.Parent = self.Container
     corner(f, Theme.CornerSmall)
@@ -1338,7 +1410,7 @@ function Section:AddGameScanner(cfg)
     f.Name = "Scan_"..name
     f.Size = UDim2.new(1,0,0,60)
     f.BackgroundColor3 = Theme.Surface
-    f.BackgroundTransparency = 0.4
+    f.BackgroundTransparency = 1
     f.BorderSizePixel = 0
     f.Parent = self.Container
     corner(f, Theme.CornerSmall)
@@ -1424,7 +1496,7 @@ function Section:Add3DViewport(cfg)
     f.Name = "Vp_"..name
     f.Size = UDim2.new(1,0,0,180)
     f.BackgroundColor3 = Theme.Surface
-    f.BackgroundTransparency = 0.4
+    f.BackgroundTransparency = 1
     f.BorderSizePixel = 0
     f.Parent = self.Container
     corner(f, Theme.CornerSmall)
@@ -1500,7 +1572,7 @@ function Section:AddLineGraph(cfg)
     f.Name = "Graph_"..name
     f.Size = UDim2.new(1,0,0,140)
     f.BackgroundColor3 = Theme.Surface
-    f.BackgroundTransparency = 0.4
+    f.BackgroundTransparency = 1
     f.BorderSizePixel = 0
     f.Parent = self.Container
     corner(f, Theme.CornerSmall)
@@ -1770,11 +1842,12 @@ function Section:AddSubTabs(cfg)
 
     local btnContainer = Instance.new("Frame")
     btnContainer.Size = UDim2.new(1,0,0,28)
-    btnContainer.BackgroundColor3 = Theme.Background
-    btnContainer.BackgroundTransparency = 0.5
+    btnContainer.BackgroundColor3 = Color3.new(0,0,0)
+    btnContainer.BackgroundTransparency = 0.8
     btnContainer.BorderSizePixel = 0
     btnContainer.Parent = f
     corner(btnContainer, Theme.CornerSmall)
+    waveBorder(btnContainer, Color3.fromRGB(138,43,226), Color3.fromRGB(0,255,255))
     listLayout(btnContainer, 0).FillDirection = Enum.FillDirection.Horizontal
 
     local contentContainer = Instance.new("Frame")
@@ -1795,10 +1868,12 @@ function Section:AddSubTabs(cfg)
             fr.Visible = (i == idx)
         end
         for i, b in ipairs(btns) do
-            b.BackgroundColor3 = (i == idx) and Theme.Purple or Theme.Background
+            local isAbout = b.Text:lower() == "about"
+            b.BackgroundColor3 = (i == idx) and (isAbout and Color3.fromRGB(0,255,255) or Theme.Purple) or Color3.new(0,0,0)
             b.BackgroundTransparency = (i == idx) and 0.4 or 1
             if b:FindFirstChild("Underline") then
                 b.Underline.Visible = (i == idx)
+                b.Underline.BackgroundColor3 = isAbout and Color3.fromRGB(0,255,255) or Theme.Accent
             end
         end
     end
@@ -1870,12 +1945,13 @@ function Section.new(tab, cfg)
     hdr.Size = UDim2.new(1,-16,0,28)
     hdr.Position = UDim2.new(0,8,0,4)
     hdr.BackgroundTransparency = 1
-    hdr.Text = "⬡  "..self.Name
-    hdr.TextColor3 = Theme.Accent
+    hdr.Text = self.Name
+    hdr.TextColor3 = Color3.new(1,1,1)
     hdr.TextSize = 15
     hdr.FontFace = Theme.FontTitle
     hdr.TextXAlignment = Enum.TextXAlignment.Left
     hdr.Parent = f
+    rainbowStroke(hdr, 1.2)
 
     local line = Instance.new("Frame")
     line.Size = UDim2.new(1,-16,0,1)
@@ -1951,6 +2027,7 @@ function Tab.new(window, cfg)
     lbl.TextTruncate = Enum.TextTruncate.AtEnd
     lbl.TextXAlignment = Enum.TextXAlignment.Left
     lbl.Parent = btn
+    waveGradient(lbl, Color3.fromRGB(160, 80, 255), Color3.fromRGB(0, 255, 255))
     self._lbl = lbl
     self._btn = btn
 
@@ -1994,6 +2071,7 @@ function Tab.new(window, cfg)
         tearWindow.Position = UDim2.new(0.5, 180, 0.5, 0)
         tearWindow.AnchorPoint = Vector2.new(0.5, 0.5)
         tearWindow.BackgroundColor3 = Theme.Background
+        tearWindow.BackgroundTransparency = 1
         tearWindow.BorderSizePixel = 0
         tearWindow.Parent = window._sg
         corner(tearWindow, UDim.new(0, 10))
@@ -2002,6 +2080,7 @@ function Tab.new(window, cfg)
         local tb = Instance.new("Frame")
         tb.Size = UDim2.new(1,0,0,30)
         tb.BackgroundColor3 = Theme.Surface
+        tb.BackgroundTransparency = 1
         tb.BorderSizePixel = 0
         tb.Parent = tearWindow
         corner(tb, UDim.new(0,10))
@@ -2010,6 +2089,7 @@ function Tab.new(window, cfg)
         tFix.Size = UDim2.new(1,0,0,10)
         tFix.Position = UDim2.new(0,0,1,-10)
         tFix.BackgroundColor3 = Theme.Surface
+        tFix.BackgroundTransparency = 1
         tFix.BorderSizePixel = 0
         tFix.Parent = tb
 
@@ -2116,10 +2196,10 @@ function Tab:Select()
     self.Page.Visible = true
     self.Page.Position = UDim2.new(0, 0, 0, 0)
 
-    -- Sidebar Active State match: Horizontal cyan gradient
-    tween(self._btn, {BackgroundTransparency = 0.2}, 0.2)
-    gradient3D(self._btn, Theme.AccentDim, Theme.SurfaceDark, 0)
-    glowStroke(self._btn, Theme.Accent, 1, 0.5)
+    -- Sidebar Active State match: wave gradient border
+    tween(self._btn, {BackgroundTransparency = 0.6}, 0.2)
+    self._btn.BackgroundColor3 = Color3.new(0,0,0)
+    waveBorder(self._btn, Color3.fromRGB(138,43,226), Color3.fromRGB(0, 255, 255))
     self._lbl.TextColor3 = Theme.Text
     if self._icon then self._icon.ImageColor3 = Theme.Accent end
 end
@@ -2205,7 +2285,7 @@ function Window.new(cfg)
     main.Position = UDim2.new(0.5,0,0.5,0)
     main.AnchorPoint = Vector2.new(0.5,0.5)
     main.BackgroundColor3 = Theme.Background
-    main.BackgroundTransparency = 0.5
+    main.BackgroundTransparency = 1
     main.BorderSizePixel = 0
     main.ClipsDescendants = true
     main.Parent = wrapper
@@ -2272,6 +2352,7 @@ function Window.new(cfg)
         galaxy.Name = "GalaxyLayer"
         galaxy.Size = UDim2.new(1,0,1,0)
         galaxy.BackgroundColor3 = Color3.fromRGB(12, 6, 24)
+        galaxy.BackgroundTransparency = 1
         galaxy.ZIndex = 0
         galaxy.BorderSizePixel = 0
         galaxy.Parent = main
@@ -2361,6 +2442,7 @@ function Window.new(cfg)
         cyber.Name = "CyberLayer"
         cyber.Size = UDim2.new(1,0,1,0)
         cyber.BackgroundColor3 = Theme.Background
+        cyber.BackgroundTransparency = 1
         cyber.ZIndex = 0
         cyber.BorderSizePixel = 0
         cyber.Parent = main
@@ -2460,7 +2542,7 @@ function Window.new(cfg)
     sidebar.Size = UDim2.new(0, 210, 1, 0)
     sidebar.Position = UDim2.new(0, 0, 0, 0)
     sidebar.BackgroundColor3 = Theme.SurfaceDark
-    sidebar.BackgroundTransparency = 0.6
+    sidebar.BackgroundTransparency = 1
     sidebar.BorderSizePixel = 0
     sidebar.ClipsDescendants = true
     sidebar.Parent = main
@@ -2475,26 +2557,27 @@ function Window.new(cfg)
     sidebarLine.Parent = sidebar
 
     local ttl = Instance.new("TextLabel")
-    ttl.Size = UDim2.new(1, -20, 0, 24)
+    ttl.Size = UDim2.new(1, -20, 0, 16)
     ttl.Position = UDim2.new(0, 10, 0, 8)
     ttl.BackgroundTransparency = 1
     ttl.Text = self.Title
-    ttl.TextColor3 = Theme.Text
-    ttl.TextSize = 14
+    ttl.TextColor3 = Theme.TextDim
+    ttl.TextSize = 10
     ttl.FontFace = Theme.FontTitle
     ttl.TextXAlignment = Enum.TextXAlignment.Left
     ttl.Parent = sidebar
 
     local subTtl = Instance.new("TextLabel")
-    subTtl.Size = UDim2.new(1, -20, 0, 16)
-    subTtl.Position = UDim2.new(0, 10, 0, 32)
+    subTtl.Size = UDim2.new(1, -20, 0, 24)
+    subTtl.Position = UDim2.new(0, 10, 0, 20)
     subTtl.BackgroundTransparency = 1
     subTtl.Text = cfg.Subtitle or "by UI Engine"
-    subTtl.TextColor3 = Theme.TextDim
-    subTtl.TextSize = 12
-    subTtl.FontFace = Theme.FontBody
+    subTtl.TextColor3 = Color3.new(1,1,1)
+    subTtl.TextSize = 18
+    subTtl.FontFace = Theme.FontTitle
     subTtl.TextXAlignment = Enum.TextXAlignment.Left
     subTtl.Parent = sidebar
+    rainbowStroke(subTtl, 1.4)
 
     local ttlLine = Instance.new("Frame")
     ttlLine.Size = UDim2.new(1, 0, 0, 1)
@@ -2643,14 +2726,26 @@ function Window.new(cfg)
 
     local bottomOffset = 0
     if cfg.Profile then
-        bottomOffset = 68
+        bottomOffset = 84
         local bpf = Instance.new("Frame")
         bpf.Name = "BottomProfile"
-        bpf.Size = UDim2.new(1,0,0,68)
-        bpf.Position = UDim2.new(0,0,1,-68)
+        bpf.Size = UDim2.new(1,0,0,84)
+        bpf.Position = UDim2.new(0,0,1,-84)
         bpf.BackgroundTransparency = 1
         bpf.BorderSizePixel = 0
         bpf.Parent = sidebar
+
+        local bpfHdr = Instance.new("TextLabel")
+        bpfHdr.Size = UDim2.new(1,-20,0,16)
+        bpfHdr.Position = UDim2.new(0,10,0,4)
+        bpfHdr.BackgroundTransparency = 1
+        bpfHdr.Text = "Users Interface"
+        bpfHdr.TextColor3 = Color3.new(1,1,1)
+        bpfHdr.TextSize = 11
+        bpfHdr.FontFace = Theme.FontTitle
+        bpfHdr.TextXAlignment = Enum.TextXAlignment.Left
+        bpfHdr.Parent = bpf
+        rainbowStroke(bpfHdr, 1.2)
 
         local bpfLine = Instance.new("Frame")
         bpfLine.Size = UDim2.new(1, -20, 0, 1)
@@ -2685,7 +2780,7 @@ function Window.new(cfg)
 
         local pt = Instance.new("TextLabel")
         pt.Size = UDim2.new(1,-60,0,16)
-        pt.Position = UDim2.new(0,60,0,16)
+        pt.Position = UDim2.new(0,60,0,32)
         pt.BackgroundTransparency = 1
         pt.Text = cfg.Profile.Title or "User"
         pt.TextColor3 = Theme.Text
@@ -2696,7 +2791,7 @@ function Window.new(cfg)
 
         local pd = Instance.new("TextLabel")
         pd.Size = UDim2.new(1,-60,0,14)
-        pd.Position = UDim2.new(0,60,0,34)
+        pd.Position = UDim2.new(0,60,0,50)
         pd.BackgroundTransparency = 1
         pd.Text = cfg.Profile.Desc or "Profile"
         pd.TextColor3 = Theme.TextDim
