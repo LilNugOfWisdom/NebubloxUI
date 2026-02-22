@@ -1,4 +1,4 @@
-﻿--[[
+--[[
     ╔═══════════════════════════════════════════════╗
     ║           NEBUBLOX UI LIBRARY v1.0            ║
     ║   A premium, flexible Roblox UI framework     ║
@@ -43,9 +43,9 @@ local Theme = {
     Font          = Font.fromEnum(Enum.Font.GothamBold),
     FontTitle     = Font.fromEnum(Enum.Font.GothamBlack),
     FontBody      = Font.fromEnum(Enum.Font.Gotham),
-    Corner        = UDim.new(0, 4),
-    CornerSmall   = UDim.new(0, 4),
-    CornerPill    = UDim.new(0, 4),
+    Corner        = UDim.new(0, 10),
+    CornerSmall   = UDim.new(0, 6),
+    CornerPill    = UDim.new(0, 6),
     Warning       = Color3.fromRGB(255, 200, 50),
 }
 
@@ -2478,19 +2478,30 @@ function Window.new(cfg)
     sidebarLine.Parent = sidebar
 
     local ttl = Instance.new("TextLabel")
-    ttl.Size = UDim2.new(1, -20, 0, 36)
-    ttl.Position = UDim2.new(0, 10, 0, 0)
+    ttl.Size = UDim2.new(1, -20, 0, 24)
+    ttl.Position = UDim2.new(0, 10, 0, 8)
     ttl.BackgroundTransparency = 1
-    ttl.Text = "⬡  "..self.Title
-    ttl.TextColor3 = Theme.TextDim
-    ttl.TextSize = 13
+    ttl.Text = self.Title
+    ttl.TextColor3 = Theme.Text
+    ttl.TextSize = 18
     ttl.FontFace = Theme.FontTitle
     ttl.TextXAlignment = Enum.TextXAlignment.Left
     ttl.Parent = sidebar
 
+    local subTtl = Instance.new("TextLabel")
+    subTtl.Size = UDim2.new(1, -20, 0, 16)
+    subTtl.Position = UDim2.new(0, 10, 0, 32)
+    subTtl.BackgroundTransparency = 1
+    subTtl.Text = cfg.Subtitle or "by UI Engine"
+    subTtl.TextColor3 = Theme.TextDim
+    subTtl.TextSize = 12
+    subTtl.FontFace = Theme.FontBody
+    subTtl.TextXAlignment = Enum.TextXAlignment.Left
+    subTtl.Parent = sidebar
+
     local ttlLine = Instance.new("Frame")
     ttlLine.Size = UDim2.new(1, 0, 0, 1)
-    ttlLine.Position = UDim2.new(0, 0, 0, 36)
+    ttlLine.Position = UDim2.new(0, 0, 0, 56)
     ttlLine.BackgroundColor3 = Theme.AccentGlow
     ttlLine.BackgroundTransparency = 0.7
     ttlLine.BorderSizePixel = 0
@@ -2596,60 +2607,7 @@ function Window.new(cfg)
         end
     end)
 
-    local yOffset = 42
-
-    if cfg.Profile then
-        local pf = Instance.new("Frame")
-        pf.Name = "HubProfileContainer"
-        pf.Size = UDim2.new(1, 0, 0, 70)
-        pf.Position = UDim2.new(0, 0, 0, yOffset)
-        pf.BackgroundTransparency = 1
-        pf.Parent = sidebar
-
-        local av = Instance.new("ImageLabel")
-        av.Size = UDim2.new(0, 48, 0, 48)
-        av.Position = UDim2.new(0, 10, 0.5, 0)
-        av.AnchorPoint = Vector2.new(0, 0.5)
-        av.BackgroundColor3 = Theme.SurfaceLight
-        av.BorderSizePixel = 0
-        av.Image = resolveImage(cfg.Profile.Avatar or "rbxassetid://10138402123")
-        av.Parent = pf
-        corner(av, Theme.Corner)
-        glowStroke(av, Theme.AccentGlow, 1.5, 0.2)
-        innerShine(av)
-
-        local pt = Instance.new("TextLabel")
-        pt.Size = UDim2.new(1, -68, 0, 24)
-        pt.Position = UDim2.new(0, 68, 0, 14)
-        pt.BackgroundTransparency = 1
-        pt.Text = cfg.Profile.Title or "Hub"
-        pt.TextColor3 = Theme.Text
-        pt.TextSize = 20
-        pt.FontFace = Theme.FontTitle
-        pt.TextXAlignment = Enum.TextXAlignment.Left
-        pt.Parent = pf
-
-        local pd = Instance.new("TextLabel")
-        pd.Size = UDim2.new(1, -68, 0, 16)
-        pd.Position = UDim2.new(0, 68, 0, 38)
-        pd.BackgroundTransparency = 1
-        pd.Text = cfg.Profile.Desc or "by Devs"
-        pd.TextColor3 = Theme.TextDim
-        pd.TextSize = 13
-        pd.FontFace = Theme.FontBody
-        pd.TextXAlignment = Enum.TextXAlignment.Left
-        pd.Parent = pf
-
-        local pfLine = Instance.new("Frame")
-        pfLine.Size = UDim2.new(1, -20, 0, 1)
-        pfLine.Position = UDim2.new(0, 10, 1, 0)
-        pfLine.BackgroundColor3 = Theme.AccentGlow
-        pfLine.BackgroundTransparency = 0.7
-        pfLine.BorderSizePixel = 0
-        pfLine.Parent = pf
-
-        yOffset = yOffset + 80
-    end
+    local yOffset = 62
 
     local searchContainer = Instance.new("Frame")
     searchContainer.Name = "SearchContainer"
@@ -2687,7 +2645,7 @@ function Window.new(cfg)
     yOffset = yOffset + 40
 
     local bottomOffset = 0
-    if cfg.BottomProfile then
+    if cfg.Profile then
         bottomOffset = 68
         local bpf = Instance.new("Frame")
         bpf.Name = "BottomProfile"
@@ -2711,12 +2669,12 @@ function Window.new(cfg)
         av.AnchorPoint = Vector2.new(0,0.5)
         av.BackgroundColor3 = Theme.SurfaceLight
         av.BorderSizePixel = 0
-        av.Image = resolveImage(cfg.BottomProfile.Avatar or "rbxassetid://10138402123")
+        av.Image = resolveImage(cfg.Profile.Avatar or "rbxassetid://10138402123")
         av.Parent = bpf
         corner(av, Theme.CornerPill)
         glowStroke(av, Theme.Accent, 1.5, 0.4)
 
-        if cfg.BottomProfile.Status then
+        if cfg.Profile.Status then
             local stat = Instance.new("Frame")
             stat.Size = UDim2.new(0,10,0,10)
             stat.Position = UDim2.new(1,-2,1,-2)
@@ -2732,18 +2690,18 @@ function Window.new(cfg)
         pt.Size = UDim2.new(1,-60,0,16)
         pt.Position = UDim2.new(0,60,0,16)
         pt.BackgroundTransparency = 1
-        pt.Text = cfg.BottomProfile.Title or "User"
+        pt.Text = cfg.Profile.Title or "User"
         pt.TextColor3 = Theme.Text
         pt.TextSize = 14
-        pt.FontFace = Theme.Font
+        pt.FontFace = Theme.FontTitle
         pt.TextXAlignment = Enum.TextXAlignment.Left
         pt.Parent = bpf
 
         local pd = Instance.new("TextLabel")
         pd.Size = UDim2.new(1,-60,0,14)
-        pd.Position = UDim2.new(0,60,0,36)
+        pd.Position = UDim2.new(0,60,0,34)
         pd.BackgroundTransparency = 1
-        pd.Text = cfg.BottomProfile.Desc or "Profile"
+        pd.Text = cfg.Profile.Desc or "Profile"
         pd.TextColor3 = Theme.TextDim
         pd.TextSize = 12
         pd.FontFace = Theme.FontBody

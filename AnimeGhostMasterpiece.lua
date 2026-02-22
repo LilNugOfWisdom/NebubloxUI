@@ -222,6 +222,13 @@ getgenv().Nebublox_Running = true
 -- ═══════════════════════════════════════
 local Window = Nebublox:MakeWindow({
     Title = "NEBUBLOX : ANIME GHOST",
+    Subtitle = "by LilNugOfWisdom",
+    Profile = {
+        Title = player.Name,
+        Desc = "Masterpiece User",
+        Avatar = "rbxthumb://type=AvatarHeadShot&id="..player.UserId.."&w=420&h=420",
+        Status = true
+    },
     Size = UDim2.new(0, 680, 0, 480),
     CyberBackground = true
 })
@@ -233,22 +240,36 @@ Nebublox:MakeWatermark({Text = "Nebublox : Anime Ghost"})
 --  TAB 1: HOME
 -- ═══════════════════════════════════════
 local HomeTab = Window:MakeTab({Name = "Home", Icon = "home"})
-local HomeMain = HomeTab:MakeSection({Name = "Dashboard"})
 
-HomeMain:AddProfileCard({
-    Title = "Welcome, " .. player.Name,
-    Desc = "Initializing Discord Sync...",
-    DiscordId = Configuration.DiscordID,
-    Status = "offline"
-})
+local InfoCard = HomeTab:MakeSection({Name = "Information"})
+local InfoTabs = InfoCard:AddSubTabs({Tabs = {"About", "Changelog", "Credits"}})
+local AboutTab, ChangeTab, CredTab = InfoTabs[1], InfoTabs[2], InfoTabs[3]
 
-local StatLabel = HomeMain:AddParagraph({Title = "Session Analytics", Content = "Tracking..."})
+AboutTab:AddLabel({Text = "WELCOME TO NEBUBLOX"})
+AboutTab:AddLabel({Text = "Good Afternoon, " .. player.Name .. "!"})
+AboutTab:AddParagraph({Title = "Status Check", Content = "Status: Connected\nJobID: " .. game.JobId .. "\nDate: " .. os.date("%x")})
+AboutTab:AddButton({Name = "Copy JobID", Icon = "clipboard", Callback = function() setclipboard(game.JobId); Window:Notify({Title="Copied", Content="JobID copied to clipboard!"}) end})
+
+ChangeTab:AddParagraph({Title = "Recent Updates", Content = "- Overhauled NebubloxUI Layout\n- Improved Engine Stability\n- Rebuilt Settings Tab"})
+
+CredTab:AddParagraph({Title = "Development Team", Content = "d1_ofc & lopp_0"})
+CredTab:AddDualButton(
+    {Name = "Update Info", Icon = "info", Callback = function() Window:Notify({Title="Info", Content="Version 1.1 Active"}) end},
+    {Name = "Discord", Icon = "star", Callback = function() setclipboard(Configuration.Discord); Window:Notify({Title="Discord", Content="Link Copied!", Type="success"}) end}
+)
+
+local AccountCard = HomeTab:MakeSection({Name = "Account Information"})
+AccountCard:AddParagraph({Title = "User Details", Content = "User ID: " .. player.UserId .. "\nAccount Age: " .. player.AccountAge .. " days"})
+
+local StatCard = HomeTab:MakeSection({Name = "Session Statistics"})
+local StatLabel = StatCard:AddParagraph({Title = "Session Analytics", Content = "Tracking..."})
 task.spawn(function() while task.wait(3) do if not getgenv().Nebublox_Running then break end; pcall(function() local yH, cH = GetSessionStats(); StatLabel:Set("💸 " .. yH .. "  |  💎 " .. cH .. "  |  ⏱ " .. math.floor(tick()-SessionStats.StartTime) .. "s") end) end end)
 
 if not getgenv().NebubloxKeyValid then
+    local KeySec = HomeTab:MakeSection({Name = "Authentication"})
     local KeyInputString = ""
-    HomeMain:AddTextbox({Name = "Galaxy Key", Placeholder = "Enter Key...", Callback = function(t) KeyInputString = t end})
-    HomeMain:AddButton({Name = "Verify Key", Icon = "shield", Callback = function()
+    KeySec:AddTextbox({Name = "Galaxy Key", Placeholder = "Enter Key...", Callback = function(t) KeyInputString = t end})
+    KeySec:AddButton({Name = "Verify Key", Icon = "shield", Callback = function()
         local trimmedKey = KeyInputString:gsub("^%s*(.-)%s*$", "%1")
         if trimmedKey == "" then Window:Notify({Title = "Error", Content = "Enter a key!", Type = "error"}); return end
         Window:Notify({Title = "Verifying...", Content = "Checking server...", Type = "info"})
@@ -260,14 +281,7 @@ if not getgenv().NebubloxKeyValid then
             Window:Notify({Title = "Failed", Content = (type(data) == "table" and data.message) or "Invalid Key", Type = "error"})
         end
     end})
-else
-    HomeMain:AddLabel({Text = "✨ Status: Authorized Premium"})
 end
-
-HomeMain:AddDualButton(
-    {Name = "Join Discord", Icon = "star", Callback = function() setclipboard(Configuration.Discord); Window:Notify({Title="Discord", Content="Link Copied!", Type="success"}) end},
-    {Name = "Nebublox Site", Icon = "star", Callback = function() setclipboard("https://nebublox.space"); Window:Notify({Title="Website", Content="Link Copied!", Type="success"}) end}
-)
 
 -- ═══════════════════════════════════════
 --  TAB 2: COMBAT
@@ -392,41 +406,53 @@ end
 --  TAB 8: SETTINGS
 -- ═══════════════════════════════════════
 local SettingsTab = Window:MakeTab({Name = "Settings", Icon = "settings"})
-local SetSec = SettingsTab:MakeSection({Name = "Configuration"})
 
+local ThemeSec = SettingsTab:MakeSection({Name = "Theme Customization"})
+ThemeSec:AddDropdown({Name = "Color Palette", Options = {"Dark Matter", "Nebula", "Synthwave", "Cyberpunk"}, Default = "Dark Matter", Callback = function(t)
+    Window:Notify({Title="Theme", Content="Theme set to "..t.." (WIP)", Type="info"})
+end})
+
+local UtilSec = SettingsTab:MakeSection({Name = "Utilities"})
+UtilSec:AddToggle({Name = "Anti-AFK Mechanism", Default = false, Callback = function(s) if s then getgenv().AntiAfkConnection = player.Idled:Connect(function() VirtualUser:CaptureController(); VirtualUser:ClickButton2(Vector2.new()) end) else if getgenv().AntiAfkConnection then getgenv().AntiAfkConnection:Disconnect() end end end})
+
+UtilSec:AddDualButton(
+    {Name = "FPS Boost (Potato)", Icon = "alert", Callback = function()
+        task.spawn(function() pcall(function()
+            Lighting.GlobalShadows = false; Lighting.FogEnd = 9e9; Lighting.Brightness = 1
+            for _, c in ipairs(Lighting:GetChildren()) do if c:IsA("PostEffect") or c:IsA("BlurEffect") or c:IsA("SunRaysEffect") or c:IsA("ColorCorrectionEffect") or c:IsA("BloomEffect") or c:IsA("DepthOfFieldEffect") or c:IsA("Atmosphere") or c:IsA("Sky") then c:Destroy() end end
+            for _, v in ipairs(Workspace:GetDescendants()) do
+                if v:IsA("BasePart") then v.Material = Enum.Material.Plastic; v.Reflectance = 0; v.CastShadow = false
+                elseif v:IsA("Decal") or v:IsA("Texture") then v:Destroy()
+                elseif v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Sparkles") or v:IsA("Fire") or v:IsA("Smoke") then v:Destroy()
+                elseif v:IsA("MeshPart") then v.Material = Enum.Material.Plastic; v.TextureID = ""
+                elseif v:IsA("Sound") then v:Stop(); v:Destroy() end
+            end
+            settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+        end); Window:Notify({Title="FPS Boost", Content="Potato Mode Applied!", Type="success"}) end)
+    end},
+    {Name = "Unload Script", Icon = "shield", Callback = function()
+        getgenv().Nebublox_Running = false
+        if getgenv().AntiAfkConnection then getgenv().AntiAfkConnection:Disconnect() end
+        if CurrentHighlight then pcall(function() CurrentHighlight:Destroy() end) end
+        if getgenv().NebuBlox_Platform then pcall(function() getgenv().NebuBlox_Platform:Destroy() end) end
+        if getgenv().NebuBlox_NoClipConnection then getgenv().NebuBlox_NoClipConnection:Disconnect() end
+        if getgenv().NebuBlox_MovementConnection then getgenv().NebuBlox_MovementConnection:Disconnect() end
+        pcall(function() Window:Destroy() end)
+    end}
+)
+
+local SetSec = SettingsTab:MakeSection({Name = "Configuration Management"})
 local FolderName = "Nebublox"
 local ConfigsFolder = FolderName .. "/Configs"
 pcall(function() if not isfolder(FolderName) then makefolder(FolderName) end; if not isfolder(ConfigsFolder) then makefolder(ConfigsFolder) end end)
-local ConfName = ""
-SetSec:AddTextbox({Name = "Config Name", Placeholder = "MyConfig", Callback = function(t) ConfName = t end})
-SetSec:AddButton({Name = "Save Config", Icon = "star", Callback = function() if ConfName ~= "" then pcall(function() writefile(ConfigsFolder.."/"..ConfName..".json", HttpService:JSONEncode(getgenv().NebubloxSettings or {})) end); Window:Notify({Title="Config",Content="Saved: "..ConfName,Type="success"}) end end})
-SetSec:AddButton({Name = "Load Config", Icon = "star", Callback = function() if ConfName ~= "" then pcall(function() local p = ConfigsFolder.."/"..ConfName..".json"; if isfile(p) then for k,v in pairs(HttpService:JSONDecode(readfile(p))) do getgenv().NebubloxSettings = getgenv().NebubloxSettings or {}; getgenv().NebubloxSettings[k] = v end end end); Window:Notify({Title="Config",Content="Loaded: "..ConfName,Type="success"}) end end})
 
-local UtilSec = SettingsTab:MakeSection({Name = "Utilities"})
-UtilSec:AddToggle({Name = "Anti-AFK", Default = false, Callback = function(s) if s then getgenv().AntiAfkConnection = player.Idled:Connect(function() VirtualUser:CaptureController(); VirtualUser:ClickButton2(Vector2.new()) end) else if getgenv().AntiAfkConnection then getgenv().AntiAfkConnection:Disconnect() end end end})
-UtilSec:AddButton({Name = "FPS Boost (Potato Mode)", Icon = "star", Callback = function()
-    task.spawn(function() pcall(function()
-        Lighting.GlobalShadows = false; Lighting.FogEnd = 9e9; Lighting.Brightness = 1
-        for _, c in ipairs(Lighting:GetChildren()) do if c:IsA("PostEffect") or c:IsA("BlurEffect") or c:IsA("SunRaysEffect") or c:IsA("ColorCorrectionEffect") or c:IsA("BloomEffect") or c:IsA("DepthOfFieldEffect") or c:IsA("Atmosphere") or c:IsA("Sky") then c:Destroy() end end
-        for _, v in ipairs(Workspace:GetDescendants()) do
-            if v:IsA("BasePart") then v.Material = Enum.Material.Plastic; v.Reflectance = 0; v.CastShadow = false
-            elseif v:IsA("Decal") or v:IsA("Texture") then v:Destroy()
-            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Sparkles") or v:IsA("Fire") or v:IsA("Smoke") then v:Destroy()
-            elseif v:IsA("MeshPart") then v.Material = Enum.Material.Plastic; v.TextureID = ""
-            elseif v:IsA("Sound") then v:Stop(); v:Destroy() end
-        end
-        settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
-    end); Window:Notify({Title="FPS Boost", Content="Potato Mode Applied!", Type="success"}) end)
-end})
-UtilSec:AddButton({Name = "Unload Script", Icon = "shield", Description = "Safely disconnect everything and close", Callback = function()
-    getgenv().Nebublox_Running = false
-    if getgenv().AntiAfkConnection then getgenv().AntiAfkConnection:Disconnect() end
-    if CurrentHighlight then pcall(function() CurrentHighlight:Destroy() end) end
-    if getgenv().NebuBlox_Platform then pcall(function() getgenv().NebuBlox_Platform:Destroy() end) end
-    if getgenv().NebuBlox_NoClipConnection then getgenv().NebuBlox_NoClipConnection:Disconnect() end
-    if getgenv().NebuBlox_MovementConnection then getgenv().NebuBlox_MovementConnection:Disconnect() end
-    pcall(function() Window:Destroy() end)
-end})
+local ConfName = ""
+SetSec:AddTextbox({Name = "Config Profile", Placeholder = "Enter config name...", Callback = function(t) ConfName = t end})
+
+SetSec:AddDualButton(
+    {Name = "Save Settings", Icon = "download", Callback = function() if ConfName ~= "" then pcall(function() writefile(ConfigsFolder.."/"..ConfName..".json", HttpService:JSONEncode(getgenv().NebubloxSettings or {})) end); Window:Notify({Title="Config",Content="Saved: "..ConfName,Type="success"}) end end},
+    {Name = "Load Settings", Icon = "upload", Callback = function() if ConfName ~= "" then pcall(function() local p = ConfigsFolder.."/"..ConfName..".json"; if isfile(p) then for k,v in pairs(HttpService:JSONDecode(readfile(p))) do getgenv().NebubloxSettings = getgenv().NebubloxSettings or {}; getgenv().NebubloxSettings[k] = v end end end); Window:Notify({Title="Config",Content="Loaded: "..ConfName,Type="success"}) end end}
+)
 
 -- ═══════════════════════════════════════
 --  FINAL INIT
