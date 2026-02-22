@@ -249,8 +249,9 @@ local AboutTab, ChangeTab, CredTab = InfoTabs[1], InfoTabs[2], InfoTabs[3]
 
 AboutTab:AddLabel({Text = "WELCOME TO NEBUBLOX"})
 AboutTab:AddLabel({Text = "Good Afternoon, " .. player.DisplayName .. "!"})
-AboutTab:AddParagraph({Title = "Status Check", Content = "Status: Connected\nJobID: " .. game.JobId .. "\nDate: " .. os.date("%x")})
-AboutTab:AddButton({Name = "Copy JobID", Icon = "clipboard", Callback = function() setclipboard(game.JobId); Window:Notify({Title="Copied", Content="JobID copied to clipboard!"}) end})
+local statusRow = AboutTab:AddRow({Columns = 2})
+statusRow[1]:AddParagraph({Title = "Status Check", Content = "Status: Connected\nJobID: " .. game.JobId .. "\nDate: " .. os.date("%x")})
+statusRow[2]:AddButton({Name = "Copy JobID", Icon = "star", Callback = function() setclipboard(game.JobId); Window:Notify({Title="Copied", Content="JobID copied to clipboard!"}) end})
 
 ChangeTab:AddParagraph({Title = "Recent Updates", Content = "- Overhauled NebubloxUI Layout\n- Improved Engine Stability\n- Rebuilt Settings Tab"})
 

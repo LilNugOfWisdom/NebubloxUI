@@ -389,11 +389,11 @@ function Section:AddButton(cfg)
     end
 
     btn.MouseEnter:Connect(function()
-        tween(btn, {BackgroundTransparency = 0.2}, 0.15)
+        tween(btn, {BackgroundTransparency = 0.6, BackgroundColor3 = Color3.fromRGB(180, 100, 255)}, 0.15)
         if cfg.Color then tween(btnStroke, {Transparency = 0.1}, 0.15) end
     end)
     btn.MouseLeave:Connect(function()
-        tween(btn, {BackgroundTransparency = 0.5}, 0.15)
+        tween(btn, {BackgroundTransparency = 0.8, BackgroundColor3 = Color3.new(0,0,0)}, 0.15)
         if cfg.Color then tween(btnStroke, {Transparency = 0.2}, 0.15) end
     end)
     btn.MouseButton1Click:Connect(function()
@@ -443,8 +443,8 @@ function Section:AddDualButton(cfg1, cfg2)
         end
         innerShine(btn)
         
-        btn.MouseEnter:Connect(function() tween(btn, {BackgroundTransparency = 0.2}, 0.15); if cfg.Color then tween(s, {Transparency = 0.1}, 0.15) end end)
-        btn.MouseLeave:Connect(function() tween(btn, {BackgroundTransparency = 0.5}, 0.15); if cfg.Color then tween(s, {Transparency = 0.2}, 0.15) end end)
+        btn.MouseEnter:Connect(function() tween(btn, {BackgroundTransparency = 0.6, BackgroundColor3 = Color3.fromRGB(180, 100, 255)}, 0.15); if cfg.Color then tween(s, {Transparency = 0.1}, 0.15) end end)
+        btn.MouseLeave:Connect(function() tween(btn, {BackgroundTransparency = 0.8, BackgroundColor3 = cfg.Color or Color3.new(0,0,0)}, 0.15); if cfg.Color then tween(s, {Transparency = 0.2}, 0.15) end end)
         btn.MouseButton1Click:Connect(function()
             if cfg.Color then
                 tween(s, {Color = Theme.Text, Transparency = 0, Thickness = 2}, 0.06)
@@ -2025,21 +2025,21 @@ function Tab.new(window, cfg)
     btn.Parent = window._tabBar
     corner(btn, Theme.CornerPill)
 
-    if self.Icon then
-        local ico = Instance.new("ImageLabel")
-        ico.Size = UDim2.new(0,18,0,18)
-        ico.Position = UDim2.new(0,8,0.5,0)
-        ico.AnchorPoint = Vector2.new(0,0.5)
-        ico.BackgroundTransparency = 1
-        ico.Image = resolveImage(self.Icon)
-        ico.ImageColor3 = Theme.TextDim
-        ico.Parent = btn
-        self._icon = ico
-    end
+    local dot = Instance.new("TextLabel")
+    dot.Size = UDim2.new(0,18,0,18)
+    dot.Position = UDim2.new(0,8,0.5,0)
+    dot.AnchorPoint = Vector2.new(0,0.5)
+    dot.BackgroundTransparency = 1
+    dot.Text = "•"
+    dot.TextColor3 = Theme.TextDim
+    dot.TextSize = 22
+    dot.FontFace = Theme.Font
+    dot.Parent = btn
+    self._icon = dot
 
     local lbl = Instance.new("TextLabel")
-    lbl.Size = UDim2.new(1, self.Icon and -60 or -36, 1, 0)
-    lbl.Position = UDim2.new(0, self.Icon and 30 or 8, 0, 0)
+    lbl.Size = UDim2.new(1, -36, 1, 0)
+    lbl.Position = UDim2.new(0, 30, 0, 0)
     lbl.BackgroundTransparency = 1
     lbl.Text = self.Name
     lbl.TextColor3 = Theme.TextDim
@@ -2217,12 +2217,11 @@ function Tab:Select()
     self.Page.Visible = true
     self.Page.Position = UDim2.new(0, 0, 0, 0)
 
-    -- Sidebar Active State match: wave gradient border
-    tween(self._btn, {BackgroundTransparency = 0.6}, 0.2)
-    self._btn.BackgroundColor3 = Color3.new(0,0,0)
+    -- Sidebar Active State match: light purple and transparent
+    tween(self._btn, {BackgroundTransparency = 0.6, BackgroundColor3 = Color3.fromRGB(180, 100, 255)}, 0.2)
     waveBorder(self._btn, Color3.fromRGB(138,43,226), Color3.fromRGB(0, 255, 255))
     self._lbl.TextColor3 = Theme.Text
-    if self._icon then self._icon.ImageColor3 = Theme.Accent end
+    if self._icon then self._icon.TextColor3 = Theme.Accent end
 end
 
 function Tab:MakeSection(cfg) return Section.new(self, cfg) end
@@ -2747,11 +2746,11 @@ function Window.new(cfg)
 
     local bottomOffset = 0
     if cfg.Profile then
-        bottomOffset = 84
+        bottomOffset = 136
         local bpf = Instance.new("Frame")
         bpf.Name = "BottomProfile"
-        bpf.Size = UDim2.new(1,0,0,84)
-        bpf.Position = UDim2.new(0,0,1,-84)
+        bpf.Size = UDim2.new(1,0,0,136)
+        bpf.Position = UDim2.new(0,0,1,-136)
         bpf.BackgroundTransparency = 1
         bpf.BorderSizePixel = 0
         bpf.Parent = sidebar
@@ -2777,9 +2776,9 @@ function Window.new(cfg)
         bpfLine.Parent = bpf
 
         local av = Instance.new("ImageLabel")
-        av.Size = UDim2.new(0,40,0,40)
-        av.Position = UDim2.new(0,10,0.5,0)
-        av.AnchorPoint = Vector2.new(0,0.5)
+        av.Size = UDim2.new(0,54,0,54)
+        av.Position = UDim2.new(0.5,0,0,34)
+        av.AnchorPoint = Vector2.new(0.5,0)
         av.BackgroundColor3 = Theme.SurfaceLight
         av.BorderSizePixel = 0
         av.Image = resolveImage(cfg.Profile.Avatar or "rbxassetid://10138402123")
@@ -2789,8 +2788,8 @@ function Window.new(cfg)
 
         if cfg.Profile.Status then
             local stat = Instance.new("Frame")
-            stat.Size = UDim2.new(0,10,0,10)
-            stat.Position = UDim2.new(1,-2,1,-2)
+            stat.Size = UDim2.new(0,12,0,12)
+            stat.Position = UDim2.new(1,-4,1,-4)
             stat.AnchorPoint = Vector2.new(1,1)
             stat.BackgroundColor3 = Theme.Success
             stat.BorderSizePixel = 0
@@ -2800,25 +2799,25 @@ function Window.new(cfg)
         end
 
         local pt = Instance.new("TextLabel")
-        pt.Size = UDim2.new(1,-60,0,16)
-        pt.Position = UDim2.new(0,60,0,32)
+        pt.Size = UDim2.new(1,0,0,18)
+        pt.Position = UDim2.new(0,0,0,92)
         pt.BackgroundTransparency = 1
         pt.Text = cfg.Profile.Title or "User"
         pt.TextColor3 = Theme.Text
         pt.TextSize = 14
         pt.FontFace = Theme.FontTitle
-        pt.TextXAlignment = Enum.TextXAlignment.Left
+        pt.TextXAlignment = Enum.TextXAlignment.Center
         pt.Parent = bpf
 
         local pd = Instance.new("TextLabel")
-        pd.Size = UDim2.new(1,-60,0,14)
-        pd.Position = UDim2.new(0,60,0,50)
+        pd.Size = UDim2.new(1,0,0,14)
+        pd.Position = UDim2.new(0,0,0,110)
         pd.BackgroundTransparency = 1
         pd.Text = cfg.Profile.Desc or "Profile"
         pd.TextColor3 = Theme.TextDim
-        pd.TextSize = 12
+        pd.TextSize = 11
         pd.FontFace = Theme.FontBody
-        pd.TextXAlignment = Enum.TextXAlignment.Left
+        pd.TextXAlignment = Enum.TextXAlignment.Center
         pd.Parent = bpf
     end
 
