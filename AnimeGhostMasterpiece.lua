@@ -223,6 +223,7 @@ getgenv().Nebublox_Running = true
 local Window = Nebublox:MakeWindow({
     Title = "NEBUBLOX : ANIME GHOST",
     Size = UDim2.new(0, 680, 0, 480),
+    CyberBackground = true
 })
 
 -- Watermark HUD

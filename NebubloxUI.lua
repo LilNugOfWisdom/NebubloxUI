@@ -2301,6 +2301,98 @@ function Window.new(cfg)
         end))
         self._galaxy = galaxy
     end
+
+    if cfg.CyberBackground then
+        local cyber = Instance.new("Frame")
+        cyber.Name = "CyberLayer"
+        cyber.Size = UDim2.new(1,0,1,0)
+        cyber.BackgroundColor3 = Theme.Background
+        cyber.ZIndex = 0
+        cyber.BorderSizePixel = 0
+        cyber.Parent = main
+        cyber.ClipsDescendants = true
+        corner(cyber, UDim.new(0,12))
+
+        local cGrad = Instance.new("UIGradient")
+        cGrad.Parent = cyber
+        cGrad.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(16, 8, 32)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(6, 2, 14))
+        })
+        cGrad.Rotation = 90
+
+        local tex = Instance.new("ImageLabel")
+        tex.Size = UDim2.new(2,0,2,0)
+        tex.Position = UDim2.new(0,0,0,0)
+        tex.BackgroundTransparency = 1
+        tex.Image = "rbxassetid://16625867384"
+        tex.ImageColor3 = Theme.Accent
+        tex.ImageTransparency = 0.92
+        tex.ScaleType = Enum.ScaleType.Tile
+        tex.TileSize = UDim2.new(0, 100, 0, 100)
+        tex.ZIndex = 0
+        tex.Parent = cyber
+        
+        task.spawn(function()
+            while tex.Parent do
+                local tw = tween(tex, {Position = UDim2.new(0,-100,0,-100)}, 4, Enum.EasingStyle.Linear)
+                tw.Completed:Wait()
+                tex.Position = UDim2.new(0,0,0,0)
+            end
+        end)
+
+        track(RunService.Heartbeat:Connect(function()
+            if main.Parent and main.Visible and math.random() < 0.03 then
+                local isHoriz = math.random() > 0.5
+                local stream = Instance.new("Frame")
+                stream.BackgroundColor3 = Theme.Accent
+                stream.BorderSizePixel = 0
+                stream.ZIndex = 0
+                stream.Parent = cyber
+                
+                local gLine = Instance.new("UIGradient")
+                gLine.Parent = stream
+                
+                local startPos, endPos, size
+                if isHoriz then
+                    local y = math.random(5, 95)/100
+                    size = UDim2.new(0, math.random(40, 100), 0, 1)
+                    startPos = UDim2.new(-0.2, 0, y, 0)
+                    endPos = UDim2.new(1.2, 0, y, 0)
+                    gLine.Transparency = NumberSequence.new({
+                        NumberSequenceKeypoint.new(0, 1),
+                        NumberSequenceKeypoint.new(0.5, 0),
+                        NumberSequenceKeypoint.new(1, 1)
+                    })
+                else
+                    local x = math.random(5, 95)/100
+                    size = UDim2.new(0, 1, 0, math.random(40, 100))
+                    startPos = UDim2.new(x, 0, -0.2, 0)
+                    endPos = UDim2.new(x, 0, 1.2, 0)
+                    gLine.Rotation = 90
+                    gLine.Transparency = NumberSequence.new({
+                        NumberSequenceKeypoint.new(0, 1),
+                        NumberSequenceKeypoint.new(0.5, 0),
+                        NumberSequenceKeypoint.new(1, 1)
+                    })
+                end
+                
+                stream.Size = size
+                stream.Position = startPos
+                
+                local glow = Instance.new("UIStroke")
+                glow.Color = Theme.AccentGlow
+                glow.Thickness = 1
+                glow.Transparency = 0.5
+                glow.Parent = stream
+
+                local speed = math.random(15, 25)/10
+                tween(stream, {Position = endPos}, speed, Enum.EasingStyle.Linear)
+                task.delay(speed, function() stream:Destroy() end)
+            end
+        end))
+        self._cyber = cyber
+    end
     -- ==========================================
     -- VISUAL BACKGROUND EFFECTS END HERE
     -- ==========================================
