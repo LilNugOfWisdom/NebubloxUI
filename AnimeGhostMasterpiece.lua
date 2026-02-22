@@ -465,19 +465,7 @@ SpeedSec:AddSlider({Name = "WalkSpeed Value", Min = 16, Max = 500, Increment = 1
 SpeedSec:AddToggle({Name = "Jump", Default = false, Callback = function(s) getgenv().AutoJumpPower = s; if s then task.spawn(function() while getgenv().AutoJumpPower do if not getgenv().Nebublox_Running then break end; pcall(function() local h = player.Character and player.Character:FindFirstChild("Humanoid"); if h then h.UseJumpPower = true; h.JumpPower = getgenv().AutoJumpPowerVal or 100 end end); task.wait(0.1) end end) else pcall(function() local h = player.Character and player.Character:FindFirstChild("Humanoid"); if h then h.JumpPower = 50 end end) end end})
 SpeedSec:AddSlider({Name = "JumpPower Value", Min = 50, Max = 500, Increment = 1, Default = 100, Callback = function(v) getgenv().AutoJumpPowerVal = v end})
 
--- ═══════════════════════════════════════
---  TAB 6: SHOP
--- ═══════════════════════════════════════
-local ShopTab = Window:MakeTab({Name = "🛒 Shop", Icon = ""})
-local ShopSec = ShopTab:MakeSection({Name = "Auto-Buy"})
-local ShopItems = {YenPotion2="Yen Potion II",DamagePotion2="Damage Potion II",LuckPotion2="Luck Potion II",XPPotion2="XP Potion II",DropPotion2="Drop Potion II",Crystals="Crystals"}
-getgenv().AutoBuyItems = {}
-for id, title in pairs(ShopItems) do
-    ShopSec:AddToggle({Name = "Auto Buy " .. title, Default = false, Callback = function(s)
-        getgenv().AutoBuyItems[id] = s
-        if s then task.spawn(function() while getgenv().AutoBuyItems[id] and task.wait(60) do if not getgenv().Nebublox_Running then break end; pcall(function() if GameLibrary and GameLibrary.Remote then GameLibrary.Remote:Fire("ShopSystem","Buy","Dungeon Shop",id) end end) end end) end
-    end})
-end
+-- Tab Removed (Shop)
 
 -- ═══════════════════════════════════════
 --  TAB 7: TELEPORTS

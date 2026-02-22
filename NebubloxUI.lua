@@ -2751,40 +2751,7 @@ function Window.new(cfg)
 
     local yOffset = 62
 
-    local searchContainer = Instance.new("Frame")
-    searchContainer.Name = "SearchContainer"
-    searchContainer.Size = UDim2.new(1,-20,0,32)
-    searchContainer.Position = UDim2.new(0,10,0,yOffset)
-    searchContainer.BackgroundColor3 = Theme.Surface
-    searchContainer.BackgroundTransparency = 0.4
-    searchContainer.BorderSizePixel = 0
-    searchContainer.Parent = sidebar
-    corner(searchContainer, Theme.CornerSmall)
-    stroke(searchContainer, Theme.AccentGlow, 1, 0.5)
 
-    local searchIcon = Instance.new("ImageLabel")
-    searchIcon.Size = UDim2.new(0,14,0,14)
-    searchIcon.Position = UDim2.new(0,8,0.5,0)
-    searchIcon.AnchorPoint = Vector2.new(0,0.5)
-    searchIcon.BackgroundTransparency = 1
-    searchIcon.Image = resolveIcon("search")
-    searchIcon.ImageColor3 = Theme.TextDim
-    searchIcon.Parent = searchContainer
-
-    local searchBox = Instance.new("TextBox")
-    searchBox.Size = UDim2.new(1,-30,1,0)
-    searchBox.Position = UDim2.new(0,26,0,0)
-    searchBox.BackgroundTransparency = 1
-    searchBox.PlaceholderText = "Search..."
-    searchBox.PlaceholderColor3 = Theme.TextDim
-    searchBox.Text = ""
-    searchBox.TextColor3 = Theme.Text
-    searchBox.TextSize = 12
-    searchBox.Font = Theme.FontBody
-    searchBox.TextXAlignment = Enum.TextXAlignment.Left
-    searchBox.Parent = searchContainer
-    
-    yOffset = yOffset + 40
 
     local bottomOffset = 0
     if cfg.Profile then
