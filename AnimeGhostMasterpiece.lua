@@ -261,18 +261,24 @@ CredTab:AddDualButton(
     {Name = "Discord", Icon = "star", Color = Color3.fromRGB(138, 43, 226), Callback = function() setclipboard(Configuration.Discord); Window:Notify({Title="Discord", Content="Link Copied!", Type="success"}) end}
 )
 
-local AccountCard = HomeTab:MakeSection({Name = "Account Information"})
+local statsRow = HomeTab:AddRow({Columns = 2})
+local AccountCard = statsRow[1]:MakeSection({Name = "Account Information"})
 AccountCard:AddParagraph({Title = "User Details", Content = "User ID: " .. player.UserId .. "\nAccount Age: " .. player.AccountAge .. " days"})
 
-local StatCard = HomeTab:MakeSection({Name = "Session Statistics"})
+local StatCard = statsRow[2]:MakeSection({Name = "Session Statistics"})
 local StatLabel = StatCard:AddParagraph({Title = "Session Analytics", Content = "Tracking..."})
 task.spawn(function() while task.wait(3) do if not getgenv().Nebublox_Running then break end; pcall(function() local yH, cH = GetSessionStats(); StatLabel:Set("💸 " .. yH .. "  |  💎 " .. cH .. "  |  ⏱ " .. math.floor(tick()-SessionStats.StartTime) .. "s") end) end end)
 
 if not getgenv().NebubloxKeyValid then
     local KeySec = HomeTab:MakeSection({Name = "Authentication"})
     local KeyInputString = ""
-    KeySec:AddTextbox({Name = "Galaxy Key", Placeholder = "Enter Key...", Callback = function(t) KeyInputString = t end})
-    KeySec:AddButton({Name = "Verify Key", Icon = "shield", Color = Color3.fromRGB(0, 255, 255), Callback = function()
+    local authRow = KeySec:AddRow({Columns = 2})
+    
+    local entryRow = authRow[1]:AddRow({Columns = 2})
+    entryRow[1]:AddLabel({Text = "🌌 Galaxy Key"})
+    entryRow[2]:AddTextbox({Name = "", Placeholder = "Enter Key...", Callback = function(t) KeyInputString = t end})
+    
+    authRow[2]:AddButton({Name = "Verify 🌌", Color = Color3.fromRGB(0, 255, 255), Callback = function()
         local trimmedKey = KeyInputString:gsub("^%s*(.-)%s*$", "%1")
         if trimmedKey == "" then Window:Notify({Title = "Error", Content = "Enter a key!", Type = "error"}); return end
         Window:Notify({Title = "Verifying...", Content = "Checking server...", Type = "info"})

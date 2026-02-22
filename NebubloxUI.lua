@@ -2226,6 +2226,43 @@ end
 
 function Tab:MakeSection(cfg) return Section.new(self, cfg) end
 
+function Tab:AddRow(cfg)
+    cfg = cfg or {}
+    local cols = cfg.Columns or 2
+    local gap = cfg.Gap or 8
+    
+    local f = Instance.new("Frame")
+    f.Name = "Row"
+    f.Size = UDim2.new(1,0,0,0)
+    f.AutomaticSize = Enum.AutomaticSize.Y
+    f.BackgroundTransparency = 1
+    f.BorderSizePixel = 0
+    f.Parent = self.Page
+    
+    local rowList = Instance.new("UIListLayout")
+    rowList.FillDirection = Enum.FillDirection.Horizontal
+    rowList.SortOrder = Enum.SortOrder.LayoutOrder
+    rowList.Padding = UDim.new(0, gap)
+    rowList.Parent = f
+    
+    local pseudoGroup = {}
+    for i=1, cols do
+        local colContainer = Instance.new("Frame")
+        colContainer.Size = UDim2.new(1/cols, -(gap * (cols-1))/cols, 0, 0)
+        colContainer.AutomaticSize = Enum.AutomaticSize.Y
+        colContainer.BackgroundTransparency = 1
+        colContainer.BorderSizePixel = 0
+        colContainer.Parent = f
+        listLayout(colContainer, 8)
+        
+        local pTab = setmetatable({}, {__index = Tab})
+        pTab.Page = colContainer
+        pTab.Window = self.Window
+        table.insert(pseudoGroup, pTab)
+    end
+    return pseudoGroup
+end
+
 -- ═══════════════════════════════════════
 --  WINDOW
 -- ═══════════════════════════════════════
@@ -2582,18 +2619,18 @@ function Window.new(cfg)
     ttl.BackgroundTransparency = 1
     ttl.Text = self.Title
     ttl.TextColor3 = Theme.TextDim
-    ttl.TextSize = 10
+    ttl.TextSize = 9
     ttl.FontFace = Theme.FontTitle
     ttl.TextXAlignment = Enum.TextXAlignment.Left
     ttl.Parent = sidebar
 
     local subTtl = Instance.new("TextLabel")
     subTtl.Size = UDim2.new(1, -20, 0, 24)
-    subTtl.Position = UDim2.new(0, 10, 0, 20)
+    subTtl.Position = UDim2.new(0, 10, 0, 18)
     subTtl.BackgroundTransparency = 1
-    subTtl.Text = cfg.Subtitle or "by UI Engine"
+    subTtl.Text = cfg.Subtitle or "UI"
     subTtl.TextColor3 = Color3.new(1,1,1)
-    subTtl.TextSize = 18
+    subTtl.TextSize = 22
     subTtl.FontFace = Theme.FontTitle
     subTtl.TextXAlignment = Enum.TextXAlignment.Left
     subTtl.Parent = sidebar
