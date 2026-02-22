@@ -142,20 +142,22 @@ end
 
 local function ScanFolder(folder, myRoot, bestTarget, shortestDist)
     for _, mob in ipairs(folder:GetChildren()) do
-        if not mob:IsA("Model") or mob == player.Character then continue end
-        local rootPart = mob:FindFirstChild("HumanoidRootPart") or mob:FindFirstChild("EnemyHitbox") or mob.PrimaryPart
-        if not rootPart or not IsEnemyAlive(mob) then continue end
-        local realName = GetRealEnemyName(mob)
-        local isSelected = false
-        local selection = getgenv().SelectedEnemy
-        if not selection or (typeof(selection) == "string" and selection == "All") then isSelected = true
-        elseif typeof(selection) == "table" then
-            if #selection == 0 or table.find(selection, "All") then isSelected = true
-            else for _, sel in ipairs(selection) do if string.find(realName, sel) or string.find(mob.Name, sel) then isSelected = true; break end end end
-        elseif typeof(selection) == "string" then isSelected = string.find(realName, selection) or string.find(mob.Name, selection) end
-        if isSelected then
-            local dist = (rootPart.Position - myRoot.Position).Magnitude
-            if dist < shortestDist then shortestDist = dist; bestTarget = mob end
+        if mob:IsA("Model") and mob ~= player.Character then
+            local rootPart = mob:FindFirstChild("HumanoidRootPart") or mob:FindFirstChild("EnemyHitbox") or mob.PrimaryPart
+            if rootPart and IsEnemyAlive(mob) then
+                local realName = GetRealEnemyName(mob)
+                local isSelected = false
+                local selection = getgenv().SelectedEnemy
+                if not selection or (typeof(selection) == "string" and selection == "All") then isSelected = true
+                elseif typeof(selection) == "table" then
+                    if #selection == 0 or table.find(selection, "All") then isSelected = true
+                    else for _, sel in ipairs(selection) do if string.find(realName, sel) or string.find(mob.Name, sel) then isSelected = true; break end end end
+                elseif typeof(selection) == "string" then isSelected = string.find(realName, selection) or string.find(mob.Name, selection) end
+                if isSelected then
+                    local dist = (rootPart.Position - myRoot.Position).Magnitude
+                    if dist < shortestDist then shortestDist = dist; bestTarget = mob end
+                end
+            end
         end
     end
     return bestTarget, shortestDist
@@ -477,7 +479,7 @@ dungRow[2]:AddButton({Name = "Refresh 🔄", Color = Color3.fromRGB(0, 255, 255)
     if DungDrop and DungDrop.Refresh then DungDrop:Refresh(dList, dList[1]) end
 end})
 
-DungSec:AddButton({Name = "Join Dungeon ⚔️", Icon = "sword", Callback = function() pcall(function() if GameLibrary and GameLibrary.Remote then GameLibrary.Remote:Fire("GamemodeSystem","Create","Dungeon",getgenv().SelectedDungeon,"Hard",false,n=6) end end) end})
+DungSec:AddButton({Name = "Join Dungeon ⚔️", Icon = "sword", Callback = function() pcall(function() if GameLibrary and GameLibrary.Remote then GameLibrary.Remote:Fire("GamemodeSystem","Create","Dungeon",getgenv().SelectedDungeon,"Hard",false) end end) end})
 DungSec:AddTextbox({Name = "Leave at Level", Placeholder = "0 = Disabled", Callback = function(t) getgenv().DungeonLeaveLevel = tonumber(t) or 0 end})
 
 local RaidSec = GamemodesTab:MakeSection({Name = "Auto Raid"})
