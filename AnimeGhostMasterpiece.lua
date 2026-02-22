@@ -217,18 +217,6 @@ getgenv().Nebublox_Running = true
 local Window = Nebublox:MakeWindow({
     Title = "NEBUBLOX : ANIME GHOST",
     Size = UDim2.new(0, 680, 0, 480),
-    Background = {
-        Image = "rbxassetid://1331823772",
-        Transparency = 0.88,
-        Tint = Color3.fromRGB(160, 60, 255),
-        Blur = true
-    },
-    GalaxyBackground = true,
-    Profile = {
-        Title = "Nebublox",
-        Desc = "Masterpiece Edition",
-        Image = "rbxassetid://15266858296"
-    }
 })
 
 -- Watermark HUD
