@@ -2063,10 +2063,10 @@ function Tab:Select()
     self.Page.Visible = true
     self.Page.Position = UDim2.new(0, 0, 0, 0)
 
-    -- 3D pop active state
-    tween(self._btn, {BackgroundTransparency = 0}, 0.2)
-    gradient3D(self._btn, Color3.fromRGB(140, 50, 255), Color3.fromRGB(50, 15, 110))
-    glowStroke(self._btn, Theme.Accent, 1, 0.4)
+    -- Sidebar Active State match: Horizontal cyan gradient
+    tween(self._btn, {BackgroundTransparency = 0.2}, 0.2)
+    gradient3D(self._btn, Theme.AccentDim, Theme.SurfaceDark, 0)
+    glowStroke(self._btn, Theme.Accent, 1, 0.5)
     self._lbl.TextColor3 = Theme.Text
     if self._icon then self._icon.ImageColor3 = Theme.Accent end
 end
@@ -2401,39 +2401,50 @@ function Window.new(cfg)
     wrapper.GroupTransparency = 1
     tween(wrapper, {Size = self._size, GroupTransparency = 0}, 0.5, Enum.EasingStyle.Back)
 
-    local tb = Instance.new("Frame")
-    tb.Name = "TitleBar"
-    tb.Size = UDim2.new(1,0,0,40)
-    tb.BackgroundColor3 = Color3.new(1,1,1)
-    tb.BorderSizePixel = 0
-    tb.Parent = main
-    corner(tb, UDim.new(0,12))
-    gradient3D(tb, Color3.fromRGB(22, 14, 42), Color3.fromRGB(10, 6, 22))
-    
-    local tbFix = Instance.new("Frame")
-    tbFix.Size = UDim2.new(1,0,0,12)
-    tbFix.Position = UDim2.new(0,0,1,-12)
-    tbFix.BackgroundColor3 = Color3.fromRGB(10, 6, 22)
-    tbFix.BorderSizePixel = 0
-    tbFix.Parent = tb
+    local sidebar = Instance.new("Frame")
+    sidebar.Name = "Sidebar"
+    sidebar.Size = UDim2.new(0, 210, 1, 0)
+    sidebar.Position = UDim2.new(0, 0, 0, 0)
+    sidebar.BackgroundColor3 = Theme.SurfaceDark
+    sidebar.BackgroundTransparency = 0.2
+    sidebar.BorderSizePixel = 0
+    sidebar.ClipsDescendants = true
+    sidebar.Parent = main
+    self._tabBar = sidebar
+
+    local sidebarLine = Instance.new("Frame")
+    sidebarLine.Size = UDim2.new(0, 1, 1, 0)
+    sidebarLine.Position = UDim2.new(1, -1, 0, 0)
+    sidebarLine.BackgroundColor3 = Theme.Border
+    sidebarLine.BackgroundTransparency = 0.5
+    sidebarLine.BorderSizePixel = 0
+    sidebarLine.Parent = sidebar
 
     local ttl = Instance.new("TextLabel")
-    ttl.Size = UDim2.new(0, 200, 1, 0)
-    ttl.Position = UDim2.new(0,14,0,0)
+    ttl.Size = UDim2.new(1, -20, 0, 36)
+    ttl.Position = UDim2.new(0, 10, 0, 0)
     ttl.BackgroundTransparency = 1
     ttl.Text = "⬡  "..self.Title
-    ttl.TextColor3 = Theme.Accent
-    ttl.TextSize = 17
+    ttl.TextColor3 = Theme.TextDim
+    ttl.TextSize = 13
     ttl.Font = Theme.FontTitle
     ttl.TextXAlignment = Enum.TextXAlignment.Left
-    ttl.Parent = tb
+    ttl.Parent = sidebar
+
+    local ttlLine = Instance.new("Frame")
+    ttlLine.Size = UDim2.new(1, 0, 0, 1)
+    ttlLine.Position = UDim2.new(0, 0, 0, 36)
+    ttlLine.BackgroundColor3 = Theme.Border
+    ttlLine.BackgroundTransparency = 0.7
+    ttlLine.BorderSizePixel = 0
+    ttlLine.Parent = sidebar
 
     local statusFrame = Instance.new("Frame")
     statusFrame.Size = UDim2.new(0, 140, 0, 16)
-    statusFrame.Position = UDim2.new(0, 200, 0.5, 0)
-    statusFrame.AnchorPoint = Vector2.new(0, 0.5)
+    statusFrame.Position = UDim2.new(1, -150, 1, -24)
     statusFrame.BackgroundTransparency = 1
-    statusFrame.Parent = tb
+    statusFrame.Parent = main
+    statusFrame.ZIndex = 50
 
     self.StatusLabel = Instance.new("TextLabel")
     self.StatusLabel.Size = UDim2.new(0, 80, 1, 0)
@@ -2469,18 +2480,26 @@ function Window.new(cfg)
         end
     end))
 
-    for i, info in ipairs({{Text="✕", Col=Theme.Error, Off=-34}, {Text="—", Col=Theme.Accent, Off=-66}}) do
+    local controlsFrame = Instance.new("Frame")
+    controlsFrame.Size = UDim2.new(0, 68, 0, 28)
+    controlsFrame.Position = UDim2.new(1, -74, 0, 6)
+    controlsFrame.BackgroundTransparency = 1
+    controlsFrame.Parent = main
+    controlsFrame.ZIndex = 50
+
+    for i, info in ipairs({{Text="✕", Col=Theme.Error, Off=38}, {Text="—", Col=Theme.Accent, Off=6}}) do
         local b = Instance.new("TextButton")
-        b.Size = UDim2.new(0,28,0,28)
-        b.Position = UDim2.new(1,info.Off,0,5)
+        b.Size = UDim2.new(0,24,0,24)
+        b.Position = UDim2.new(0,info.Off,0,2)
         b.BackgroundColor3 = info.Col
         b.BackgroundTransparency = 0.8
         b.Text = info.Text
         b.TextColor3 = info.Col
-        b.TextSize = 14
+        b.TextSize = 12
         b.Font = Theme.Font
         b.BorderSizePixel = 0
-        b.Parent = tb
+        b.Parent = controlsFrame
+        b.ZIndex = 51
         corner(b, UDim.new(0,6))
         
         b.MouseEnter:Connect(function() tween(b, {BackgroundTransparency = 0.4}, 0.15) end)
@@ -2489,26 +2508,28 @@ function Window.new(cfg)
         if i == 1 then
             b.MouseButton1Click:Connect(function()
                 tween(wrapper, {Size = UDim2.new(0,0,0,0), GroupTransparency = 1}, 0.4, Enum.EasingStyle.Back, Enum.EasingDirection.In)
-                task.delay(0.45, function() sg:Destroy() end)
+                task.delay(0.45, function() self._sg:Destroy() end)
             end)
         else
             self._minimized = false
             b.MouseButton1Click:Connect(function()
                 self._minimized = not self._minimized
                 tween(wrapper, {Size = self._minimized and UDim2.new(0,self._size.X.Offset,0,38) or self._size}, 0.3)
-                glow.Visible = not self._minimized
+                if glow then glow.Visible = not self._minimized end
             end)
         end
     end
 
     local dragging, dragInput, dragStart, startPos
-    tb.InputBegan:Connect(function(i)
+    sidebar.InputBegan:Connect(function(i)
         if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-            dragging = true; dragStart = i.Position; startPos = wrapper.Position
-            i.Changed:Connect(function() if i.UserInputState == Enum.UserInputState.End then dragging = false end end)
+            if i.Position.Y - sidebar.AbsolutePosition.Y < 40 then
+                dragging = true; dragStart = i.Position; startPos = wrapper.Position
+                i.Changed:Connect(function() if i.UserInputState == Enum.UserInputState.End then dragging = false end end)
+            end
         end
     end)
-    tb.InputChanged:Connect(function(i)
+    sidebar.InputChanged:Connect(function(i)
         if i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch then dragInput = i end
     end)
     UserInputService.InputChanged:Connect(function(i)
@@ -2518,23 +2539,69 @@ function Window.new(cfg)
         end
     end)
 
-    local tabBar = Instance.new("Frame")
-    tabBar.Name = "TabBar"
-    tabBar.Size = UDim2.new(0,140,1,-42)
-    tabBar.Position = UDim2.new(0,0,0,40)
-    tabBar.BackgroundColor3 = Theme.Surface
-    tabBar.BorderSizePixel = 0
-    tabBar.ClipsDescendants = true
-    tabBar.Parent = main
-    self._tabBar = tabBar
+    local yOffset = 42
+
+    if cfg.Profile then
+        local pf = Instance.new("Frame")
+        pf.Name = "HubProfileContainer"
+        pf.Size = UDim2.new(1, 0, 0, 70)
+        pf.Position = UDim2.new(0, 0, 0, yOffset)
+        pf.BackgroundTransparency = 1
+        pf.Parent = sidebar
+
+        local av = Instance.new("ImageLabel")
+        av.Size = UDim2.new(0, 48, 0, 48)
+        av.Position = UDim2.new(0, 10, 0.5, 0)
+        av.AnchorPoint = Vector2.new(0, 0.5)
+        av.BackgroundColor3 = Theme.SurfaceLight
+        av.BorderSizePixel = 0
+        av.Image = resolveImage(cfg.Profile.Avatar or "rbxassetid://10138402123")
+        av.Parent = pf
+        corner(av, Theme.Corner)
+        glowStroke(av, Theme.AccentGlow, 1.5, 0.2)
+        innerShine(av)
+
+        local pt = Instance.new("TextLabel")
+        pt.Size = UDim2.new(1, -68, 0, 24)
+        pt.Position = UDim2.new(0, 68, 0, 14)
+        pt.BackgroundTransparency = 1
+        pt.Text = cfg.Profile.Title or "Hub"
+        pt.TextColor3 = Theme.Text
+        pt.TextSize = 20
+        pt.Font = Theme.FontTitle
+        pt.TextXAlignment = Enum.TextXAlignment.Left
+        pt.Parent = pf
+
+        local pd = Instance.new("TextLabel")
+        pd.Size = UDim2.new(1, -68, 0, 16)
+        pd.Position = UDim2.new(0, 68, 0, 38)
+        pd.BackgroundTransparency = 1
+        pd.Text = cfg.Profile.Desc or "by Devs"
+        pd.TextColor3 = Theme.TextDim
+        pd.TextSize = 13
+        pd.Font = Theme.FontBody
+        pd.TextXAlignment = Enum.TextXAlignment.Left
+        pd.Parent = pf
+
+        local pfLine = Instance.new("Frame")
+        pfLine.Size = UDim2.new(1, -20, 0, 1)
+        pfLine.Position = UDim2.new(0, 10, 1, 0)
+        pfLine.BackgroundColor3 = Theme.Border
+        pfLine.BackgroundTransparency = 0.7
+        pfLine.BorderSizePixel = 0
+        pfLine.Parent = pf
+
+        yOffset = yOffset + 80
+    end
 
     local searchContainer = Instance.new("Frame")
     searchContainer.Name = "SearchContainer"
-    searchContainer.Size = UDim2.new(1,-12,0,28)
-    searchContainer.Position = UDim2.new(0,6,0,6)
-    searchContainer.BackgroundColor3 = Theme.Background
+    searchContainer.Size = UDim2.new(1,-20,0,32)
+    searchContainer.Position = UDim2.new(0,10,0,yOffset)
+    searchContainer.BackgroundColor3 = Theme.Surface
+    searchContainer.BackgroundTransparency = 0.4
     searchContainer.BorderSizePixel = 0
-    searchContainer.Parent = tabBar
+    searchContainer.Parent = sidebar
     corner(searchContainer, Theme.CornerSmall)
     stroke(searchContainer, Theme.Border, 1, 0.5)
 
@@ -2551,7 +2618,7 @@ function Window.new(cfg)
     searchBox.Size = UDim2.new(1,-30,1,0)
     searchBox.Position = UDim2.new(0,26,0,0)
     searchBox.BackgroundTransparency = 1
-    searchBox.PlaceholderText = "Search tabs..."
+    searchBox.PlaceholderText = "Search..."
     searchBox.PlaceholderColor3 = Theme.TextDim
     searchBox.Text = ""
     searchBox.TextColor3 = Theme.Text
@@ -2559,88 +2626,38 @@ function Window.new(cfg)
     searchBox.Font = Theme.FontBody
     searchBox.TextXAlignment = Enum.TextXAlignment.Left
     searchBox.Parent = searchContainer
+    
+    yOffset = yOffset + 40
 
-    local yOffset = 40
-    if cfg.Profile then
-        local pf = Instance.new("Frame")
-        pf.Name = "ProfileContainer"
-        pf.Size = UDim2.new(1,-12,0,46)
-        pf.Position = UDim2.new(0,6,0,6)
-        pf.BackgroundColor3 = Theme.Background
-        pf.BorderSizePixel = 0
-        pf.Parent = tabBar
-        corner(pf, Theme.CornerSmall)
-        stroke(pf, Theme.Border, 1, 0.5)
-
-        local av = Instance.new("ImageLabel")
-        av.Size = UDim2.new(0,32,0,32)
-        av.Position = UDim2.new(0,8,0.5,0)
-        av.AnchorPoint = Vector2.new(0,0.5)
-        av.BackgroundColor3 = Theme.Surface
-        av.BorderSizePixel = 0
-        av.Image = resolveImage(cfg.Profile.Avatar or "rbxassetid://10138402123")
-        av.Parent = pf
-        corner(av, UDim.new(1,0))
-
-        if cfg.Profile.Status then
-            local stat = Instance.new("Frame")
-            stat.Size = UDim2.new(0,10,0,10)
-            stat.Position = UDim2.new(1,-2,1,-2)
-            stat.AnchorPoint = Vector2.new(1,1)
-            stat.BackgroundColor3 = Theme.Success
-            stat.BorderSizePixel = 0
-            stat.Parent = av
-            corner(stat, UDim.new(1,0))
-            stroke(stat, Theme.Background, 2, 0)
-        end
-
-        local pt = Instance.new("TextLabel")
-        pt.Size = UDim2.new(1,-54,0,16)
-        pt.Position = UDim2.new(0,48,0,8)
-        pt.BackgroundTransparency = 1
-        pt.Text = cfg.Profile.Title or "User"
-        pt.TextColor3 = Theme.Text
-        pt.TextSize = 13
-        pt.Font = Theme.Font
-        pt.TextXAlignment = Enum.TextXAlignment.Left
-        pt.Parent = pf
-
-        local pd = Instance.new("TextLabel")
-        pd.Size = UDim2.new(1,-54,0,14)
-        pd.Position = UDim2.new(0,48,0,24)
-        pd.BackgroundTransparency = 1
-        pd.Text = cfg.Profile.Desc or "Profile"
-        pd.TextColor3 = Theme.TextDim
-        pd.TextSize = 11
-        pd.Font = Theme.FontBody
-        pd.TextXAlignment = Enum.TextXAlignment.Left
-        pd.Parent = pf
-
-        searchContainer.Position = UDim2.new(0,6,0,58)
-        yOffset = 92
-    end
-
-    local bottomOffset = 6
+    local bottomOffset = 0
     if cfg.BottomProfile then
+        bottomOffset = 68
         local bpf = Instance.new("Frame")
         bpf.Name = "BottomProfile"
-        bpf.Size = UDim2.new(1,-12,0,46)
-        bpf.Position = UDim2.new(0,6,1,-52)
-        bpf.BackgroundColor3 = Theme.Background
+        bpf.Size = UDim2.new(1,0,0,68)
+        bpf.Position = UDim2.new(0,0,1,-68)
+        bpf.BackgroundTransparency = 1
         bpf.BorderSizePixel = 0
-        bpf.Parent = tabBar
-        corner(bpf, Theme.CornerSmall)
-        stroke(bpf, Theme.Border, 1, 0.5)
+        bpf.Parent = sidebar
+
+        local bpfLine = Instance.new("Frame")
+        bpfLine.Size = UDim2.new(1, -20, 0, 1)
+        bpfLine.Position = UDim2.new(0, 10, 0, 0)
+        bpfLine.BackgroundColor3 = Theme.Border
+        bpfLine.BackgroundTransparency = 0.7
+        bpfLine.BorderSizePixel = 0
+        bpfLine.Parent = bpf
 
         local av = Instance.new("ImageLabel")
-        av.Size = UDim2.new(0,32,0,32)
-        av.Position = UDim2.new(0,8,0.5,0)
+        av.Size = UDim2.new(0,40,0,40)
+        av.Position = UDim2.new(0,10,0.5,0)
         av.AnchorPoint = Vector2.new(0,0.5)
-        av.BackgroundColor3 = Theme.Surface
+        av.BackgroundColor3 = Theme.SurfaceLight
         av.BorderSizePixel = 0
         av.Image = resolveImage(cfg.BottomProfile.Avatar or "rbxassetid://10138402123")
         av.Parent = bpf
-        corner(av, UDim.new(1,0))
+        corner(av, Theme.CornerPill)
+        glowStroke(av, Theme.Accent, 1.5, 0.4)
 
         if cfg.BottomProfile.Status then
             local stat = Instance.new("Frame")
@@ -2650,33 +2667,31 @@ function Window.new(cfg)
             stat.BackgroundColor3 = Theme.Success
             stat.BorderSizePixel = 0
             stat.Parent = av
-            corner(stat, UDim.new(1,0))
+            corner(stat, Theme.CornerPill)
             stroke(stat, Theme.Background, 2, 0)
         end
 
         local pt = Instance.new("TextLabel")
-        pt.Size = UDim2.new(1,-54,0,16)
-        pt.Position = UDim2.new(0,48,0,8)
+        pt.Size = UDim2.new(1,-60,0,16)
+        pt.Position = UDim2.new(0,60,0,16)
         pt.BackgroundTransparency = 1
         pt.Text = cfg.BottomProfile.Title or "User"
         pt.TextColor3 = Theme.Text
-        pt.TextSize = 13
+        pt.TextSize = 14
         pt.Font = Theme.Font
         pt.TextXAlignment = Enum.TextXAlignment.Left
         pt.Parent = bpf
 
         local pd = Instance.new("TextLabel")
-        pd.Size = UDim2.new(1,-54,0,14)
-        pd.Position = UDim2.new(0,48,0,24)
+        pd.Size = UDim2.new(1,-60,0,14)
+        pd.Position = UDim2.new(0,60,0,36)
         pd.BackgroundTransparency = 1
         pd.Text = cfg.BottomProfile.Desc or "Profile"
         pd.TextColor3 = Theme.TextDim
-        pd.TextSize = 11
+        pd.TextSize = 12
         pd.Font = Theme.FontBody
         pd.TextXAlignment = Enum.TextXAlignment.Left
         pd.Parent = bpf
-
-        bottomOffset = 58
     end
 
     local tabListContainer = Instance.new("ScrollingFrame")
@@ -2689,9 +2704,9 @@ function Window.new(cfg)
     tabListContainer.ScrollBarImageColor3 = Theme.Accent
     tabListContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
     tabListContainer.CanvasSize = UDim2.new(0,0,0,0)
-    tabListContainer.Parent = tabBar
-    listLayout(tabListContainer, 2)
-    pad(tabListContainer, 0, 0, 6, 6)
+    tabListContainer.Parent = sidebar
+    listLayout(tabListContainer, 4)
+    pad(tabListContainer, 0, 0, 10, 10)
     self._tabListContainer = tabListContainer
 
     searchBox:GetPropertyChangedSignal("Text"):Connect(function()
@@ -2701,18 +2716,10 @@ function Window.new(cfg)
         end
     end)
 
-    local div = Instance.new("Frame")
-    div.Size = UDim2.new(0,1,1,-8)
-    div.Position = UDim2.new(1,0,0,4)
-    div.BackgroundColor3 = Theme.Border
-    div.BackgroundTransparency = 0.5
-    div.BorderSizePixel = 0
-    div.Parent = tabBar
-
     local content = Instance.new("Frame")
     content.Name = "Content"
-    content.Size = UDim2.new(1,-144,1,-42)
-    content.Position = UDim2.new(0,142,0,40)
+    content.Size = UDim2.new(1,-210, 1, 0)
+    content.Position = UDim2.new(0,210, 0, 0)
     content.BackgroundTransparency = 1
     content.BorderSizePixel = 0
     content.ClipsDescendants = true
