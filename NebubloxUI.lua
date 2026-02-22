@@ -1873,7 +1873,7 @@ function Tab.new(window, cfg)
     btn.Text = ""
     btn.BorderSizePixel = 0
     btn.Parent = window._tabBar
-    corner(btn, Theme.CornerSmall)
+    corner(btn, Theme.CornerPill)
 
     if self.Icon then
         local ico = Instance.new("ImageLabel")
