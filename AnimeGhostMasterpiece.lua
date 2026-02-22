@@ -494,10 +494,11 @@ utilRow[2]:AddButton({Name = "FPS Boost", Icon = "zap", Callback = function()
             elseif v:IsA("Sound") then v:Stop(); v:Destroy() end
         end
         settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
-    end); Window:Notify({Title="FPS Boost", Content="Potato Mode Applied!", Type="success"}) end)
+        RunService:Set3dRenderingEnabled(false) -- More aggressive boost
+    end); Window:Notify({Title="Settings", Content="FPS Boost Enabled!", Type="info"}) end)
 end})
 
-utilRow[3]:AddButton({Name = "Unload / Kill Script", Icon = "shield", Callback = function()
+utilRow[3]:AddButton({Name = "Destroy Script", Icon = "shield", Callback = function()
     getgenv().Nebublox_Running = false
     if getgenv().AntiAfkConnection then getgenv().AntiAfkConnection:Disconnect() end
     if CurrentHighlight then pcall(function() CurrentHighlight:Destroy() end) end
@@ -514,19 +515,20 @@ pcall(function() if not isfolder(FolderName) then makefolder(FolderName) end; if
 
 local ConfName = ""
 local function GetConfigs() local files = {"None"}; pcall(function() for _, f in ipairs(listfiles(ConfigsFolder)) do if f:match("%.json$") then table.insert(files, f:match("([^/\\]+)%.json$")) end end end); return files end
-local ConfDrop = SetSec:AddDropdown({Name = "Saved Profiles", Options = GetConfigs(), Default = "None", Callback = function(v) if v ~= "None" then ConfName = v end end})
 
-SetSec:AddButton({Name = "Refresh Profiles", Icon = "star", Callback = function()
+local confRow1 = SetSec:AddRow({Columns = 2})
+local ConfDrop = confRow1[1]:AddDropdown({Name = "Saved Profiles", Options = GetConfigs(), Default = "None", Callback = function(v) if v ~= "None" then ConfName = v end end})
+confRow1[2]:AddButton({Name = "Refresh 🔄", Color = Color3.fromRGB(0, 255, 255), Callback = function()
     local files = GetConfigs()
     if ConfDrop and ConfDrop.Refresh then ConfDrop:Refresh(files, files[1]) end
 end})
 
 SetSec:AddTextbox({Name = "Profile Name", Placeholder = "Enter config name...", Callback = function(t) ConfName = t end})
 
-local cfgRow = SetSec:AddRow({Columns = 3})
-cfgRow[1]:AddButton({Name = "Save", Icon = "download", Callback = function() if ConfName ~= "" and ConfName ~= "None" then pcall(function() writefile(ConfigsFolder.."/"..ConfName..".json", HttpService:JSONEncode(getgenv().NebubloxSettings or {})) end); Window:Notify({Title="Config",Content="Saved: "..ConfName,Type="success"}) end end})
-cfgRow[2]:AddButton({Name = "Load", Icon = "upload", Callback = function() if ConfName ~= "" and ConfName ~= "None" then pcall(function() local p = ConfigsFolder.."/"..ConfName..".json"; if isfile(p) then for k,v in pairs(HttpService:JSONDecode(readfile(p))) do getgenv().NebubloxSettings = getgenv().NebubloxSettings or {}; getgenv().NebubloxSettings[k] = v end end end); Window:Notify({Title="Config",Content="Loaded: "..ConfName,Type="success"}) end end})
-cfgRow[3]:AddButton({Name = "Delete", Icon = "shield", Callback = function() if ConfName ~= "" and ConfName ~= "None" then pcall(function() delfile(ConfigsFolder.."/"..ConfName..".json") end); Window:Notify({Title="Config",Content="Deleted: "..ConfName,Type="error"}) end end})
+local confRow2 = SetSec:AddRow({Columns = 3})
+confRow2[1]:AddButton({Name = "Save", Color = Color3.fromRGB(0, 255, 140), Callback = function() if ConfName ~= "" and ConfName ~= "None" then pcall(function() writefile(ConfigsFolder.."/"..ConfName..".json", HttpService:JSONEncode(getgenv().NebubloxSettings or {})) end); Window:Notify({Title="Config",Content="Saved: "..ConfName,Type="success"}) end end})
+confRow2[2]:AddButton({Name = "Load", Color = Color3.fromRGB(180, 100, 255), Callback = function() if ConfName ~= "" and ConfName ~= "None" then pcall(function() local p = ConfigsFolder.."/"..ConfName..".json"; if isfile(p) then for k,v in pairs(HttpService:JSONDecode(readfile(p))) do getgenv().NebubloxSettings = getgenv().NebubloxSettings or {}; getgenv().NebubloxSettings[k] = v end end end); Window:Notify({Title="Config",Content="Loaded: "..ConfName,Type="success"}) end end})
+confRow2[3]:AddButton({Name = "Delete", Color = Color3.fromRGB(255, 50, 90), Callback = function() if ConfName ~= "" and ConfName ~= "None" then pcall(function() delfile(ConfigsFolder.."/"..ConfName..".json") end); Window:Notify({Title="Config",Content="Deleted: "..ConfName,Type="error"}) end end})
 
 -- ═══════════════════════════════════════
 --  FINAL INIT
