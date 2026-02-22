@@ -224,8 +224,8 @@ local Window = Nebublox:MakeWindow({
     Title = "NEBUBLOX : ANIME GHOST",
     Subtitle = "by LilNugOfWisdom",
     Profile = {
-        Title = player.Name,
-        Desc = "Masterpiece User",
+        Title = player.DisplayName,
+        Desc = "@"..player.Name,
         Avatar = "rbxthumb://type=AvatarHeadShot&id="..player.UserId.."&w=420&h=420",
         Status = true
     },
@@ -239,14 +239,14 @@ Nebublox:MakeWatermark({Text = "Nebublox : Anime Ghost"})
 -- ═══════════════════════════════════════
 --  TAB 1: HOME
 -- ═══════════════════════════════════════
-local HomeTab = Window:MakeTab({Name = "Home", Icon = "home"})
+local HomeTab = Window:MakeTab({Name = "🏠 Home", Icon = ""})
 
 local InfoCard = HomeTab:MakeSection({Name = "Information"})
 local InfoTabs = InfoCard:AddSubTabs({Tabs = {"About", "Changelog", "Credits"}})
 local AboutTab, ChangeTab, CredTab = InfoTabs[1], InfoTabs[2], InfoTabs[3]
 
 AboutTab:AddLabel({Text = "WELCOME TO NEBUBLOX"})
-AboutTab:AddLabel({Text = "Good Afternoon, " .. player.Name .. "!"})
+AboutTab:AddLabel({Text = "Good Afternoon, " .. player.DisplayName .. "!"})
 AboutTab:AddParagraph({Title = "Status Check", Content = "Status: Connected\nJobID: " .. game.JobId .. "\nDate: " .. os.date("%x")})
 AboutTab:AddButton({Name = "Copy JobID", Icon = "clipboard", Callback = function() setclipboard(game.JobId); Window:Notify({Title="Copied", Content="JobID copied to clipboard!"}) end})
 
@@ -286,7 +286,7 @@ end
 -- ═══════════════════════════════════════
 --  TAB 2: COMBAT
 -- ═══════════════════════════════════════
-local CombatTab = Window:MakeTab({Name = "Combat", Icon = "sword"})
+local CombatTab = Window:MakeTab({Name = "⚔️ Combat", Icon = ""})
 local CombatSec = CombatTab:MakeSection({Name = "Target System"})
 
 getgenv().SelectedEnemy = {"All"}
@@ -327,7 +327,7 @@ task.spawn(function() while task.wait(0.1) do if not getgenv().Nebublox_Running 
 -- ═══════════════════════════════════════
 --  TAB 3: DUNGEONS
 -- ═══════════════════════════════════════
-local DungeonTab = Window:MakeTab({Name = "Dungeons", Icon = "shield"})
+local DungeonTab = Window:MakeTab({Name = "🛡️ Dungeons", Icon = ""})
 local DungSec = DungeonTab:MakeSection({Name = "Dungeon Automation"})
 DungSec:AddButton({Name = "Auto Join Crystal Cave (Hard)", Icon = "sword", Callback = function() pcall(function() if GameLibrary and GameLibrary.Remote then GameLibrary.Remote:Fire("GamemodeSystem","Create","Dungeon","CrystalCave","Hard") end end) end})
 DungSec:AddTextbox({Name = "Leave at Level", Placeholder = "0 = Disabled", Callback = function(t) getgenv().DungeonLeaveLevel = tonumber(t) or 0 end})
@@ -335,7 +335,7 @@ DungSec:AddTextbox({Name = "Leave at Level", Placeholder = "0 = Disabled", Callb
 -- ═══════════════════════════════════════
 --  TAB 4: RAIDS
 -- ═══════════════════════════════════════
-local RaidTab = Window:MakeTab({Name = "Raids", Icon = "star"})
+local RaidTab = Window:MakeTab({Name = "🔥 Raids", Icon = ""})
 local RaidSec = RaidTab:MakeSection({Name = "Raid Automation"})
 RaidSec:AddToggle({Name = "Auto Start Raid", Default = false, Callback = function(s)
     getgenv().AutoStartRaid = s
@@ -350,7 +350,7 @@ RaidSec:AddTextbox({Name = "Leave at Wave", Placeholder = "0 = Disabled", Callba
 -- ═══════════════════════════════════════
 --  TAB 5: AUTOMATION
 -- ═══════════════════════════════════════
-local AutoTab = Window:MakeTab({Name = "Automation", Icon = "settings"})
+local AutoTab = Window:MakeTab({Name = "🤖 Automation", Icon = ""})
 local AutoSec = AutoTab:MakeSection({Name = "Core Automations"})
 
 AutoSec:AddToggle({Name = "Auto Claim Rewards", Default = false, Callback = function(s) getgenv().AutoClaimQuests = s; task.spawn(function() while getgenv().AutoClaimQuests and task.wait(5) do if not getgenv().Nebublox_Running then break end; ClaimQuests() end end) end})
@@ -381,7 +381,7 @@ SpeedSec:AddSlider({Name = "JumpPower Value", Min = 50, Max = 500, Increment = 1
 -- ═══════════════════════════════════════
 --  TAB 6: SHOP
 -- ═══════════════════════════════════════
-local ShopTab = Window:MakeTab({Name = "Shop", Icon = "star"})
+local ShopTab = Window:MakeTab({Name = "🛒 Shop", Icon = ""})
 local ShopSec = ShopTab:MakeSection({Name = "Auto-Buy"})
 local ShopItems = {YenPotion2="Yen Potion II",DamagePotion2="Damage Potion II",LuckPotion2="Luck Potion II",XPPotion2="XP Potion II",DropPotion2="Drop Potion II",Crystals="Crystals"}
 getgenv().AutoBuyItems = {}
@@ -395,7 +395,7 @@ end
 -- ═══════════════════════════════════════
 --  TAB 7: TELEPORTS
 -- ═══════════════════════════════════════
-local TPTab = Window:MakeTab({Name = "Teleports", Icon = "star"})
+local TPTab = Window:MakeTab({Name = "🌍 Teleports", Icon = ""})
 local TPSec = TPTab:MakeSection({Name = "World Navigation"})
 TPSec:AddButton({Name = "Map 1 (Spawn)", Callback = function() pcall(function() local sp = Workspace:FindFirstChild("_MAP") and Workspace._MAP:FindFirstChild("1") and Workspace._MAP["1"]:FindFirstChild("Spawn") and Workspace._MAP["1"].Spawn:FindFirstChild("hf sp"); if sp and sp:IsA("BasePart") then player.Character.HumanoidRootPart.CFrame = sp.CFrame * CFrame.new(0,3,0); Window:Notify({Title="Teleport",Content="Map 1!",Type="success"}) end end) end})
 for i = 2, 4 do
@@ -405,18 +405,13 @@ end
 -- ═══════════════════════════════════════
 --  TAB 8: SETTINGS
 -- ═══════════════════════════════════════
-local SettingsTab = Window:MakeTab({Name = "Settings", Icon = "settings"})
-
-local ThemeSec = SettingsTab:MakeSection({Name = "Theme Customization"})
-ThemeSec:AddDropdown({Name = "Color Palette", Options = {"Dark Matter", "Nebula", "Synthwave", "Cyberpunk"}, Default = "Dark Matter", Callback = function(t)
-    Window:Notify({Title="Theme", Content="Theme set to "..t.." (WIP)", Type="info"})
-end})
+local SettingsTab = Window:MakeTab({Name = "⚙️ Settings", Icon = ""})
 
 local UtilSec = SettingsTab:MakeSection({Name = "Utilities"})
 UtilSec:AddToggle({Name = "Anti-AFK Mechanism", Default = false, Callback = function(s) if s then getgenv().AntiAfkConnection = player.Idled:Connect(function() VirtualUser:CaptureController(); VirtualUser:ClickButton2(Vector2.new()) end) else if getgenv().AntiAfkConnection then getgenv().AntiAfkConnection:Disconnect() end end end})
 
 UtilSec:AddDualButton(
-    {Name = "FPS Boost (Potato)", Icon = "alert", Callback = function()
+    {Name = "FPS Boost (Potato)", Icon = "zap", Callback = function()
         task.spawn(function() pcall(function()
             Lighting.GlobalShadows = false; Lighting.FogEnd = 9e9; Lighting.Brightness = 1
             for _, c in ipairs(Lighting:GetChildren()) do if c:IsA("PostEffect") or c:IsA("BlurEffect") or c:IsA("SunRaysEffect") or c:IsA("ColorCorrectionEffect") or c:IsA("BloomEffect") or c:IsA("DepthOfFieldEffect") or c:IsA("Atmosphere") or c:IsA("Sky") then c:Destroy() end end

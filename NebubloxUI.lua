@@ -25,24 +25,24 @@ local _connections = {}
 -- ═══════════════════════════════════════
 local Theme = {
     _name         = "NebubloxUltima",
-    Background    = Color3.fromRGB(6, 2, 14),
-    Surface       = Color3.fromRGB(14, 8, 28),
-    SurfaceLight  = Color3.fromRGB(22, 12, 44),
-    SurfaceDark   = Color3.fromRGB(8, 4, 18),
-    Accent        = Color3.fromRGB(0, 240, 255),
-    AccentDim     = Color3.fromRGB(0, 160, 210),
+    Background    = Color3.fromRGB(30, 20, 50),
+    Surface       = Color3.fromRGB(45, 30, 75),
+    SurfaceLight  = Color3.fromRGB(60, 40, 100),
+    SurfaceDark   = Color3.fromRGB(20, 10, 35),
+    Accent        = Color3.fromRGB(0, 255, 255),
+    AccentDim     = Color3.fromRGB(0, 180, 210),
     AccentGlow    = Color3.fromRGB(80, 255, 255),
-    Purple        = Color3.fromRGB(140, 40, 255),
-    PurpleDark    = Color3.fromRGB(60, 12, 130),
-    PurpleGlow    = Color3.fromRGB(200, 100, 255),
+    Purple        = Color3.fromRGB(160, 80, 255),
+    PurpleDark    = Color3.fromRGB(80, 30, 150),
+    PurpleGlow    = Color3.fromRGB(220, 120, 255),
     Text          = Color3.fromRGB(255, 255, 255),
-    TextDim       = Color3.fromRGB(160, 150, 190),
-    Border        = Color3.fromRGB(90, 45, 160),
+    TextDim       = Color3.fromRGB(255, 255, 255),
+    Border        = Color3.fromRGB(100, 50, 180),
     Success       = Color3.fromRGB(0, 255, 140),
     Error         = Color3.fromRGB(255, 50, 90),
     Font          = Font.fromEnum(Enum.Font.GothamBold),
     FontTitle     = Font.fromEnum(Enum.Font.GothamBlack),
-    FontBody      = Font.fromEnum(Enum.Font.Gotham),
+    FontBody      = Font.fromEnum(Enum.Font.GothamBold),
     Corner        = UDim.new(0, 10),
     CornerSmall   = UDim.new(0, 6),
     CornerPill    = UDim.new(0, 6),
@@ -90,10 +90,15 @@ end
 
 local function stroke(obj, col, thick, trans)
     local s = Instance.new("UIStroke")
-    s.Color = col or Theme.AccentGlow
+    local tBase = trans or 0.5
+    s.Color = col or Theme.Border
     s.Thickness = thick or 1
-    s.Transparency = trans or 0.5
+    s.Transparency = tBase
     s.Parent = obj
+    
+    local pulse = TweenService:Create(s, TweenInfo.new(1.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Transparency = math.min(1, tBase + 0.3)})
+    pulse:Play()
+    
     return s
 end
 
@@ -154,10 +159,15 @@ end
 
 local function glowStroke(obj, col, thick, trans)
     local s = Instance.new("UIStroke")
+    local tBase = trans or 0.3
     s.Color = col or Theme.Accent
     s.Thickness = thick or 1.5
-    s.Transparency = trans or 0.3
+    s.Transparency = tBase
     s.Parent = obj
+    
+    local pulse = TweenService:Create(s, TweenInfo.new(1.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Transparency = math.min(1, tBase + 0.4)})
+    pulse:Play()
+    
     return s
 end
 
@@ -216,27 +226,20 @@ function Section:AddButton(cfg)
     local icon = cfg.Icon
 
     local isUltra = (icon ~= nil)
-    local height = isUltra and 60 or (desc and 48 or 36)
+    local height = isUltra and 50 or (desc and 42 or 28)
 
     local btn = Instance.new("TextButton")
     btn.Name = "Btn_"..name
     btn.Size = UDim2.new(1,0,0, height)
-    btn.BackgroundColor3 = Color3.new(1,1,1)
-    btn.BackgroundTransparency = 0
+    btn.BackgroundColor3 = Theme.PurpleDark
+    btn.BackgroundTransparency = 0.6
     btn.ZIndex = self:NextZ()
     btn.Text = ""
     btn.BorderSizePixel = 0
     btn.Parent = self.Container
     corner(btn, Theme.CornerSmall)
 
-    -- 3D gradient armor plating
-    local btnGrad
-    if isUltra then
-        btnGrad = gradient3D(btn, Color3.fromRGB(32, 18, 62), Color3.fromRGB(12, 6, 26))
-    else
-        btnGrad = gradient3D(btn, Color3.fromRGB(175, 75, 255), Color3.fromRGB(65, 18, 135))
-    end
-    local btnStroke = glowStroke(btn, Theme.Accent, 1.5, isUltra and 0.35 or 0.5)
+    local btnStroke = stroke(btn, Color3.new(0,0,0), 1, 0.2)
     innerShine(btn)
 
     if self.Window and cfg.Tooltip then self.Window.TrackTooltip(btn, cfg.Tooltip) end
@@ -305,18 +308,19 @@ function Section:AddButton(cfg)
         end
     end
 
-    -- Hover: circuit-line stroke glows brighter
     btn.MouseEnter:Connect(function()
-        tween(btnStroke, {Transparency = 0.05, Thickness = 2}, 0.15)
+        tween(btn, {BackgroundTransparency = 0.4}, 0.15)
+        tween(btnStroke, {Transparency = 0.1}, 0.15)
     end)
     btn.MouseLeave:Connect(function()
-        tween(btnStroke, {Transparency = isUltra and 0.35 or 0.5, Thickness = 1.5}, 0.15)
+        tween(btn, {BackgroundTransparency = 0.6}, 0.15)
+        tween(btnStroke, {Color = Color3.new(0,0,0), Transparency = 0.2}, 0.15)
     end)
     -- Click: energy flash
     btn.MouseButton1Click:Connect(function()
-        tween(btnStroke, {Color = Theme.AccentGlow, Transparency = 0, Thickness = 2.5}, 0.06)
+        tween(btnStroke, {Color = Theme.Accent, Transparency = 0, Thickness = 2}, 0.06)
         task.delay(0.15, function()
-            tween(btnStroke, {Color = Theme.Accent, Transparency = isUltra and 0.35 or 0.5, Thickness = 1.5}, 0.25)
+            tween(btnStroke, {Color = Color3.new(0,0,0), Transparency = 0.2, Thickness = 1}, 0.25)
         end)
         pcall(cb)
     end)
@@ -325,7 +329,7 @@ end
 
 function Section:AddDualButton(cfg1, cfg2)
     local container = Instance.new("Frame")
-    container.Size = UDim2.new(1, 0, 0, 36)
+    container.Size = UDim2.new(1, 0, 0, 28)
     container.BackgroundTransparency = 1
     container.Parent = self.Container
     
@@ -340,29 +344,22 @@ function Section:AddDualButton(cfg1, cfg2)
         local cb = cfg.Callback or function() end
         local btn = Instance.new("TextButton")
         btn.Size = UDim2.new(0.5, -4, 1, 0)
-        btn.BackgroundColor3 = Theme.Purple
-        btn.BackgroundTransparency = 0.5
+        btn.BackgroundColor3 = Theme.PurpleDark
+        btn.BackgroundTransparency = 0.6
         btn.Text = cfg.Name or "Button"
         btn.TextColor3 = Theme.Text
         btn.FontFace = Theme.Font
-        btn.TextSize = 14
+        btn.TextSize = 13
         btn.Parent = container
         corner(btn, Theme.CornerSmall)
-        gradient3D(btn, Color3.fromRGB(175, 75, 255), Color3.fromRGB(65, 18, 135))
-        local s = glowStroke(btn, Theme.AccentGlow, 1.5, 0.4)
+        local s = stroke(btn, Color3.new(0,0,0), 1, 0.2)
         innerShine(btn)
         
-        btn.MouseEnter:Connect(function() tween(btn, {BackgroundTransparency = 0.2}, 0.15); tween(s, {Thickness = 2, Transparency = 0.1}, 0.15) end)
-        btn.MouseLeave:Connect(function() tween(btn, {BackgroundTransparency = 0.5}, 0.15); tween(s, {Thickness = 1.5, Transparency = 0.4}, 0.15) end)
+        btn.MouseEnter:Connect(function() tween(btn, {BackgroundTransparency = 0.4}, 0.15); tween(s, {Transparency = 0.1}, 0.15) end)
+        btn.MouseLeave:Connect(function() tween(btn, {BackgroundTransparency = 0.6}, 0.15); tween(s, {Color = Color3.new(0,0,0), Transparency = 0.2}, 0.15) end)
         btn.MouseButton1Click:Connect(function()
-            local ef = Instance.new("Frame")
-            ef.Size = UDim2.new(1,0,1,0)
-            ef.BackgroundColor3 = Theme.AccentGlow
-            ef.BackgroundTransparency = 0
-            ef.Parent = btn
-            corner(ef, Theme.CornerSmall)
-            tween(ef, {BackgroundTransparency = 1}, 0.3)
-            task.delay(0.3, function() ef:Destroy() end)
+            tween(s, {Color = Theme.Accent, Transparency = 0, Thickness = 2}, 0.06)
+            task.delay(0.15, function() tween(s, {Color = Color3.new(0,0,0), Transparency = 0.2, Thickness = 1}, 0.25) end)
             pcall(cb)
         end)
     end
@@ -378,9 +375,9 @@ function Section:AddToggle(cfg)
 
     local f = Instance.new("Frame")
     f.Name = "Tog_"..name
-    f.Size = UDim2.new(1,0,0,32)
+    f.Size = UDim2.new(1,0,0,28)
     f.BackgroundColor3 = Theme.Surface
-    f.BackgroundTransparency = 0.4
+    f.BackgroundTransparency = 0.6
     f.BorderSizePixel = 0
     f.Parent = self.Container
     corner(f, Theme.CornerSmall)
@@ -392,35 +389,35 @@ function Section:AddToggle(cfg)
     lbl.Text = name
     lbl.TextColor3 = Theme.Text
     lbl.TextSize = 13
-    lbl.FontFace = Theme.FontBody
+    lbl.FontFace = Theme.Font
     lbl.TextXAlignment = Enum.TextXAlignment.Left
     lbl.Parent = f
     if self.Window and cfg.Tooltip then self.Window.TrackTooltip(lbl, cfg.Tooltip) end
 
     local sw = Instance.new("TextButton")
-    sw.Size = UDim2.new(0,40,0,20)
-    sw.Position = UDim2.new(1,-50,0.5,0)
+    sw.Size = UDim2.new(0,36,0,18)
+    sw.Position = UDim2.new(1,-46,0.5,0)
     sw.AnchorPoint = Vector2.new(0,0.5)
-    sw.BackgroundColor3 = state and Theme.Accent or Theme.AccentGlow
+    sw.BackgroundColor3 = state and Theme.Accent or Theme.SurfaceDark
     sw.Text = ""
     sw.BorderSizePixel = 0
     sw.Parent = f
     corner(sw, Theme.CornerPill)
+    local swStroke = stroke(sw, state and Theme.Accent or Color3.new(0,0,0), 1, 0.2)
 
     local knob = Instance.new("Frame")
-    knob.Size = UDim2.new(0,16,0,16)
-    knob.Position = state and UDim2.new(1,-18,0.5,0) or UDim2.new(0,2,0.5,0)
+    knob.Size = UDim2.new(0,14,0,14)
+    knob.Position = state and UDim2.new(1,-16,0.5,0) or UDim2.new(0,2,0.5,0)
     knob.AnchorPoint = Vector2.new(0,0.5)
     knob.BackgroundColor3 = Color3.new(1,1,1)
     knob.BorderSizePixel = 0
     knob.Parent = sw
     corner(knob, Theme.CornerPill)
-    local knobGlow = glowStroke(knob, state and Theme.Accent or Theme.AccentGlow, 1.5, state and 0.2 or 0.7)
 
     local function upd()
-        tween(sw, {BackgroundColor3 = state and Theme.Accent or Theme.AccentGlow}, 0.2)
-        tween(knob, {Position = state and UDim2.new(1,-18,0.5,0) or UDim2.new(0,2,0.5,0)}, 0.2)
-        tween(knobGlow, {Color = state and Theme.Accent or Theme.AccentGlow, Transparency = state and 0.2 or 0.7}, 0.2)
+        tween(sw, {BackgroundColor3 = state and Theme.Accent or Theme.SurfaceDark}, 0.2)
+        tween(knob, {Position = state and UDim2.new(1,-16,0.5,0) or UDim2.new(0,2,0.5,0)}, 0.2)
+        tween(swStroke, {Color = state and Theme.Accent or Color3.new(0,0,0)}, 0.2)
     end
     sw.MouseButton1Click:Connect(function() state = not state; upd(); pcall(cb, state) end)
 
@@ -2483,7 +2480,7 @@ function Window.new(cfg)
     ttl.BackgroundTransparency = 1
     ttl.Text = self.Title
     ttl.TextColor3 = Theme.Text
-    ttl.TextSize = 18
+    ttl.TextSize = 14
     ttl.FontFace = Theme.FontTitle
     ttl.TextXAlignment = Enum.TextXAlignment.Left
     ttl.Parent = sidebar
@@ -2502,8 +2499,8 @@ function Window.new(cfg)
     local ttlLine = Instance.new("Frame")
     ttlLine.Size = UDim2.new(1, 0, 0, 1)
     ttlLine.Position = UDim2.new(0, 0, 0, 56)
-    ttlLine.BackgroundColor3 = Theme.AccentGlow
-    ttlLine.BackgroundTransparency = 0.7
+    ttlLine.BackgroundColor3 = Theme.Border
+    ttlLine.BackgroundTransparency = 0.5
     ttlLine.BorderSizePixel = 0
     ttlLine.Parent = sidebar
 
