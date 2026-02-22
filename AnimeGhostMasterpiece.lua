@@ -264,8 +264,10 @@ else
     HomeMain:AddLabel({Text = "✨ Status: Authorized Premium"})
 end
 
-HomeMain:AddButton({Name = "Join Discord", Description = "Copy invite link", Icon = "star", Callback = function() setclipboard(Configuration.Discord); Window:Notify({Title="Discord", Content="Link Copied!", Type="success"}) end})
-HomeMain:AddButton({Name = "Nebublox Website", Description = "nebublox.space", Icon = "star", Callback = function() setclipboard("https://nebublox.space"); Window:Notify({Title="Website", Content="Link Copied!", Type="success"}) end})
+HomeMain:AddDualButton(
+    {Name = "Join Discord", Icon = "star", Callback = function() setclipboard(Configuration.Discord); Window:Notify({Title="Discord", Content="Link Copied!", Type="success"}) end},
+    {Name = "Nebublox Site", Icon = "star", Callback = function() setclipboard("https://nebublox.space"); Window:Notify({Title="Website", Content="Link Copied!", Type="success"}) end}
+)
 
 -- ═══════════════════════════════════════
 --  TAB 2: COMBAT
