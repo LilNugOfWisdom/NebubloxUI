@@ -325,18 +325,15 @@ local CurrentHighlight = Instance.new("Highlight"); CurrentHighlight.FillColor =
 task.spawn(function() while task.wait(0.1) do if not getgenv().Nebublox_Running then CurrentHighlight:Destroy(); break end; if TargetState.CurrentTarget and TargetState.CurrentTarget.Parent then if CurrentHighlight.Parent ~= TargetState.CurrentTarget then CurrentHighlight.Parent = TargetState.CurrentTarget; CurrentHighlight.Enabled = true end else CurrentHighlight.Parent = nil; CurrentHighlight.Enabled = false end end end)
 
 -- ═══════════════════════════════════════
---  TAB 3: DUNGEONS
+--  TAB 3: GAMEMODES
 -- ═══════════════════════════════════════
-local DungeonTab = Window:MakeTab({Name = "🛡️ Dungeons", Icon = ""})
-local DungSec = DungeonTab:MakeSection({Name = "Dungeon Automation"})
+local GamemodesTab = Window:MakeTab({Name = "🎮 Gamemodes", Icon = ""})
+
+local DungSec = GamemodesTab:MakeSection({Name = "Dungeon Automation"})
 DungSec:AddButton({Name = "Auto Join Crystal Cave (Hard)", Icon = "sword", Callback = function() pcall(function() if GameLibrary and GameLibrary.Remote then GameLibrary.Remote:Fire("GamemodeSystem","Create","Dungeon","CrystalCave","Hard") end end) end})
 DungSec:AddTextbox({Name = "Leave at Level", Placeholder = "0 = Disabled", Callback = function(t) getgenv().DungeonLeaveLevel = tonumber(t) or 0 end})
 
--- ═══════════════════════════════════════
---  TAB 4: RAIDS
--- ═══════════════════════════════════════
-local RaidTab = Window:MakeTab({Name = "🔥 Raids", Icon = ""})
-local RaidSec = RaidTab:MakeSection({Name = "Raid Automation"})
+local RaidSec = GamemodesTab:MakeSection({Name = "Raid Automation"})
 RaidSec:AddToggle({Name = "Auto Start Raid", Default = false, Callback = function(s)
     getgenv().AutoStartRaid = s
     task.spawn(function() while getgenv().AutoStartRaid do if not getgenv().Nebublox_Running then break end; pcall(function()
