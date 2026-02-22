@@ -55,6 +55,28 @@ pcall(function()
     end
 end)
 
+local function SafeSetFont(obj, font)
+    if not obj then return end
+    local success = pcall(function()
+        obj.Font = font or Theme.Font
+    end)
+    if not success then
+        pcall(function() obj.Font = Enum.Font.SourceSans end)
+    end
+end
+
+local function ValidateThemeFonts()
+    for k, v in pairs(Theme) do
+        if k:find("^Font") then
+            if typeof(v) ~= "EnumItem" then
+                Theme[k] = Enum.Font.GothamBold
+            end
+        end
+    end
+end
+ValidateThemeFonts()
+
+
 -- ═══════════════════════════════════════
 --  UTILITIES
 -- ═══════════════════════════════════════
@@ -347,8 +369,9 @@ function Section:AddButton(cfg)
         lbl.Text = name
         lbl.TextColor3 = Theme.Text
         lbl.TextSize = 15
-        lbl.Font = Theme.Font
+        SafeSetFont(lbl, Theme.Font)
         lbl.TextXAlignment = Enum.TextXAlignment.Left
+
         lbl.Parent = btn
         lbl.ZIndex = btn.ZIndex + 2
 
@@ -360,8 +383,9 @@ function Section:AddButton(cfg)
             d.Text = desc
             d.TextColor3 = Theme.TextDim
             d.TextSize = 12
-            d.Font = Theme.FontBody
+            SafeSetFont(d, Theme.FontBody)
             d.TextXAlignment = Enum.TextXAlignment.Left
+
             d.Parent = btn
             d.ZIndex = btn.ZIndex + 2
         end
@@ -373,8 +397,9 @@ function Section:AddButton(cfg)
         lbl.Text = name
         lbl.TextColor3 = Theme.Text
         lbl.TextSize = 14
-        lbl.Font = Theme.Font
+        SafeSetFont(lbl, Theme.Font)
         lbl.TextXAlignment = Enum.TextXAlignment.Left
+
         lbl.Parent = btn
         lbl.ZIndex = btn.ZIndex + 2
 
@@ -386,8 +411,9 @@ function Section:AddButton(cfg)
             d.Text = desc
             d.TextColor3 = Theme.TextDim
             d.TextSize = 12
-            d.Font = Theme.FontBody
+            SafeSetFont(d, Theme.FontBody)
             d.TextXAlignment = Enum.TextXAlignment.Left
+
             d.Parent = btn
             d.ZIndex = btn.ZIndex + 2
         end
@@ -434,8 +460,9 @@ function Section:AddDualButton(cfg1, cfg2)
         btn.BackgroundTransparency = 0.5
         btn.Text = cfg.Name or "Button"
         btn.TextColor3 = Theme.Text
-        btn.Font = Theme.Font
+        SafeSetFont(btn, Theme.Font)
         btn.TextSize = 13
+
         btn.Parent = container
         corner(btn, Theme.CornerSmall)
         
@@ -484,8 +511,9 @@ function Section:AddToggle(cfg)
     lbl.Text = name
     lbl.TextColor3 = Theme.Text
     lbl.TextSize = 13
-    lbl.Font = Theme.Font
+    SafeSetFont(lbl, Theme.Font)
     lbl.TextXAlignment = Enum.TextXAlignment.Left
+
     lbl.Parent = f
     if self.Window and cfg.Tooltip then self.Window.TrackTooltip(lbl, cfg.Tooltip) end
 
@@ -540,8 +568,9 @@ function Section:AddSlider(cfg)
     lbl.Text = name
     lbl.TextColor3 = Theme.Text
     lbl.TextSize = 13
-    lbl.Font = Theme.FontBody
+    SafeSetFont(lbl, Theme.FontBody)
     lbl.TextXAlignment = Enum.TextXAlignment.Left
+
     lbl.Parent = f
     if self.Window and cfg.Tooltip then self.Window.TrackTooltip(lbl, cfg.Tooltip) end
 
@@ -552,8 +581,9 @@ function Section:AddSlider(cfg)
     vLbl.Text = tostring(val)
     vLbl.TextColor3 = Theme.Accent
     vLbl.TextSize = 13
-    vLbl.Font = Theme.Font
+    SafeSetFont(vLbl, Theme.Font)
     vLbl.TextXAlignment = Enum.TextXAlignment.Right
+
     vLbl.Parent = f
 
     local track = Instance.new("Frame")
@@ -653,8 +683,9 @@ function Section:AddDropdown(cfg)
     lbl.Text = name
     lbl.TextColor3 = Theme.Text
     lbl.TextSize = 13
-    lbl.Font = Theme.FontBody
+    SafeSetFont(lbl, Theme.FontBody)
     lbl.TextXAlignment = Enum.TextXAlignment.Left
+
     lbl.Parent = f
 
     local valBtn = Instance.new("TextButton")
@@ -662,10 +693,10 @@ function Section:AddDropdown(cfg)
     valBtn.Position = UDim2.new(0.5,0,0,2)
     valBtn.BackgroundColor3 = Theme.SurfaceLight
     valBtn.Text = "  "..tostring(selected).."  ▾"
-    valBtn.TextColor3 = Theme.Accent
     valBtn.TextSize = 12
-    valBtn.Font = Theme.FontBody
+    SafeSetFont(valBtn, Theme.FontBody)
     valBtn.BorderSizePixel = 0
+
     valBtn.TextXAlignment = Enum.TextXAlignment.Right
     valBtn.Parent = f
     corner(valBtn, Theme.CornerSmall)
@@ -688,8 +719,9 @@ function Section:AddDropdown(cfg)
         ob.Text = "   "..tostring(opt)
         ob.TextColor3 = Theme.TextDim
         ob.TextSize = 12
-        ob.Font = Theme.FontBody
+        SafeSetFont(ob, Theme.FontBody)
         ob.TextXAlignment = Enum.TextXAlignment.Left
+
         ob.BorderSizePixel = 0
         ob.Parent = optContainer
         ob.MouseEnter:Connect(function() tween(ob, {BackgroundTransparency = 0.1, TextColor3 = Theme.Accent}, 0.1) end)
@@ -724,8 +756,9 @@ function Section:AddDropdown(cfg)
             ob.Text = "   "..tostring(opt)
             ob.TextColor3 = Theme.TextDim
             ob.TextSize = 12
-            ob.Font = Theme.FontBody
+            SafeSetFont(ob, Theme.FontBody)
             ob.TextXAlignment = Enum.TextXAlignment.Left
+
             ob.BorderSizePixel = 0
             ob.Parent = optContainer
             ob.MouseEnter:Connect(function() tween(ob, {BackgroundTransparency = 0.1, TextColor3 = Theme.Accent}, 0.1) end)
@@ -772,8 +805,9 @@ function Section:AddMultiDropdown(cfg)
     lbl.Text = name
     lbl.TextColor3 = Theme.Text
     lbl.TextSize = 13
-    lbl.Font = Theme.FontBody
+    SafeSetFont(lbl, Theme.FontBody)
     lbl.TextXAlignment = Enum.TextXAlignment.Left
+
     lbl.Parent = f
     if self.Window and cfg.Tooltip then self.Window.TrackTooltip(lbl, cfg.Tooltip) end
 
@@ -784,10 +818,10 @@ function Section:AddMultiDropdown(cfg)
     valBtn.Position = UDim2.new(0.5,0,0,2)
     valBtn.BackgroundColor3 = Theme.SurfaceLight
     valBtn.Text = countSel().." selected  ▾"
-    valBtn.TextColor3 = Theme.Accent
     valBtn.TextSize = 12
-    valBtn.Font = Theme.FontBody
+    SafeSetFont(valBtn, Theme.FontBody)
     valBtn.BorderSizePixel = 0
+
     valBtn.TextXAlignment = Enum.TextXAlignment.Right
     valBtn.Parent = f
     corner(valBtn, Theme.CornerSmall)
@@ -813,8 +847,9 @@ function Section:AddMultiDropdown(cfg)
         rainbowTextOutline(ob)
         ob.TextColor3 = sel[opt] and Theme.Accent or Theme.TextDim
         ob.TextSize = 12
-        ob.Font = Theme.FontBody
+        SafeSetFont(ob, Theme.FontBody)
         ob.TextXAlignment = Enum.TextXAlignment.Left
+
         ob.BorderSizePixel = 0
         ob.Parent = optC
         ob.MouseButton1Click:Connect(function()
@@ -834,6 +869,34 @@ function Section:AddMultiDropdown(cfg)
 
     local api = {}
     function api:Get() return getResult() end
+    function api:Refresh(newOpts, newSel)
+        for _,c in ipairs(optC:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
+        options = newOpts
+        sel = {}; if newSel then for _,v in ipairs(newSel) do sel[v] = true end end
+        for _, opt in ipairs(options) do
+            local ob = Instance.new("TextButton")
+            ob.Size = UDim2.new(1,0,0,26)
+            ob.BackgroundColor3 = Theme.Background
+            ob.BackgroundTransparency = 0.4
+            ob.Text = (sel[opt] and "  ● " or "  ○ ")..tostring(opt)
+            rainbowTextOutline(ob)
+            ob.TextColor3 = sel[opt] and Theme.Accent or Theme.TextDim
+            ob.TextSize = 12
+            SafeSetFont(ob, Theme.FontBody)
+            ob.TextXAlignment = Enum.TextXAlignment.Left
+
+            ob.BorderSizePixel = 0
+            ob.Parent = optC
+            ob.MouseButton1Click:Connect(function()
+                sel[opt] = not sel[opt] or nil
+                ob.Text = (sel[opt] and "  ● " or "  ○ ")..tostring(opt)
+                ob.TextColor3 = sel[opt] and Theme.Accent or Theme.TextDim
+                valBtn.Text = countSel().." selected  ▾"
+                pcall(cb, getResult())
+            end)
+        end
+        valBtn.Text = countSel().." selected  ▾"
+    end
     return api
 end
 
@@ -862,8 +925,9 @@ function Section:AddKeybind(cfg)
     lbl.Text = name
     lbl.TextColor3 = Theme.Text
     lbl.TextSize = 13
-    lbl.Font = Theme.FontBody
+    SafeSetFont(lbl, Theme.FontBody)
     lbl.TextXAlignment = Enum.TextXAlignment.Left
+
     lbl.Parent = f
     if self.Window and cfg.Tooltip then self.Window.TrackTooltip(lbl, cfg.Tooltip) end
 
@@ -875,8 +939,9 @@ function Section:AddKeybind(cfg)
     kBtn.Text = key.Name
     kBtn.TextColor3 = Theme.Accent
     kBtn.TextSize = 12
-    kBtn.Font = Theme.Font
+    SafeSetFont(kBtn, Theme.Font)
     kBtn.BorderSizePixel = 0
+
     kBtn.Parent = f
     corner(kBtn, Theme.CornerSmall)
     stroke(kBtn, Theme.AccentGlow, 1, 0.6)
@@ -928,8 +993,9 @@ function Section:AddTextbox(cfg)
     lbl.Text = name
     lbl.TextColor3 = Theme.Text
     lbl.TextSize = 13
-    lbl.Font = Theme.FontBody
+    SafeSetFont(lbl, Theme.FontBody)
     lbl.TextXAlignment = Enum.TextXAlignment.Left
+
     lbl.Parent = f
     if self.Window and cfg.Tooltip then self.Window.TrackTooltip(lbl, cfg.Tooltip) end
 
@@ -943,8 +1009,9 @@ function Section:AddTextbox(cfg)
     tb.PlaceholderColor3 = Theme.TextDim
     tb.TextColor3 = Theme.Accent
     tb.TextSize = 12
-    tb.Font = Theme.FontBody
+    SafeSetFont(tb, Theme.FontBody)
     tb.BorderSizePixel = 0
+
     tb.ClearTextOnFocus = clearOnFocus or false
     tb.Parent = f
     corner(tb, Theme.CornerSmall)
@@ -983,8 +1050,9 @@ function Section:AddImageDisplay(cfg)
         lbl.Text = name
         lbl.TextColor3 = Theme.TextDim
         lbl.TextSize = 12
-        lbl.Font = Theme.FontBody
+        SafeSetFont(lbl, Theme.FontBody)
         lbl.TextXAlignment = Enum.TextXAlignment.Left
+
         lbl.Parent = f
         if self.Window and cfg.Tooltip then self.Window.TrackTooltip(lbl, cfg.Tooltip) end
     end
@@ -1015,8 +1083,9 @@ function Section:AddLabel(cfg)
     lbl.Text = cfg.Text or "Label"
     lbl.TextColor3 = cfg.Color or Theme.TextDim
     lbl.TextSize = 13
-    lbl.Font = Theme.FontBody
+    SafeSetFont(lbl, Theme.FontBody)
     lbl.TextXAlignment = Enum.TextXAlignment.Left
+
     lbl.Parent = self.Container
     if self.Window and cfg.Tooltip then self.Window.TrackTooltip(lbl, cfg.Tooltip) end
     local api = {}
@@ -1046,8 +1115,9 @@ function Section:AddParagraph(cfg)
         t.Text = cfg.Title
         t.TextColor3 = Theme.Accent
         t.TextSize = 13
-        t.Font = Theme.Font
+        SafeSetFont(t, Theme.Font)
         t.TextXAlignment = Enum.TextXAlignment.Left
+
         t.Parent = f
     end
 
@@ -1058,8 +1128,9 @@ function Section:AddParagraph(cfg)
     body.Text = cfg.Content or cfg.Text or ""
     body.TextColor3 = Theme.TextDim
     body.TextSize = 12
-    body.Font = Theme.FontBody
+    SafeSetFont(body, Theme.FontBody)
     body.TextWrapped = true
+
     body.TextXAlignment = Enum.TextXAlignment.Left
     body.Parent = f
     listLayout(f, 2)
@@ -1105,8 +1176,9 @@ function Section:AddConsole(cfg)
         l.Text = "› "..tostring(text)
         l.TextColor3 = color or Theme.TextDim
         l.TextSize = 11
-        l.Font = Enum.Font.RobotoMono
+        SafeSetFont(l, Enum.Font.RobotoMono)
         l.TextXAlignment = Enum.TextXAlignment.Left
+
         l.Parent = scroll
         table.insert(lines, l)
         if #lines > maxLines then lines[1]:Destroy(); table.remove(lines, 1) end
@@ -1144,8 +1216,9 @@ function Section:AddAIAssistant(cfg)
     lbl.Text = "✧ "..name
     lbl.TextColor3 = Theme.Accent
     lbl.TextSize = 13
-    lbl.Font = Theme.Font
+    SafeSetFont(lbl, Theme.Font)
     lbl.TextXAlignment = Enum.TextXAlignment.Left
+
     lbl.Parent = f
     if self.Window and cfg.Tooltip then self.Window.TrackTooltip(lbl, cfg.Tooltip) end
 
@@ -1189,8 +1262,9 @@ function Section:AddAIAssistant(cfg)
     box.TextColor3 = Theme.Text
     box.PlaceholderColor3 = Theme.TextDim
     box.TextSize = 12
-    box.Font = Theme.FontBody
+    SafeSetFont(box, Theme.FontBody)
     box.TextXAlignment = Enum.TextXAlignment.Left
+
     box.Parent = inputFrame
 
     local btn = Instance.new("TextButton")
@@ -1201,8 +1275,9 @@ function Section:AddAIAssistant(cfg)
     btn.Text = "➤"
     btn.TextColor3 = Theme.Text
     btn.TextSize = 12
-    btn.Font = Theme.Font
+    SafeSetFont(btn, Theme.Font)
     btn.BorderSizePixel = 0
+
     btn.Parent = inputFrame
     corner(btn, Theme.CornerSmall)
     
@@ -1216,8 +1291,9 @@ function Section:AddAIAssistant(cfg)
         l.TextWrapped = true
         l.TextColor3 = isAi and Theme.Accent or Theme.TextDim
         l.TextSize = 12
-        l.Font = Theme.FontBody
+        SafeSetFont(l, Theme.FontBody)
         l.TextXAlignment = Enum.TextXAlignment.Left
+
         l.Parent = scroll
         table.insert(lines, l)
         scroll.CanvasPosition = Vector2.new(0, scroll.AbsoluteCanvasSize.Y + 100)
@@ -1270,8 +1346,9 @@ function Section:AddVideo(cfg)
     lbl.Text = name
     lbl.TextColor3 = Theme.Text
     lbl.TextSize = 13
-    lbl.Font = Theme.FontBody
+    SafeSetFont(lbl, Theme.FontBody)
     lbl.TextXAlignment = Enum.TextXAlignment.Left
+
     lbl.Parent = f
     if self.Window and cfg.Tooltip then self.Window.TrackTooltip(lbl, cfg.Tooltip) end
 
@@ -1319,8 +1396,9 @@ function Section:AddColorPicker(cfg)
     lbl.Text = name
     lbl.TextColor3 = Theme.Text
     lbl.TextSize = 13
-    lbl.Font = Theme.FontBody
+    SafeSetFont(lbl, Theme.FontBody)
     lbl.TextXAlignment = Enum.TextXAlignment.Left
+
     lbl.Parent = f
     if self.Window and cfg.Tooltip then self.Window.TrackTooltip(lbl, cfg.Tooltip) end
 
@@ -1447,8 +1525,9 @@ function Section:AddGameScanner(cfg)
     lbl.Text = name
     lbl.TextColor3 = Theme.Text
     lbl.TextSize = 13
-    lbl.Font = Theme.FontBody
+    SafeSetFont(lbl, Theme.FontBody)
     lbl.TextXAlignment = Enum.TextXAlignment.Left
+
     lbl.Parent = f
     if self.Window and cfg.Tooltip then self.Window.TrackTooltip(lbl, cfg.Tooltip) end
 
@@ -1459,8 +1538,9 @@ function Section:AddGameScanner(cfg)
     desc.Text = "Finds Remotes, Modules, and Assets"
     desc.TextColor3 = Theme.TextDim
     desc.TextSize = 11
-    desc.Font = Theme.FontBody
+    SafeSetFont(desc, Theme.FontBody)
     desc.TextXAlignment = Enum.TextXAlignment.Left
+
     desc.Parent = f
 
     local btn = Instance.new("TextButton")
@@ -1471,8 +1551,9 @@ function Section:AddGameScanner(cfg)
     btn.Text = "Scan Game"
     btn.TextColor3 = Theme.Text
     btn.TextSize = 12
-    btn.Font = Theme.FontBody
+    SafeSetFont(btn, Theme.FontBody)
     btn.BorderSizePixel = 0
+
     btn.Parent = f
     corner(btn, Theme.CornerSmall)
 
@@ -1533,8 +1614,9 @@ function Section:Add3DViewport(cfg)
     lbl.Text = name
     lbl.TextColor3 = Theme.Text
     lbl.TextSize = 13
-    lbl.Font = Theme.FontBody
+    SafeSetFont(lbl, Theme.FontBody)
     lbl.TextXAlignment = Enum.TextXAlignment.Left
+
     lbl.Parent = f
     if self.Window and cfg.Tooltip then self.Window.TrackTooltip(lbl, cfg.Tooltip) end
 
@@ -1610,8 +1692,9 @@ function Section:AddLineGraph(cfg)
     lbl.Text = name
     lbl.TextColor3 = Theme.Text
     lbl.TextSize = 13
-    lbl.Font = Theme.FontBody
+    SafeSetFont(lbl, Theme.FontBody)
     lbl.TextXAlignment = Enum.TextXAlignment.Left
+
     lbl.Parent = f
     if self.Window and cfg.Tooltip then self.Window.TrackTooltip(lbl, cfg.Tooltip) end
 
@@ -1622,8 +1705,9 @@ function Section:AddLineGraph(cfg)
     valLbl.Text = "0"
     valLbl.TextColor3 = Theme.Accent
     valLbl.TextSize = 13
-    valLbl.Font = Theme.Font
+    SafeSetFont(valLbl, Theme.Font)
     valLbl.TextXAlignment = Enum.TextXAlignment.Right
+
     valLbl.Parent = f
 
     local canvas = Instance.new("Frame")
@@ -1788,8 +1872,9 @@ function Section:AddProfileCard(cfg)
     tLbl.Text = title
     tLbl.TextColor3 = Theme.Text
     tLbl.TextSize = 14
-    tLbl.Font = Theme.Font
+    SafeSetFont(tLbl, Theme.Font)
     tLbl.TextXAlignment = Enum.TextXAlignment.Left
+
     tLbl.Parent = f
 
     local dLbl = Instance.new("TextLabel")
@@ -1799,8 +1884,9 @@ function Section:AddProfileCard(cfg)
     dLbl.Text = desc
     dLbl.TextColor3 = Theme.TextDim
     dLbl.TextSize = 11
-    dLbl.Font = Theme.FontBody
+    SafeSetFont(dLbl, Theme.FontBody)
     dLbl.TextXAlignment = Enum.TextXAlignment.Left
+
     dLbl.Parent = f
 
     local st = Instance.new("Frame")
@@ -1911,8 +1997,9 @@ function Section:AddSubTabs(cfg)
         btn.Text = tName
         btn.TextColor3 = Theme.Text
         btn.TextSize = 13
-        btn.Font = Theme.Font
+        SafeSetFont(btn, Theme.Font)
         btn.BorderSizePixel = 0
+
         btn.Parent = btnContainer
         corner(btn, Theme.CornerSmall)
         
@@ -1974,8 +2061,9 @@ function Section.new(tab, cfg)
     hdr.Text = self.Name
     hdr.TextColor3 = Color3.new(1,1,1)
     hdr.TextSize = 15
-    hdr.Font = Theme.FontTitle
+    SafeSetFont(hdr, Theme.FontTitle)
     hdr.TextXAlignment = Enum.TextXAlignment.Left
+
     hdr.Parent = f
     rainbowWaveBorder(hdr, 1.2)
 
@@ -2038,8 +2126,9 @@ function Tab.new(window, cfg)
     dot.Text = "•"
     dot.TextColor3 = Theme.TextDim
     dot.TextSize = 22
-    dot.Font = Theme.Font
+    SafeSetFont(dot, Theme.Font)
     dot.Parent = btn
+
     self._icon = dot
 
     local lbl = Instance.new("TextLabel")
@@ -2049,8 +2138,9 @@ function Tab.new(window, cfg)
     lbl.Text = self.Name
     lbl.TextColor3 = Theme.TextDim
     lbl.TextSize = 13
-    lbl.Font = Theme.Font
+    SafeSetFont(lbl, Theme.Font)
     lbl.TextTruncate = Enum.TextTruncate.AtEnd
+
     lbl.TextXAlignment = Enum.TextXAlignment.Left
     lbl.Parent = btn
     waveGradient(lbl, Color3.fromRGB(160, 80, 255), Color3.fromRGB(0, 255, 255))
@@ -2065,8 +2155,9 @@ function Tab.new(window, cfg)
     tearBtn.Text = "⇱"
     tearBtn.TextColor3 = Theme.TextDim
     tearBtn.TextSize = 14
-    tearBtn.Font = Theme.FontBody
+    SafeSetFont(tearBtn, Theme.FontBody)
     tearBtn.Parent = btn
+
     if window.TrackTooltip then window.TrackTooltip(tearBtn, "Tear off tab") end
 
     local page = Instance.new("ScrollingFrame")
@@ -2125,8 +2216,9 @@ function Tab.new(window, cfg)
         title.BackgroundTransparency = 1
         title.Text = "⬡ " .. self.Name
         title.TextColor3 = Theme.Accent
-        title.Font = Theme.Font
+        SafeSetFont(title, Theme.Font)
         title.TextSize = 14
+
         title.TextXAlignment = Enum.TextXAlignment.Left
         title.Parent = tb
 
@@ -2210,7 +2302,14 @@ function Tab:Select()
         p.Page.Visible = false
         tween(p._btn, {BackgroundTransparency = 1}, 0.2)
         p._lbl.TextColor3 = Theme.TextDim
-        if p._icon then p._icon.ImageColor3 = Theme.TextDim end
+        if p._icon then
+            if p._icon:IsA("TextLabel") then
+                p._icon.TextColor3 = Theme.TextDim
+            else
+                p._icon.ImageColor3 = Theme.TextDim
+            end
+        end
+
         -- Remove active glow
         local oldStroke = p._btn:FindFirstChildOfClass("UIStroke")
         if oldStroke then oldStroke:Destroy() end
@@ -2226,7 +2325,14 @@ function Tab:Select()
     tween(self._btn, {BackgroundTransparency = 0.6, BackgroundColor3 = Color3.fromRGB(180, 100, 255)}, 0.2)
     waveBorder(self._btn, Color3.fromRGB(138,43,226), Color3.fromRGB(0, 255, 255))
     self._lbl.TextColor3 = Theme.Text
-    if self._icon then self._icon.TextColor3 = Theme.Accent end
+    if self._icon then
+        if self._icon:IsA("TextLabel") then
+            self._icon.TextColor3 = Theme.Accent
+        else
+            self._icon.ImageColor3 = Theme.Accent
+        end
+    end
+
 end
 
 function Tab:MakeSection(cfg) return Section.new(self, cfg) end
@@ -2303,8 +2409,9 @@ function Window.new(cfg)
     tip.Visible = false
     tip.TextColor3 = Theme.Text
     tip.TextSize = 12
-    tip.Font = Theme.FontBody
+    SafeSetFont(tip, Theme.FontBody)
     tip.TextWrapped = true
+
     tip.Parent = sg
     corner(tip, Theme.CornerSmall)
     stroke(tip, Theme.Accent, 1, 0.4)
@@ -2514,8 +2621,8 @@ function Window.new(cfg)
         local cGrad = Instance.new("UIGradient")
         cGrad.Parent = cyber
         cGrad.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(16, 8, 32)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(6, 2, 14))
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 0, 80)), -- Deep Purple
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 0, 30))  -- Darker Purple
         })
         cGrad.Rotation = 90
 
@@ -2524,8 +2631,8 @@ function Window.new(cfg)
         tex.Position = UDim2.new(0,0,0,0)
         tex.BackgroundTransparency = 1
         tex.Image = "rbxassetid://16625867384"
-        tex.ImageColor3 = Theme.Accent
-        tex.ImageTransparency = 0.92
+        tex.ImageColor3 = Theme.Purple
+        tex.ImageTransparency = 0.9
         tex.ScaleType = Enum.ScaleType.Tile
         tex.TileSize = UDim2.new(0, 100, 0, 100)
         tex.ZIndex = 0
@@ -2542,8 +2649,12 @@ function Window.new(cfg)
         track(RunService.Heartbeat:Connect(function()
             if main.Parent and main.Visible and math.random() < 0.03 then
                 local isHoriz = math.random() > 0.5
+                local isPurple = math.random() > 0.5
+                local streamCol = isPurple and Color3.fromRGB(180, 100, 255) or Theme.Accent
+                local streamGlow = isPurple and Color3.fromRGB(220, 150, 255) or Theme.AccentGlow
+                
                 local stream = Instance.new("Frame")
-                stream.BackgroundColor3 = Theme.Accent
+                stream.BackgroundColor3 = streamCol
                 stream.BorderSizePixel = 0
                 stream.ZIndex = 0
                 stream.Parent = cyber
@@ -2579,7 +2690,7 @@ function Window.new(cfg)
                 stream.Position = startPos
                 
                 local glow = Instance.new("UIStroke")
-                glow.Color = Theme.AccentGlow
+                glow.Color = streamGlow
                 glow.Thickness = 1
                 glow.Transparency = 0.5
                 glow.Parent = stream
@@ -2625,8 +2736,9 @@ function Window.new(cfg)
     ttl.Text = self.Title
     ttl.TextColor3 = Theme.TextDim
     ttl.TextSize = 9
-    ttl.Font = Theme.FontTitle
+    SafeSetFont(ttl, Theme.FontTitle)
     ttl.TextXAlignment = Enum.TextXAlignment.Left
+
     ttl.Parent = sidebar
 
     local subTtl = Instance.new("TextLabel")
@@ -2636,8 +2748,9 @@ function Window.new(cfg)
     subTtl.Text = cfg.Subtitle or "UI"
     subTtl.TextColor3 = Color3.new(1,1,1)
     subTtl.TextSize = 22
-    subTtl.Font = Theme.FontTitle
+    SafeSetFont(subTtl, Theme.FontTitle)
     subTtl.TextXAlignment = Enum.TextXAlignment.Left
+
     subTtl.Parent = sidebar
     rainbowWaveBorder(subTtl, 1.5)
 
@@ -2663,8 +2776,9 @@ function Window.new(cfg)
     self.StatusLabel.Text = "● Ready"
     self.StatusLabel.TextColor3 = Theme.Success
     self.StatusLabel.TextSize = 12
-    self.StatusLabel.Font = Theme.FontBody
+    SafeSetFont(self.StatusLabel, Theme.FontBody)
     self.StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+
     self.StatusLabel.Parent = statusFrame
 
     local pingLabel = Instance.new("TextLabel")
@@ -2674,8 +2788,9 @@ function Window.new(cfg)
     pingLabel.Text = "?ms"
     pingLabel.TextColor3 = Theme.TextDim
     pingLabel.TextSize = 12
-    pingLabel.Font = Theme.FontBody
+    SafeSetFont(pingLabel, Theme.FontBody)
     pingLabel.TextXAlignment = Enum.TextXAlignment.Left
+
     pingLabel.Parent = statusFrame
 
     track(RunService.Heartbeat:Connect(function()
@@ -2706,8 +2821,9 @@ function Window.new(cfg)
         b.Text = info.Text
         b.TextColor3 = info.Col
         b.TextSize = 12
-        b.Font = Theme.Font
+        SafeSetFont(b, Theme.Font)
         b.BorderSizePixel = 0
+
         b.Parent = controlsFrame
         b.ZIndex = 51
         corner(b, UDim.new(0,6))
@@ -2771,8 +2887,9 @@ function Window.new(cfg)
         bpfHdr.Text = "Users Interface"
         bpfHdr.TextColor3 = Color3.new(1,1,1)
         bpfHdr.TextSize = 11
-        bpfHdr.Font = Theme.FontTitle
+        SafeSetFont(bpfHdr, Theme.FontTitle)
         bpfHdr.TextXAlignment = Enum.TextXAlignment.Left
+
         bpfHdr.Parent = bpf
         rainbowWaveBorder(bpfHdr, 1.2)
 
@@ -2814,8 +2931,9 @@ function Window.new(cfg)
         pt.Text = cfg.Profile.Title or "User"
         pt.TextColor3 = Theme.Text
         pt.TextSize = 14
-        pt.Font = Theme.FontTitle
+        SafeSetFont(pt, Theme.FontTitle)
         pt.TextXAlignment = Enum.TextXAlignment.Center
+
         pt.Parent = bpf
 
         local pd = Instance.new("TextLabel")
@@ -2825,8 +2943,9 @@ function Window.new(cfg)
         pd.Text = cfg.Profile.Desc or "Profile"
         pd.TextColor3 = Theme.TextDim
         pd.TextSize = 11
-        pd.Font = Theme.FontBody
+        SafeSetFont(pd, Theme.FontBody)
         pd.TextXAlignment = Enum.TextXAlignment.Center
+
         pd.Parent = bpf
     end
 
@@ -2959,8 +3078,9 @@ function Window:Notify(cfg)
     tLbl.Text = title
     tLbl.TextColor3 = accentCol
     tLbl.TextSize = 13
-    tLbl.Font = Theme.Font
+    SafeSetFont(tLbl, Theme.Font)
     tLbl.TextXAlignment = Enum.TextXAlignment.Left
+
     tLbl.Parent = nf
 
     local cLbl = Instance.new("TextLabel")
@@ -2971,8 +3091,9 @@ function Window:Notify(cfg)
     cLbl.Text = content
     cLbl.TextColor3 = Theme.TextDim
     cLbl.TextSize = 12
-    cLbl.Font = Theme.FontBody
+    SafeSetFont(cLbl, Theme.FontBody)
     cLbl.TextWrapped = true
+
     cLbl.TextXAlignment = Enum.TextXAlignment.Left
     cLbl.Parent = nf
 
@@ -3017,8 +3138,9 @@ function Window:ShowDialog(cfg)
     tLbl.Text = title
     tLbl.TextColor3 = Theme.Accent
     tLbl.TextSize = 16
-    tLbl.Font = Enum.Font.GothamBold
+    SafeSetFont(tLbl, Enum.Font.GothamBold)
     tLbl.TextXAlignment = Enum.TextXAlignment.Center
+
     tLbl.ZIndex = 102
     tLbl.Parent = dBox
     
@@ -3029,8 +3151,9 @@ function Window:ShowDialog(cfg)
     cLbl.Text = content
     cLbl.TextColor3 = Theme.TextDim
     cLbl.TextSize = 13
-    cLbl.Font = Theme.FontBody
+    SafeSetFont(cLbl, Theme.FontBody)
     cLbl.TextWrapped = true
+
     cLbl.TextXAlignment = Enum.TextXAlignment.Center
     cLbl.ZIndex = 102
     cLbl.Parent = dBox
@@ -3057,8 +3180,9 @@ function Window:ShowDialog(cfg)
         btn.Text = bCfg.Title
         btn.TextColor3 = Theme.Text
         btn.TextSize = 13
-        btn.Font = Theme.Font
+        SafeSetFont(btn, Theme.Font)
         btn.ZIndex = 103
+
         btn.BorderSizePixel = 0
         btn.Parent = btnContainer
         corner(btn, Theme.CornerSmall)
@@ -3128,6 +3252,7 @@ end
 
 function Nebublox:SetTheme(overrides)
     for k,v in pairs(overrides) do Theme[k] = v end
+    ValidateThemeFonts()
 end
 
 function Nebublox:Destroy()
@@ -3215,8 +3340,9 @@ function Nebublox:MakeWatermark(cfg)
     wLbl.BackgroundTransparency = 1
     wLbl.TextColor3 = Theme.Accent
     wLbl.TextSize = 11
-    wLbl.Font = Theme.Font
+    SafeSetFont(wLbl, Theme.Font)
     wLbl.TextXAlignment = Enum.TextXAlignment.Center
+
     wLbl.Parent = wf
 
     track(RunService.Heartbeat:Connect(function()
@@ -3270,8 +3396,9 @@ function Nebublox:KeySystem(cfg)
     tLbl.Text = title
     tLbl.TextColor3 = Theme.Accent
     tLbl.TextSize = 18
-    tLbl.Font = Theme.Font
+    SafeSetFont(tLbl, Theme.Font)
     tLbl.TextXAlignment = Enum.TextXAlignment.Center
+
     tLbl.Parent = modal
 
     local sLbl = Instance.new("TextLabel")
@@ -3281,8 +3408,9 @@ function Nebublox:KeySystem(cfg)
     sLbl.Text = subtitle
     sLbl.TextColor3 = Theme.TextDim
     sLbl.TextSize = 12
-    sLbl.Font = Theme.FontBody
+    SafeSetFont(sLbl, Theme.FontBody)
     sLbl.TextXAlignment = Enum.TextXAlignment.Center
+
     sLbl.Parent = modal
 
     local keyBox = Instance.new("TextBox")
@@ -3294,8 +3422,9 @@ function Nebublox:KeySystem(cfg)
     keyBox.Text = ""
     keyBox.TextColor3 = Theme.Text
     keyBox.TextSize = 13
-    keyBox.Font = Theme.FontBody
+    SafeSetFont(keyBox, Theme.FontBody)
     keyBox.BorderSizePixel = 0
+
     keyBox.Parent = modal
     corner(keyBox, Theme.CornerSmall)
     stroke(keyBox, Theme.AccentGlow, 1, 0.5)
@@ -3307,8 +3436,9 @@ function Nebublox:KeySystem(cfg)
     verBtn.Text = "Verify Key"
     verBtn.TextColor3 = Theme.Text
     verBtn.TextSize = 15
-    verBtn.Font = Theme.FontTitle
+    SafeSetFont(verBtn, Theme.FontTitle)
     verBtn.BorderSizePixel = 0
+
     verBtn.Parent = modal
     corner(verBtn, Theme.CornerSmall)
     gradient3D(verBtn, Color3.fromRGB(175, 75, 255), Color3.fromRGB(65, 18, 135))
@@ -3324,8 +3454,9 @@ function Nebublox:KeySystem(cfg)
     statusLbl.Text = link ~= "" and ("Get key: "..link) or ""
     statusLbl.TextColor3 = Theme.AccentDim
     statusLbl.TextSize = 11
-    statusLbl.Font = Theme.FontBody
+    SafeSetFont(statusLbl, Theme.FontBody)
     statusLbl.Parent = modal
+
 
     local verified = false
     verBtn.MouseButton1Click:Connect(function()
@@ -3381,8 +3512,9 @@ function Nebublox:MakeKeybindsList(cfg)
     title.Text = cfg.Title or "Keybinds"
     title.TextColor3 = Theme.Accent
     title.TextSize = 13
-    title.Font = Theme.Font
+    SafeSetFont(title, Theme.Font)
     title.Parent = main
+
     
     local list = Instance.new("Frame")
     list.Size = UDim2.new(1,0,0,0)
@@ -3424,8 +3556,9 @@ function Nebublox:MakeKeybindsList(cfg)
         ln.Text = name
         ln.TextColor3 = Theme.Text
         ln.TextSize = 12
-        ln.Font = Theme.FontBody
+        SafeSetFont(ln, Theme.FontBody)
         ln.TextXAlignment = Enum.TextXAlignment.Left
+
         ln.Parent = f
         
         local v = Instance.new("TextLabel")
@@ -3435,8 +3568,9 @@ function Nebublox:MakeKeybindsList(cfg)
         v.Text = "["..keyString.."]"
         v.TextColor3 = Theme.Accent
         v.TextSize = 12
-        v.Font = Theme.FontBody
+        SafeSetFont(v, Theme.FontBody)
         v.TextXAlignment = Enum.TextXAlignment.Right
+
         v.Parent = f
         
         binds[name] = {Frame = f, ValLabel = v}

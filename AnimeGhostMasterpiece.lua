@@ -55,6 +55,44 @@ local player = Players.LocalPlayer
 local RequestFunc = request or http_request or (syn and syn.request) or (fluxus and fluxus.request) or nil
 
 -- ═══════════════════════════════════════
+--  UTILITY TRACKING SYSTEM
+-- ═══════════════════════════════════════
+local UtilityConnections = {}
+local UtilityInstances = {}
+
+local function trackConnection(connection)
+    table.insert(UtilityConnections, connection)
+    return connection
+end
+
+local function trackInstance(instance)
+    table.insert(UtilityInstances, instance)
+    return instance
+end
+
+local function unloadUtility()
+    getgenv().Nebublox_Running = false
+    -- Disconnect all tracked loops and events
+    for _, connection in ipairs(UtilityConnections) do
+        if connection.Connected then pcall(function() connection:Disconnect() end) end
+    end
+    -- Destroy all tracked instances
+    for _, instance in ipairs(UtilityInstances) do
+        if instance and instance.Parent then pcall(function() instance:Destroy() end) end
+    end
+    -- Legacy cleanups
+    if getgenv().CurrentHighlight then pcall(function() getgenv().CurrentHighlight:Destroy() end) end
+    if getgenv().NebuBlox_Platform then pcall(function() getgenv().NebuBlox_Platform:Destroy() end) end
+    
+    -- Window cleaning handled by NebubloxUI internally usually, but we call it here too
+    if getgenv().Nebublox_MainWindow then pcall(function() getgenv().Nebublox_MainWindow:Destroy() end) end
+    
+    table.clear(UtilityConnections)
+    table.clear(UtilityInstances)
+    print("Nebublox: Utility successfully unloaded.")
+end
+
+-- ═══════════════════════════════════════
 --  GAME FRAMEWORK LOADER
 -- ═══════════════════════════════════════
 local GameLibrary = nil
@@ -142,13 +180,22 @@ local function GetSmartTarget()
 end
 
 -- Background Scanner
-task.spawn(function() while task.wait(0.05) do if getgenv().NebuBlox_SessionID ~= SessionID then break end; if getgenv().AutoAttack then TargetState.CurrentTarget = GetSmartTarget() else TargetState.CurrentTarget = nil end end end)
+task.spawn(function()
+    while task.wait(0.05) do
+        if getgenv().NebuBlox_SessionID ~= SessionID then break end
+        if getgenv().AutoAttack then 
+            TargetState.CurrentTarget = GetSmartTarget() 
+        else 
+            TargetState.CurrentTarget = nil 
+        end
+    end
+end)
 
 -- Movement + NoClip + Platform
 local platform = Instance.new("Part"); platform.Name = "NebuFarmPlatform"; platform.Size = Vector3.new(5, 1, 5); platform.Anchored = true; platform.Transparency = 1; platform.CanCollide = true; platform.Parent = workspace
 getgenv().NebuBlox_Platform = platform
-getgenv().NebuBlox_NoClipConnection = RunService.Stepped:Connect(function() if getgenv().AutoAttack and player.Character then for _, part in ipairs(player.Character:GetDescendants()) do if part:IsA("BasePart") and part.CanCollide then part.CanCollide = false end end end end)
-getgenv().NebuBlox_MovementConnection = RunService.Stepped:Connect(function()
+getgenv().NebuBlox_NoClipConnection = trackConnection(RunService.Stepped:Connect(function() if getgenv().AutoAttack and player.Character then for _, part in ipairs(player.Character:GetDescendants()) do if part:IsA("BasePart") and part.CanCollide then part.CanCollide = false end end end end))
+getgenv().NebuBlox_MovementConnection = trackConnection(RunService.Stepped:Connect(function()
     if not getgenv().AutoAttack then platform.Position = Vector3.new(0, 99999, 0); return end
     local char = player.Character; local root = char and char:FindFirstChild("HumanoidRootPart"); local target = TargetState.CurrentTarget
     if root and target and target.Parent then
@@ -156,10 +203,27 @@ getgenv().NebuBlox_MovementConnection = RunService.Stepped:Connect(function()
         if tRoot then root.CFrame = tRoot.CFrame * CFrame.new(0, -2, 5); platform.CFrame = CFrame.new(root.Position.X, root.Position.Y - 3, root.Position.Z); root.AssemblyLinearVelocity = Vector3.zero; root.AssemblyAngularVelocity = Vector3.zero
         else platform.Position = Vector3.new(0, 99999, 0) end
     else platform.Position = Vector3.new(0, 99999, 0) end
-end)
+end))
 
 -- Attack Loop
-task.spawn(function() while task.wait(0.05) do if getgenv().NebuBlox_SessionID ~= SessionID then break end; if getgenv().AutoAttack and TargetState.CurrentTarget and TargetState.CurrentTarget.Parent then pcall(function() if GameLibrary and GameLibrary.Remote then GameLibrary.Remote:Fire("ClickSystem", "Execute", TargetState.CurrentTarget.Name) end; if player.Character then local tool = player.Character:FindFirstChildWhichIsA("Tool"); if tool then tool:Activate() end end; VirtualUser:CaptureController(); VirtualUser:ClickButton1(Vector2.new(999, 999)) end) end end end)
+task.spawn(function()
+    while task.wait(0.05) do
+        if getgenv().NebuBlox_SessionID ~= SessionID then break end
+        if getgenv().AutoAttack and TargetState.CurrentTarget and TargetState.CurrentTarget.Parent then
+            pcall(function()
+                if GameLibrary and GameLibrary.Remote then
+                    GameLibrary.Remote:Fire("ClickSystem", "Execute", TargetState.CurrentTarget.Name)
+                end
+                if player.Character then
+                    local tool = player.Character:FindFirstChildWhichIsA("Tool")
+                    if tool then tool:Activate() end
+                end
+                VirtualUser:CaptureController()
+                VirtualUser:ClickButton1(Vector2.new(999, 999))
+            end)
+        end
+    end
+end)
 
 -- ═══════════════════════════════════════
 --  GAME FUNCTIONS
@@ -181,6 +245,40 @@ local function ValidateKey(key)
         if s and r and r.StatusCode == 200 then local js, d = pcall(function() return HttpService:JSONDecode(r.Body or r.Content) end); if js and d then return d.valid, d end end
     end
     return false, "Validation Failed"
+end
+
+local function GetLanyardStatus()
+    local id = Configuration.DiscordID or "113456789012345678"
+    local url = "https://api.lanyard.rest/v1/users/" .. id
+    if RequestFunc then
+        local s, r = pcall(function() return RequestFunc({Url=url, Method="GET"}) end)
+        if s and r and r.StatusCode == 200 then
+            local js, d = pcall(function() return HttpService:JSONDecode(r.Body or r.Content) end)
+            if js and d and d.success then
+                local data = d.data
+                local status = data.discord_status or "offline"
+                local activity = ""
+                if data.activities and #data.activities > 0 then
+                    for _, act in ipairs(data.activities) do
+                        if act.type == 0 then -- Playing
+                            activity = "Playing " .. act.name
+                            break
+                        elseif act.type == 2 then -- Listening
+                            activity = "Listening to " .. act.details
+                            break
+                        elseif act.type == 4 then -- Custom Status
+                            activity = act.state or ""
+                            break
+                        end
+                    end
+                end
+                
+                local statusMap = {online = "🟢 Online", idle = "🟡 Idle", dnd = "🔴 DND", offline = "⚫ Offline"}
+                return (statusMap[status] or "⚫ Offline") .. (activity ~= "" and (" | " .. activity) or "")
+            end
+        end
+    end
+    return "⚫ Offline"
 end
 
 -- Session Stats
@@ -229,6 +327,7 @@ local Window = Nebublox:MakeWindow({
     Size = UDim2.new(0, 680, 0, 480),
     CyberBackground = true
 })
+getgenv().Nebublox_MainWindow = Window
 
 -- Watermark HUD
 Nebublox:MakeWatermark({Text = "Nebublox : Anime Ghost"})
@@ -250,11 +349,24 @@ statusRow[2]:AddButton({Name = "Copy JobID", Icon = "star", Callback = function(
 
 ChangeTab:AddParagraph({Title = "Recent Updates", Content = "- Overhauled NebubloxUI Layout\n- Improved Engine Stability\n- Rebuilt Settings Tab"})
 
-CredTab:AddParagraph({Title = "Developer", Content = "Nebublox Founder, Hes a chicken Nugget wizard..."})
+local DevPara = CredTab:AddParagraph({Title = "LilNugget", Content = "Nebublox Founder\nFetching status..."})
 CredTab:AddDualButton(
     {Name = "Update Info", Icon = "info", Color = Color3.fromRGB(0, 255, 255), Callback = function() Window:Notify({Title="Info", Content="Version 1.1 Active"}) end},
     {Name = "Discord", Icon = "star", Color = Color3.fromRGB(138, 43, 226), Callback = function() setclipboard(Configuration.Discord); Window:Notify({Title="Discord", Content="Link Copied!", Type="success"}) end}
 )
+
+-- Start Lanyard Loop
+task.spawn(function()
+    while task.wait(30) do
+        if not getgenv().Nebublox_Running then break end
+        pcall(function()
+            local status = GetLanyardStatus()
+            DevPara:Set("Nebublox Founder\nStatus: " .. status)
+        end)
+    end
+end)
+-- Initial fetch
+task.spawn(function() pcall(function() DevPara:Set("Nebublox Founder\nStatus: " .. GetLanyardStatus()) end) end)
 
 local statsRow = HomeTab:AddRow({Columns = 2})
 local AccountCard = statsRow[1]:MakeSection({Name = "Account Information"})
@@ -262,7 +374,15 @@ AccountCard:AddParagraph({Title = "User Details", Content = "User ID: " .. playe
 
 local StatCard = statsRow[2]:MakeSection({Name = "Session Statistics"})
 local StatLabel = StatCard:AddParagraph({Title = "Session Analytics", Content = "Tracking..."})
-task.spawn(function() while task.wait(3) do if not getgenv().Nebublox_Running then break end; pcall(function() local yH, cH = GetSessionStats(); StatLabel:Set("💸 " .. yH .. "  |  💎 " .. cH .. "  |  ⏱ " .. math.floor(tick()-SessionStats.StartTime) .. "s") end) end end)
+task.spawn(function() 
+    while task.wait(3) do 
+        if not getgenv().Nebublox_Running then break end
+        pcall(function() 
+            local yH, cH = GetSessionStats() 
+            StatLabel:Set("💸 " .. yH .. "  |  💎 " .. cH .. "  |  ⏱ " .. math.floor(tick()-SessionStats.StartTime) .. "s") 
+        end) 
+    end 
+end)
 
 if not getgenv().NebubloxKeyValid then
     local KeySec = HomeTab:MakeSection({Name = "Authentication"})
@@ -390,15 +510,6 @@ raidRow2[2]:AddToggle({Name = "Auto Start", Default = false, Callback = function
         if Event then Event:FireServer({{"GamemodeSystem", "Start", "Raid", 8221438525, n = 4}, "\x02"}) end
     end); task.wait(2) end end)
 end})
-
-RaidSec:AddToggle({Name = "Auto Start Raid", Default = false, Callback = function(s)
-    getgenv().AutoStartRaid = s
-    task.spawn(function() while getgenv().AutoStartRaid do if not getgenv().Nebublox_Running then break end; pcall(function()
-        local Event = game:GetService("ReplicatedStorage"):FindFirstChild("ffrostflame_bridgenet2@1.0.0")
-        if Event then Event = Event.dataRemoteEvent end
-        if Event then Event:FireServer({{"GamemodeSystem", "Start", "Raid", 8221438525, n = 4}, "\x02"}) end
-    end); task.wait(2) end end)
-end})
 RaidSec:AddButton({Name = "Create Raid", Icon = "sword", Callback = function()
     pcall(function()
         local Event = game:GetService("ReplicatedStorage"):FindFirstChild("ffrostflame_bridgenet2@1.0.0")
@@ -460,10 +571,40 @@ end})
 gRow3[2]:AddToggle({Name = "Auto Spin", Default = false, Callback = function(s) getgenv().AutoSpinGacha = s; task.spawn(function() while getgenv().AutoSpinGacha and task.wait(1) do if not getgenv().Nebublox_Running then break end; SpinGacha(getgenv().SelectedGachaType, "Normal") end end) end})
 
 local SpeedSec = AutoTab:MakeSection({Name = "Movement Hacks"})
-SpeedSec:AddToggle({Name = "Walkspeed", Default = false, Callback = function(s) getgenv().AutoWalkSpeed = s; if s then task.spawn(function() while getgenv().AutoWalkSpeed do if not getgenv().Nebublox_Running then break end; pcall(function() local h = player.Character and player.Character:FindFirstChild("Humanoid"); if h then h.WalkSpeed = getgenv().AutoWalkSpeedVal or 100 end end); task.wait(0.1) end end) else pcall(function() local h = player.Character and player.Character:FindFirstChild("Humanoid"); if h then h.WalkSpeed = 16 end end) end end})
-SpeedSec:AddSlider({Name = "WalkSpeed Value", Min = 16, Max = 500, Increment = 1, Default = 100, Callback = function(v) getgenv().AutoWalkSpeedVal = v end})
-SpeedSec:AddToggle({Name = "Jump", Default = false, Callback = function(s) getgenv().AutoJumpPower = s; if s then task.spawn(function() while getgenv().AutoJumpPower do if not getgenv().Nebublox_Running then break end; pcall(function() local h = player.Character and player.Character:FindFirstChild("Humanoid"); if h then h.UseJumpPower = true; h.JumpPower = getgenv().AutoJumpPowerVal or 100 end end); task.wait(0.1) end end) else pcall(function() local h = player.Character and player.Character:FindFirstChild("Humanoid"); if h then h.JumpPower = 50 end end) end end})
-SpeedSec:AddSlider({Name = "JumpPower Value", Min = 50, Max = 500, Increment = 1, Default = 100, Callback = function(v) getgenv().AutoJumpPowerVal = v end})
+local MovRow1 = SpeedSec:AddRow({Columns = 3})
+MovRow1[1]:AddToggle({Name = "Walkspeed", Default = false, Callback = function(s) getgenv().AutoWalkSpeed = s end})
+MovRow1[2]:AddToggle({Name = "JumpPower", Default = false, Callback = function(s) getgenv().AutoJumpPower = s end})
+MovRow1[3]:AddToggle({Name = "Noclip", Default = false, Callback = function(s) getgenv().Noclip = s end})
+
+local MovRow2 = SpeedSec:AddRow({Columns = 2})
+MovRow2[1]:AddSlider({Name = "Speed Value", Min = 16, Max = 500, Increment = 1, Default = 100, Callback = function(v) getgenv().AutoWalkSpeedVal = v end})
+MovRow2[2]:AddSlider({Name = "Jump Value", Min = 50, Max = 500, Increment = 1, Default = 100, Callback = function(v) getgenv().AutoJumpPowerVal = v end})
+
+-- Robust Movement Loop
+task.spawn(function()
+    while task.wait() do
+        if not getgenv().Nebublox_Running then break end
+        pcall(function()
+            local char = player.Character
+            local hum = char and char:FindFirstChild("Humanoid")
+            if hum then
+                if getgenv().AutoWalkSpeed then hum.WalkSpeed = getgenv().AutoWalkSpeedVal or 100 end
+                if getgenv().AutoJumpPower then 
+                    hum.UseJumpPower = true
+                    hum.JumpPower = getgenv().AutoJumpPowerVal or 100 
+                end
+            end
+            
+            if getgenv().Noclip and char then
+                for _, v in ipairs(char:GetDescendants()) do
+                    if v:IsA("BasePart") and v.CanCollide then
+                        v.CanCollide = false
+                    end
+                end
+            end
+        end)
+    end
+end)
 
 -- Tab Removed (Shop)
 
@@ -480,32 +621,82 @@ local SettingsTab = Window:MakeTab({Name = "⚙️", Icon = ""})
 local UtilSec = SettingsTab:MakeSection({Name = "Utilities"})
 local utilRow = UtilSec:AddRow({Columns = 3})
 
-utilRow[1]:AddToggle({Name = "Anti-AFK", Default = false, Callback = function(s) if s then getgenv().AntiAfkConnection = player.Idled:Connect(function() VirtualUser:CaptureController(); VirtualUser:ClickButton2(Vector2.new()) end) else if getgenv().AntiAfkConnection then getgenv().AntiAfkConnection:Disconnect() end end end})
+utilRow[1]:AddToggle({Name = "Anti-AFK", Default = false, Callback = function(s)
+    if s then
+        getgenv().AntiAfkConnection = trackConnection(player.Idled:Connect(function()
+            -- Simulates a right-click at the center of the screen
+            VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+            task.wait(0.5)
+            VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+            print("Anti-AFK: Prevented idle disconnect.")
+        end))
+    else
+        if getgenv().AntiAfkConnection then
+            getgenv().AntiAfkConnection:Disconnect()
+            getgenv().AntiAfkConnection = nil
+        end
+    end
+end})
 
 utilRow[2]:AddButton({Name = "FPS Boost", Icon = "zap", Callback = function()
     task.spawn(function() pcall(function()
-        Lighting.GlobalShadows = false; Lighting.FogEnd = 9e9; Lighting.Brightness = 1
-        for _, c in ipairs(Lighting:GetChildren()) do if c:IsA("PostEffect") or c:IsA("BlurEffect") or c:IsA("SunRaysEffect") or c:IsA("ColorCorrectionEffect") or c:IsA("BloomEffect") or c:IsA("DepthOfFieldEffect") or c:IsA("Atmosphere") or c:IsA("Sky") then c:Destroy() end end
-        for _, v in ipairs(Workspace:GetDescendants()) do
-            if v:IsA("BasePart") then v.Material = Enum.Material.Plastic; v.Reflectance = 0; v.CastShadow = false
-            elseif v:IsA("Decal") or v:IsA("Texture") then v:Destroy()
-            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Sparkles") or v:IsA("Fire") or v:IsA("Smoke") then v:Destroy()
-            elseif v:IsA("MeshPart") then v.Material = Enum.Material.Plastic; v.TextureID = ""
-            elseif v:IsA("Sound") then v:Stop(); v:Destroy() end
+        local terrain = Workspace:WaitForChild("Terrain")
+        -- Optimize Terrain & Lighting
+        terrain.WaterWaveSize = 0
+        terrain.WaterWaveSpeed = 0
+        terrain.WaterReflectance = 0
+        terrain.WaterTransparency = 0
+        
+        Lighting.GlobalShadows = false
+        Lighting.FogEnd = 9e9
+        Lighting.Brightness = 0 -- Performance Optimizer suggested 0
+        
+        for _, c in ipairs(Lighting:GetChildren()) do 
+            if c:IsA("PostEffect") or c:IsA("BlurEffect") or c:IsA("SunRaysEffect") or c:IsA("ColorCorrectionEffect") or c:IsA("BloomEffect") or c:IsA("DepthOfFieldEffect") or c:IsA("Atmosphere") or c:IsA("Sky") then 
+                c:Destroy() 
+            end 
         end
+        
+        -- Strip Textures and Materials
+        for _, descendant in ipairs(Workspace:GetDescendants()) do
+            if descendant:IsA("BasePart") then
+                descendant.Material = Enum.Material.Plastic
+                descendant.Reflectance = 0
+                descendant.CastShadow = false
+            elseif descendant:IsA("Decal") or descendant:IsA("Texture") then
+                descendant.Transparency = 1
+            elseif descendant:IsA("ParticleEmitter") or descendant:IsA("Trail") or descendant:IsA("Sparkles") or descendant:IsA("Fire") or descendant:IsA("Smoke") then
+                descendant.Lifetime = NumberRange.new(0)
+            elseif descendant:IsA("MeshPart") then
+                descendant.Material = Enum.Material.Plastic
+                descendant.TextureID = ""
+            elseif descendant:IsA("PostEffect") then
+                descendant.Enabled = false
+            elseif descendant:IsA("Sound") then
+                descendant:Stop(); descendant:Destroy()
+            end
+        end
+        
         settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
-        RunService:Set3dRenderingEnabled(false) -- More aggressive boost
+        RunService:Set3dRenderingEnabled(false)
+        print("FPS Boost applied.")
     end); Window:Notify({Title="Settings", Content="FPS Boost Enabled!", Type="info"}) end)
 end})
 
 utilRow[3]:AddButton({Name = "Destroy Script", Icon = "shield", Callback = function()
-    getgenv().Nebublox_Running = false
-    if getgenv().AntiAfkConnection then getgenv().AntiAfkConnection:Disconnect() end
-    if CurrentHighlight then pcall(function() CurrentHighlight:Destroy() end) end
-    if getgenv().NebuBlox_Platform then pcall(function() getgenv().NebuBlox_Platform:Destroy() end) end
-    if getgenv().NebuBlox_NoClipConnection then getgenv().NebuBlox_NoClipConnection:Disconnect() end
-    if getgenv().NebuBlox_MovementConnection then getgenv().NebuBlox_MovementConnection:Disconnect() end
-    pcall(function() Window:Destroy() end)
+    unloadUtility()
+end})
+
+local utilRow2 = UtilSec:AddRow({Columns = 1})
+utilRow2[1]:AddButton({Name = "Unlock FPS 🚀", Icon = "zap", Callback = function()
+    if setfpscap then
+        setfpscap(999)
+        Window:Notify({Title="FPS", Content="FPS Cap removed!", Type="success"})
+        print("FPS Cap removed.")
+    else
+        Window:Notify({Title="Error", Content="Executor does not support setfpscap", Type="error"})
+        warn("Your executor does not support the setfpscap function.")
+    end
 end})
 
 local SetSec = SettingsTab:MakeSection({Name = "Configuration Management"})
