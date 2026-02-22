@@ -25,10 +25,10 @@ local _connections = {}
 -- ═══════════════════════════════════════
 local Theme = {
     _name         = "NebubloxUltima",
-    Background    = Color3.fromRGB(30, 20, 50),
-    Surface       = Color3.fromRGB(45, 30, 75),
-    SurfaceLight  = Color3.fromRGB(60, 40, 100),
-    SurfaceDark   = Color3.fromRGB(20, 10, 35),
+    Background    = Color3.fromRGB(0, 0, 0),
+    Surface       = Color3.fromRGB(10, 10, 10),
+    SurfaceLight  = Color3.fromRGB(20, 20, 20),
+    SurfaceDark   = Color3.fromRGB(5, 5, 5),
     Accent        = Color3.fromRGB(0, 255, 255),
     AccentDim     = Color3.fromRGB(0, 180, 210),
     AccentGlow    = Color3.fromRGB(80, 255, 255),
@@ -36,8 +36,8 @@ local Theme = {
     PurpleDark    = Color3.fromRGB(80, 30, 150),
     PurpleGlow    = Color3.fromRGB(220, 120, 255),
     Text          = Color3.fromRGB(255, 255, 255),
-    TextDim       = Color3.fromRGB(255, 255, 255),
-    Border        = Color3.fromRGB(100, 50, 180),
+    TextDim       = Color3.fromRGB(200, 200, 200),
+    Border        = Color3.fromRGB(50, 50, 50),
     Success       = Color3.fromRGB(0, 255, 140),
     Error         = Color3.fromRGB(255, 50, 90),
     Font          = Font.fromEnum(Enum.Font.GothamBold),
@@ -132,6 +132,24 @@ local function rainbowStroke(obj, thickness)
     s.Parent = obj
     track(RunService.Heartbeat:Connect(function()
         s.Color = Color3.fromHSV((tick() % 5) / 5, 1, 1)
+    end))
+    return s
+end
+
+local function rainbowWaveBorder(obj, thickness)
+    local s = Instance.new("UIStroke")
+    s.Thickness = thickness or 1.2
+    s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    s.Parent = obj
+    local g = Instance.new("UIGradient")
+    g.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromHSV(0, 1, 1)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromHSV(0.5, 1, 1)),
+        ColorSequenceKeypoint.new(1, Color3.fromHSV(1, 1, 1))
+    })
+    g.Parent = s
+    track(RunService.Heartbeat:Connect(function()
+        g.Rotation = (tick() * 120) % 360
     end))
     return s
 end
@@ -1007,11 +1025,12 @@ function Section:AddParagraph(cfg)
     f.Name = "Para"
     f.Size = UDim2.new(1,0,0,0)
     f.AutomaticSize = Enum.AutomaticSize.Y
-    f.BackgroundColor3 = Theme.Background
-    f.BackgroundTransparency = 0.5
+    f.BackgroundColor3 = Color3.new(0,0,0)
+    f.BackgroundTransparency = 0.8
     f.BorderSizePixel = 0
     f.Parent = self.Container
     corner(f, Theme.CornerSmall)
+    waveBorder(f, Color3.fromRGB(138,43,226), Color3.fromRGB(0,255,255))
     pad(f, 6, 6, 8, 8)
     if self.Window and cfg.Tooltip then self.Window.TrackTooltip(f, cfg.Tooltip) end
 
@@ -1053,12 +1072,12 @@ function Section:AddConsole(cfg)
     local f = Instance.new("Frame")
     f.Name = "Console_"..name
     f.Size = UDim2.new(1,0,0, cfg.Height or 120)
-    f.BackgroundColor3 = Color3.fromRGB(5,2,12)
-    f.BackgroundTransparency = 1
+    f.BackgroundColor3 = Color3.new(0,0,0)
+    f.BackgroundTransparency = 0.8
     f.BorderSizePixel = 0
     f.Parent = self.Container
     corner(f, Theme.CornerSmall)
-    stroke(f, Theme.AccentGlow, 1, 0.6)
+    waveBorder(f, Color3.fromRGB(138,43,226), Color3.fromRGB(0,255,255))
 
     local scroll = Instance.new("ScrollingFrame")
     scroll.Size = UDim2.new(1,-4,1,-4)
@@ -1106,11 +1125,12 @@ function Section:AddAIAssistant(cfg)
     local f = Instance.new("Frame")
     f.Name = "Ai_"..name
     f.Size = UDim2.new(1,0,0,height + 60)
-    f.BackgroundColor3 = Theme.Surface
-    f.BackgroundTransparency = 0.4
+    f.BackgroundColor3 = Color3.new(0,0,0)
+    f.BackgroundTransparency = 0.8
     f.BorderSizePixel = 0
     f.Parent = self.Container
     corner(f, Theme.CornerSmall)
+    waveBorder(f, Color3.fromRGB(138,43,226), Color3.fromRGB(0,255,255))
     
     local lbl = Instance.new("TextLabel")
     lbl.Size = UDim2.new(1,-16,0,24)
@@ -1571,11 +1591,12 @@ function Section:AddLineGraph(cfg)
     local f = Instance.new("Frame")
     f.Name = "Graph_"..name
     f.Size = UDim2.new(1,0,0,140)
-    f.BackgroundColor3 = Theme.Surface
-    f.BackgroundTransparency = 1
+    f.BackgroundColor3 = Color3.new(0,0,0)
+    f.BackgroundTransparency = 0.8
     f.BorderSizePixel = 0
     f.Parent = self.Container
     corner(f, Theme.CornerSmall)
+    waveBorder(f, Color3.fromRGB(138,43,226), Color3.fromRGB(0,255,255))
 
     local lbl = Instance.new("TextLabel")
     lbl.Size = UDim2.new(1,-60,0,24)
@@ -1951,7 +1972,7 @@ function Section.new(tab, cfg)
     hdr.FontFace = Theme.FontTitle
     hdr.TextXAlignment = Enum.TextXAlignment.Left
     hdr.Parent = f
-    rainbowStroke(hdr, 1.2)
+    rainbowWaveBorder(hdr, 1.2)
 
     local line = Instance.new("Frame")
     line.Size = UDim2.new(1,-16,0,1)
@@ -2577,7 +2598,7 @@ function Window.new(cfg)
     subTtl.FontFace = Theme.FontTitle
     subTtl.TextXAlignment = Enum.TextXAlignment.Left
     subTtl.Parent = sidebar
-    rainbowStroke(subTtl, 1.4)
+    rainbowWaveBorder(subTtl, 1.5)
 
     local ttlLine = Instance.new("Frame")
     ttlLine.Size = UDim2.new(1, 0, 0, 1)
@@ -2745,7 +2766,7 @@ function Window.new(cfg)
         bpfHdr.FontFace = Theme.FontTitle
         bpfHdr.TextXAlignment = Enum.TextXAlignment.Left
         bpfHdr.Parent = bpf
-        rainbowStroke(bpfHdr, 1.2)
+        rainbowWaveBorder(bpfHdr, 1.2)
 
         local bpfLine = Instance.new("Frame")
         bpfLine.Size = UDim2.new(1, -20, 0, 1)

@@ -204,8 +204,8 @@ end
 -- ═══════════════════════════════════════
 --  LOAD NEBUBLOX UI LIBRARY
 -- ═══════════════════════════════════════
-local rawCode = game:HttpGet("https://raw.githubusercontent.com/LilNugOfWisdom/NebubloxUI/main/NebubloxUI.lua")
-print("[NEBUBLOX] Fetched " .. #rawCode .. " bytes")
+local rawCode = game:HttpGet("https://raw.githubusercontent.com/LilNugOfWisdom/NebubloxUI/main/NebubloxUI.lua?cache=" .. math.random(1, 999999))
+print("[NEBUBLOX] Fetched " .. #rawCode .. " bytes (Fresh)")
 local loader, loadErr = loadstring(rawCode)
 if not loader then
     warn("NEBUBLOX LOADSTRING SYNTAX ERROR: " .. tostring(loadErr))
