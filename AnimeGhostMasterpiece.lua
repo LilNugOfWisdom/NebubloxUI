@@ -252,7 +252,7 @@ AboutTab:AddButton({Name = "Copy JobID", Icon = "clipboard", Callback = function
 
 ChangeTab:AddParagraph({Title = "Recent Updates", Content = "- Overhauled NebubloxUI Layout\n- Improved Engine Stability\n- Rebuilt Settings Tab"})
 
-CredTab:AddParagraph({Title = "Development Team", Content = "d1_ofc & lopp_0"})
+CredTab:AddParagraph({Title = "Developer", Content = player.DisplayName})
 CredTab:AddDualButton(
     {Name = "Update Info", Icon = "info", Callback = function() Window:Notify({Title="Info", Content="Version 1.1 Active"}) end},
     {Name = "Discord", Icon = "star", Callback = function() setclipboard(Configuration.Discord); Window:Notify({Title="Discord", Content="Link Copied!", Type="success"}) end}
