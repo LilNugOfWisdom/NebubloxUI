@@ -2964,13 +2964,7 @@ function Window.new(cfg)
     pad(tabListContainer, 0, 0, 10, 10)
     self._tabListContainer = tabListContainer
 
-    searchBox:GetPropertyChangedSignal("Text"):Connect(function()
-        local q = searchBox.Text:lower()
-        for _, t in ipairs(self._tabs) do
-            t._btn.Visible = (q == "" or (t.Name and t.Name:lower():find(q) ~= nil))
-        end
-    end)
-
+    -- Removed searchBox listener
     local content = Instance.new("Frame")
     content.Name = "Content"
     content.Size = UDim2.new(1,-210, 1, 0)
