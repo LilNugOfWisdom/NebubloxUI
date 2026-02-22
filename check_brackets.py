@@ -13,54 +13,94 @@ def check_brackets(filename):
     line = 1
     col = 0
     
-    # Simple state machine to skip strings and comments
+    # Advanced state machine for Lua syntax
     in_string = None
-    in_comment = False
+    in_single_comment = False
+    in_block_comment = False
+    in_multi_string = False
     
     i = 0
     while i < len(content):
         char = content[i]
         
+        # Track line and column
         if char == '\n':
             line += 1
             col = 0
+            if in_single_comment:
+                in_single_comment = False  # Reset single-line comments on newline
         else:
             col += 1
             
-        # Handle strings
-        if not in_comment:
-            if in_string:
-                if char == in_string and content[i-1] != '\\':
-                    in_string = None
-            elif char in ['"', "'"]:
-                in_string = char
-        
-        # Handle comments
-        if not in_string:
-            if content[i:i+2] == '--':
-                in_comment = True
-            elif in_comment and char == '\n':
-                in_comment = False
-        
-        if not in_string and not in_comment:
-            if char in pairs:
-                stack.append((char, line, col))
-            elif char in pairs.values():
-                if not stack:
-                    print(f"EXTRA {char} at line {line}, col {col}")
-                    return
-                last, l_line, l_col = stack.pop()
-                if pairs[last] != char:
-                    print(f"MISMATCH: {last} (line {l_line}, col {l_col}) with {char} at line {line}, col {col}")
-                    return
+        # 1. Handle Block Comments: --[[ ... ]]
+        if in_block_comment:
+            if content[i:i+2] == ']]':
+                in_block_comment = False
+                i += 1 # Skip the second ']'
+            i += 1
+            continue
+            
+        # 2. Handle Multi-line Strings: [[ ... ]]
+        if in_multi_string:
+            if content[i:i+2] == ']]':
+                in_multi_string = False
+                i += 1 # Skip the second ']'
+            i += 1
+            continue
+            
+        # 3. Handle Single-line Comments: --
+        if in_single_comment:
+            i += 1
+            continue
+
+        # 4. Handle Standard Strings: "..." or '...'
+        if in_string:
+            # Check for closing quote, ensuring it's not escaped (e.g., \")
+            if char == in_string and content[i-1] != '\\':
+                in_string = None
+            i += 1
+            continue
+
+        # --- WE ARE IN ACTIVE CODE ---
+
+        # Check for state changes
+        if content[i:i+4] == '--[[':
+            in_block_comment = True
+            i += 3 # Skip the rest of the sequence
+        elif content[i:i+2] == '--':
+            in_single_comment = True
+            i += 1
+        elif content[i:i+2] == '[[':
+            in_multi_string = True
+            i += 1
+        elif char in ['"', "'"]:
+            in_string = char
+            
+        # Check brackets
+        elif char in pairs:
+            stack.append((char, line, col))
+        elif char in pairs.values():
+            if not stack:
+                print(f"❌ EXTRA '{char}' found at line {line}, col {col}")
+                return
+            
+            last, l_line, l_col = stack.pop()
+            if pairs[last] != char:
+                print(f"❌ MISMATCH: '{last}' (line {l_line}, col {l_col}) closed with '{char}' at line {line}, col {col}")
+                return
+                
         i += 1
         
+    # Final Validation
     if stack:
-        print("UNCLOSED BRACKETS:")
+        print("⚠️ UNCLOSED BRACKETS FOUND:")
         for b, l, c in stack:
-            print(f"  {b} started at line {l}, col {c}")
+            print(f"  -> '{b}' started at line {l}, col {c}")
     else:
-        print("BRACKETS BALANCED!")
+        print("✅ BRACKETS BALANCED! Your Lua script is structurally sound.")
 
 if __name__ == "__main__":
-    check_brackets(sys.argv[1])
+    if len(sys.argv) < 2:
+        print("Usage: python check_brackets.py <your_script.lua>")
+    else:
+        check_brackets(sys.argv[1])

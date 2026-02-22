@@ -25,22 +25,26 @@ local _connections = {}
 -- ═══════════════════════════════════════
 local Theme = {
     _name         = "NebubloxUltima",
-    Background    = Color3.fromRGB(8, 4, 18),
-    Surface       = Color3.fromRGB(16, 10, 32),
-    SurfaceLight  = Color3.fromRGB(24, 14, 48),
-    Accent        = Color3.fromRGB(0, 255, 255),
-    AccentDim     = Color3.fromRGB(0, 180, 200),
-    Purple        = Color3.fromRGB(160, 60, 255),
+    Background    = Color3.fromRGB(6, 2, 14),
+    Surface       = Color3.fromRGB(14, 8, 28),
+    SurfaceLight  = Color3.fromRGB(22, 12, 44),
+    SurfaceDark   = Color3.fromRGB(8, 4, 18),
+    Accent        = Color3.fromRGB(0, 240, 255),
+    AccentDim     = Color3.fromRGB(0, 160, 210),
+    AccentGlow    = Color3.fromRGB(80, 255, 255),
+    Purple        = Color3.fromRGB(140, 40, 255),
+    PurpleDark    = Color3.fromRGB(60, 12, 130),
     PurpleGlow    = Color3.fromRGB(200, 100, 255),
-    Text          = Color3.fromRGB(245, 245, 255),
-    TextDim       = Color3.fromRGB(150, 140, 180),
-    Border        = Color3.fromRGB(70, 40, 120),
+    Text          = Color3.fromRGB(255, 255, 255),
+    TextDim       = Color3.fromRGB(160, 150, 190),
+    Border        = Color3.fromRGB(90, 45, 160),
     Success       = Color3.fromRGB(0, 255, 140),
-    Error         = Color3.fromRGB(255, 55, 100),
+    Error         = Color3.fromRGB(255, 50, 90),
     Font          = Enum.Font.GothamBold,
+    FontTitle     = Enum.Font.GothamBlack,
     FontBody      = Enum.Font.Gotham,
-    Corner        = UDim.new(0, 10),
-    CornerSmall   = UDim.new(0, 7),
+    Corner        = UDim.new(0, 8),
+    CornerSmall   = UDim.new(0, 6),
     CornerPill    = UDim.new(1, 0),
     Warning       = Color3.fromRGB(255, 200, 50),
 }
@@ -107,6 +111,47 @@ local function track(conn)
     return conn
 end
 
+local function gradient3D(obj, topCol, botCol, rot)
+    local g = Instance.new("UIGradient")
+    g.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, topCol),
+        ColorSequenceKeypoint.new(1, botCol)
+    })
+    g.Rotation = rot or 90
+    g.Parent = obj
+    return g
+end
+
+local function innerShine(obj)
+    local s = Instance.new("Frame")
+    s.Name = "Shine"
+    s.Size = UDim2.new(1, -2, 0.45, 0)
+    s.Position = UDim2.new(0, 1, 0, 1)
+    s.BackgroundColor3 = Color3.new(1, 1, 1)
+    s.BackgroundTransparency = 0.93
+    s.BorderSizePixel = 0
+    s.ZIndex = (obj.ZIndex or 1) + 1
+    s.Parent = obj
+    corner(s, Theme.CornerSmall)
+    local sg = Instance.new("UIGradient")
+    sg.Rotation = 90
+    sg.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0),
+        NumberSequenceKeypoint.new(1, 1)
+    })
+    sg.Parent = s
+    return s
+end
+
+local function glowStroke(obj, col, thick, trans)
+    local s = Instance.new("UIStroke")
+    s.Color = col or Theme.Accent
+    s.Thickness = thick or 1.5
+    s.Transparency = trans or 0.3
+    s.Parent = obj
+    return s
+end
+
 -- ═══════════════════════════════════════
 --  BUILT-IN ICON LIBRARY
 -- ═══════════════════════════════════════
@@ -162,36 +207,71 @@ function Section:AddButton(cfg)
     local icon = cfg.Icon
 
     local isUltra = (icon ~= nil)
-    local height = isUltra and 56 or (desc and 46 or 32)
+    local height = isUltra and 60 or (desc and 48 or 36)
 
     local btn = Instance.new("TextButton")
     btn.Name = "Btn_"..name
     btn.Size = UDim2.new(1,0,0, height)
-    btn.BackgroundColor3 = isUltra and Theme.SurfaceLight or Theme.Purple
-    btn.BackgroundTransparency = isUltra and 0 or 0.6
+    btn.BackgroundColor3 = Color3.new(1,1,1)
+    btn.BackgroundTransparency = 0
     btn.ZIndex = self:NextZ()
     btn.Text = ""
     btn.BorderSizePixel = 0
     btn.Parent = self.Container
     corner(btn, Theme.CornerSmall)
-    if isUltra then stroke(btn, Theme.Accent, 1, 0.4) end
+
+    -- 3D gradient armor plating
+    local btnGrad
+    if isUltra then
+        btnGrad = gradient3D(btn, Color3.fromRGB(32, 18, 62), Color3.fromRGB(12, 6, 26))
+    else
+        btnGrad = gradient3D(btn, Color3.fromRGB(175, 75, 255), Color3.fromRGB(65, 18, 135))
+    end
+    local btnStroke = glowStroke(btn, Theme.Accent, 1.5, isUltra and 0.35 or 0.5)
+    innerShine(btn)
 
     if self.Window and cfg.Tooltip then self.Window.TrackTooltip(btn, cfg.Tooltip) end
 
     if isUltra then
         local img = Instance.new("ImageLabel")
-        img.Size = UDim2.new(0,28,0,28)
+        img.Size = UDim2.new(0,30,0,30)
         img.Position = UDim2.new(0,14,0.5,0)
         img.AnchorPoint = Vector2.new(0,0.5)
         img.BackgroundTransparency = 1
         img.Image = resolveIcon(icon)
         img.ImageColor3 = Theme.Accent
         img.Parent = btn
-        img.ZIndex = btn.ZIndex + 1
+        img.ZIndex = btn.ZIndex + 2
 
         local lbl = Instance.new("TextLabel")
-        lbl.Size = UDim2.new(1,-60,0,20)
-        lbl.Position = UDim2.new(0,54,0,10)
+        lbl.Size = UDim2.new(1,-62,0, desc and 22 or 60)
+        lbl.Position = UDim2.new(0,56,0, desc and 10 or 0)
+        lbl.BackgroundTransparency = 1
+        lbl.Text = name
+        lbl.TextColor3 = Theme.Text
+        lbl.TextSize = 15
+        lbl.Font = Theme.Font
+        lbl.TextXAlignment = Enum.TextXAlignment.Left
+        lbl.Parent = btn
+        lbl.ZIndex = btn.ZIndex + 2
+
+        if desc then
+            local d = Instance.new("TextLabel")
+            d.Size = UDim2.new(1,-62,0,16)
+            d.Position = UDim2.new(0,56,0,32)
+            d.BackgroundTransparency = 1
+            d.Text = desc
+            d.TextColor3 = Theme.TextDim
+            d.TextSize = 12
+            d.Font = Theme.FontBody
+            d.TextXAlignment = Enum.TextXAlignment.Left
+            d.Parent = btn
+            d.ZIndex = btn.ZIndex + 2
+        end
+    else
+        local lbl = Instance.new("TextLabel")
+        lbl.Size = UDim2.new(1,-20,0, desc and 22 or 36)
+        lbl.Position = UDim2.new(0,10,0, desc and 5 or 0)
         lbl.BackgroundTransparency = 1
         lbl.Text = name
         lbl.TextColor3 = Theme.Text
@@ -199,54 +279,36 @@ function Section:AddButton(cfg)
         lbl.Font = Theme.Font
         lbl.TextXAlignment = Enum.TextXAlignment.Left
         lbl.Parent = btn
-        lbl.ZIndex = btn.ZIndex + 1
+        lbl.ZIndex = btn.ZIndex + 2
 
         if desc then
             local d = Instance.new("TextLabel")
-            d.Size = UDim2.new(1,-60,0,16)
-            d.Position = UDim2.new(0,54,0,30)
+            d.Size = UDim2.new(1,-20,0,16)
+            d.Position = UDim2.new(0,10,0,27)
             d.BackgroundTransparency = 1
             d.Text = desc
             d.TextColor3 = Theme.TextDim
-            d.TextSize = 11
+            d.TextSize = 12
             d.Font = Theme.FontBody
             d.TextXAlignment = Enum.TextXAlignment.Left
             d.Parent = btn
-            d.ZIndex = btn.ZIndex + 1
-        end
-    else
-        local lbl = Instance.new("TextLabel")
-        lbl.Size = UDim2.new(1,-16,0, desc and 20 or 32)
-        lbl.Position = UDim2.new(0,10,0, desc and 4 or 0)
-        lbl.BackgroundTransparency = 1
-        lbl.Text = name
-        lbl.TextColor3 = Theme.Text
-        lbl.TextSize = 13
-        lbl.Font = Theme.FontBody
-        lbl.TextXAlignment = Enum.TextXAlignment.Left
-        lbl.Parent = btn
-        lbl.ZIndex = btn.ZIndex + 1
-
-        if desc then
-            local d = Instance.new("TextLabel")
-            d.Size = UDim2.new(1,-16,0,16)
-            d.Position = UDim2.new(0,10,0,24)
-            d.BackgroundTransparency = 1
-            d.Text = desc
-            d.TextColor3 = Theme.TextDim
-            d.TextSize = 11
-            d.Font = Theme.FontBody
-            d.TextXAlignment = Enum.TextXAlignment.Left
-            d.Parent = btn
-            d.ZIndex = btn.ZIndex + 1
+            d.ZIndex = btn.ZIndex + 2
         end
     end
 
-    btn.MouseEnter:Connect(function() tween(btn, {BackgroundTransparency = isUltra and 0.15 or 0.3}, 0.15) end)
-    btn.MouseLeave:Connect(function() tween(btn, {BackgroundTransparency = isUltra and 0 or 0.6}, 0.15) end)
+    -- Hover: circuit-line stroke glows brighter
+    btn.MouseEnter:Connect(function()
+        tween(btnStroke, {Transparency = 0.05, Thickness = 2}, 0.15)
+    end)
+    btn.MouseLeave:Connect(function()
+        tween(btnStroke, {Transparency = isUltra and 0.35 or 0.5, Thickness = 1.5}, 0.15)
+    end)
+    -- Click: energy flash
     btn.MouseButton1Click:Connect(function()
-        tween(btn, {BackgroundColor3 = Theme.Accent}, 0.08)
-        task.delay(0.12, function() tween(btn, {BackgroundColor3 = isUltra and Theme.SurfaceLight or Theme.Purple}, 0.2) end)
+        tween(btnStroke, {Color = Theme.AccentGlow, Transparency = 0, Thickness = 2.5}, 0.06)
+        task.delay(0.15, function()
+            tween(btnStroke, {Color = Theme.Accent, Transparency = isUltra and 0.35 or 0.5, Thickness = 1.5}, 0.25)
+        end)
         pcall(cb)
     end)
     return btn
@@ -297,10 +359,12 @@ function Section:AddToggle(cfg)
     knob.BorderSizePixel = 0
     knob.Parent = sw
     corner(knob, Theme.CornerPill)
+    local knobGlow = glowStroke(knob, state and Theme.Accent or Theme.Border, 1.5, state and 0.2 or 0.7)
 
     local function upd()
         tween(sw, {BackgroundColor3 = state and Theme.Accent or Theme.Border}, 0.2)
         tween(knob, {Position = state and UDim2.new(1,-18,0.5,0) or UDim2.new(0,2,0.5,0)}, 0.2)
+        tween(knobGlow, {Color = state and Theme.Accent or Theme.Border, Transparency = state and 0.2 or 0.7}, 0.2)
     end
     sw.MouseButton1Click:Connect(function() state = not state; upd(); pcall(cb, state) end)
 
@@ -365,6 +429,7 @@ function Section:AddSlider(cfg)
     fill.BorderSizePixel = 0
     fill.Parent = track
     corner(fill, Theme.CornerPill)
+    gradient3D(fill, Theme.Accent, Theme.AccentDim, 0)
 
     local sk = Instance.new("Frame")
     sk.Size = UDim2.new(0,14,0,14)
@@ -375,7 +440,7 @@ function Section:AddSlider(cfg)
     sk.ZIndex = 2
     sk.Parent = track
     corner(sk, Theme.CornerPill)
-    stroke(sk, Theme.Background, 2, 0)
+    glowStroke(sk, Theme.AccentGlow, 2, 0.2)
 
     local sliding = false
     local function updSlider(input)
@@ -1741,31 +1806,39 @@ function Section.new(tab, cfg)
     f.Size = UDim2.new(1,0,0,0)
     f.AutomaticSize = Enum.AutomaticSize.Y
     f.BackgroundColor3 = Theme.Surface
-    f.BackgroundTransparency = 0.3
+    f.BackgroundTransparency = 0.2
     f.BorderSizePixel = 0
     f.Parent = tab.Page
     corner(f, Theme.Corner)
-    stroke(f, Theme.Border, 1, 0.7)
+    glowStroke(f, Theme.Border, 1.5, 0.4)
     self.Frame = f
 
     local hdr = Instance.new("TextLabel")
-    hdr.Size = UDim2.new(1,-16,0,26)
+    hdr.Size = UDim2.new(1,-16,0,28)
     hdr.Position = UDim2.new(0,8,0,4)
     hdr.BackgroundTransparency = 1
-    hdr.Text = "⬦  "..self.Name
+    hdr.Text = "⬡  "..self.Name
     hdr.TextColor3 = Theme.Accent
-    hdr.TextSize = 14
-    hdr.Font = Theme.Font
+    hdr.TextSize = 15
+    hdr.Font = Theme.FontTitle
     hdr.TextXAlignment = Enum.TextXAlignment.Left
     hdr.Parent = f
 
     local line = Instance.new("Frame")
     line.Size = UDim2.new(1,-16,0,1)
-    line.Position = UDim2.new(0,8,0,30)
+    line.Position = UDim2.new(0,8,0,32)
     line.BackgroundColor3 = Theme.Accent
-    line.BackgroundTransparency = 0.7
+    line.BackgroundTransparency = 0.3
     line.BorderSizePixel = 0
     line.Parent = f
+    local lineGrad = Instance.new("UIGradient")
+    lineGrad.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0.8),
+        NumberSequenceKeypoint.new(0.3, 0),
+        NumberSequenceKeypoint.new(0.7, 0),
+        NumberSequenceKeypoint.new(1, 0.8)
+    })
+    lineGrad.Parent = line
 
     local c = Instance.new("Frame")
     c.Name = "Elements"
@@ -1794,8 +1867,8 @@ function Tab.new(window, cfg)
 
     local btn = Instance.new("TextButton")
     btn.Name = "Tab_"..self.Name
-    btn.Size = UDim2.new(1,0,0,34)
-    btn.BackgroundColor3 = Theme.Surface
+    btn.Size = UDim2.new(1,0,0,36)
+    btn.BackgroundColor3 = Color3.new(1,1,1)
     btn.BackgroundTransparency = 1
     btn.Text = ""
     btn.BorderSizePixel = 0
@@ -1820,8 +1893,8 @@ function Tab.new(window, cfg)
     lbl.BackgroundTransparency = 1
     lbl.Text = self.Name
     lbl.TextColor3 = Theme.TextDim
-    lbl.TextSize = 12
-    lbl.Font = Theme.FontBody
+    lbl.TextSize = 13
+    lbl.Font = Theme.Font
     lbl.TextTruncate = Enum.TextTruncate.AtEnd
     lbl.TextXAlignment = Enum.TextXAlignment.Left
     lbl.Parent = btn
@@ -1955,10 +2028,14 @@ function Tab.new(window, cfg)
     end)
 
     btn.MouseEnter:Connect(function()
-        if window._activeTab ~= self then tween(btn, {BackgroundTransparency = 0.6}, 0.15) end
+        if window._activeTab ~= self then
+            tween(btn, {BackgroundTransparency = 0.4}, 0.15)
+        end
     end)
     btn.MouseLeave:Connect(function()
-        if window._activeTab ~= self then tween(btn, {BackgroundTransparency = 1}, 0.15) end
+        if window._activeTab ~= self then
+            tween(btn, {BackgroundTransparency = 1}, 0.15)
+        end
     end)
     btn.MouseButton1Click:Connect(function() self:Select() end)
     
@@ -1975,13 +2052,21 @@ function Tab:Select()
         tween(p._btn, {BackgroundTransparency = 1}, 0.2)
         p._lbl.TextColor3 = Theme.TextDim
         if p._icon then p._icon.ImageColor3 = Theme.TextDim end
+        -- Remove active glow
+        local oldStroke = p._btn:FindFirstChildOfClass("UIStroke")
+        if oldStroke then oldStroke:Destroy() end
+        local oldGrad = p._btn:FindFirstChildOfClass("UIGradient")
+        if oldGrad then oldGrad:Destroy() end
     end
 
     w._activeTab = self
     self.Page.Visible = true
     self.Page.Position = UDim2.new(0, 0, 0, 0)
 
-    tween(self._btn, {BackgroundTransparency = 0.5, BackgroundColor3 = Theme.Purple}, 0.2)
+    -- 3D pop active state
+    tween(self._btn, {BackgroundTransparency = 0}, 0.2)
+    gradient3D(self._btn, Color3.fromRGB(140, 50, 255), Color3.fromRGB(50, 15, 110))
+    glowStroke(self._btn, Theme.Accent, 1, 0.4)
     self._lbl.TextColor3 = Theme.Text
     if self._icon then self._icon.ImageColor3 = Theme.Accent end
 end
@@ -2226,16 +2311,17 @@ function Window.new(cfg)
 
     local tb = Instance.new("Frame")
     tb.Name = "TitleBar"
-    tb.Size = UDim2.new(1,0,0,38)
-    tb.BackgroundColor3 = Theme.Surface
+    tb.Size = UDim2.new(1,0,0,40)
+    tb.BackgroundColor3 = Color3.new(1,1,1)
     tb.BorderSizePixel = 0
     tb.Parent = main
     corner(tb, UDim.new(0,12))
+    gradient3D(tb, Color3.fromRGB(22, 14, 42), Color3.fromRGB(10, 6, 22))
     
     local tbFix = Instance.new("Frame")
     tbFix.Size = UDim2.new(1,0,0,12)
     tbFix.Position = UDim2.new(0,0,1,-12)
-    tbFix.BackgroundColor3 = Theme.Surface
+    tbFix.BackgroundColor3 = Color3.fromRGB(10, 6, 22)
     tbFix.BorderSizePixel = 0
     tbFix.Parent = tb
 
@@ -2245,8 +2331,8 @@ function Window.new(cfg)
     ttl.BackgroundTransparency = 1
     ttl.Text = "⬡  "..self.Title
     ttl.TextColor3 = Theme.Accent
-    ttl.TextSize = 16
-    ttl.Font = Theme.Font
+    ttl.TextSize = 17
+    ttl.Font = Theme.FontTitle
     ttl.TextXAlignment = Enum.TextXAlignment.Left
     ttl.Parent = tb
 
@@ -2712,7 +2798,7 @@ function Window:ShowDialog(cfg)
         local btn = Instance.new("TextButton")
         btn.Size = UDim2.new(btnWidth, -6, 1, 0)
         btn.Position = UDim2.new((i-1)*btnWidth, 3, 0, 0)
-        btn.BackgroundColor3 = Theme.SurfaceLight
+        btn.BackgroundColor3 = Color3.new(1,1,1)
         btn.Text = bCfg.Title
         btn.TextColor3 = Theme.Text
         btn.TextSize = 13
@@ -2721,7 +2807,8 @@ function Window:ShowDialog(cfg)
         btn.BorderSizePixel = 0
         btn.Parent = btnContainer
         corner(btn, Theme.CornerSmall)
-        stroke(btn, Theme.Border, 1, 0.4)
+        gradient3D(btn, Color3.fromRGB(140, 50, 255), Color3.fromRGB(50, 15, 110))
+        glowStroke(btn, Theme.Accent, 1, 0.5)
         
         btn.MouseButton1Click:Connect(function()
             closeDialog()
@@ -2959,18 +3046,21 @@ function Nebublox:KeySystem(cfg)
     stroke(keyBox, Theme.Border, 1, 0.5)
 
     local verBtn = Instance.new("TextButton")
-    verBtn.Size = UDim2.new(1,-40,0,32)
+    verBtn.Size = UDim2.new(1,-40,0,36)
     verBtn.Position = UDim2.new(0,20,0,122)
-    verBtn.BackgroundColor3 = Theme.Purple
+    verBtn.BackgroundColor3 = Color3.new(1,1,1)
     verBtn.Text = "Verify Key"
     verBtn.TextColor3 = Theme.Text
-    verBtn.TextSize = 14
-    verBtn.Font = Theme.Font
+    verBtn.TextSize = 15
+    verBtn.Font = Theme.FontTitle
     verBtn.BorderSizePixel = 0
     verBtn.Parent = modal
     corner(verBtn, Theme.CornerSmall)
-    verBtn.MouseEnter:Connect(function() tween(verBtn, {BackgroundColor3 = Theme.PurpleGlow}, 0.15) end)
-    verBtn.MouseLeave:Connect(function() tween(verBtn, {BackgroundColor3 = Theme.Purple}, 0.15) end)
+    gradient3D(verBtn, Color3.fromRGB(175, 75, 255), Color3.fromRGB(65, 18, 135))
+    local verStroke = glowStroke(verBtn, Theme.Accent, 1.5, 0.4)
+    innerShine(verBtn)
+    verBtn.MouseEnter:Connect(function() tween(verStroke, {Transparency = 0.05, Thickness = 2}, 0.15) end)
+    verBtn.MouseLeave:Connect(function() tween(verStroke, {Transparency = 0.4, Thickness = 1.5}, 0.15) end)
 
     local statusLbl = Instance.new("TextLabel")
     statusLbl.Size = UDim2.new(1,-20,0,18)

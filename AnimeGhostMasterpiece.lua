@@ -158,7 +158,7 @@ getgenv().NebuBlox_MovementConnection = RunService.Stepped:Connect(function()
     local char = player.Character; local root = char and char:FindFirstChild("HumanoidRootPart"); local target = TargetState.CurrentTarget
     if root and target and target.Parent then
         local tRoot = target:FindFirstChild("HumanoidRootPart") or target:FindFirstChild("EnemyHitbox") or target.PrimaryPart
-        if tRoot then root.CFrame = tRoot.CFrame * CFrame.new(0, 0, 5); platform.CFrame = CFrame.new(root.Position.X, root.Position.Y - 3.5, root.Position.Z); root.AssemblyLinearVelocity = Vector3.zero; root.AssemblyAngularVelocity = Vector3.zero
+        if tRoot then root.CFrame = tRoot.CFrame * CFrame.new(0, -2, 5); platform.CFrame = CFrame.new(root.Position.X, root.Position.Y - 3, root.Position.Z); root.AssemblyLinearVelocity = Vector3.zero; root.AssemblyAngularVelocity = Vector3.zero
         else platform.Position = Vector3.new(0, 99999, 0) end
     else platform.Position = Vector3.new(0, 99999, 0) end
 end)
